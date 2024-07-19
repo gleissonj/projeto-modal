@@ -1,0 +1,24 @@
+.lighthouse {
+    position: relative;
+    width: 100px; /* Adjust size of the lighthouse */
+    height: 100px; /* Adjust size of the lighthouse */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .light {
+    position: absolute;
+    top: -10px; /* Position of the light */
+    width: 20px; /* Width of the light */
+    height: 20px; /* Height of the light */
+    background-color: yellow; /* Color of the light */
+    border-radius: 50%; /* Rounded shape */
+  }
+  
+  .base {
+    width: 30px; /* Width of the base */
+    height: 30px; /* Height of the base */
+    background-color: green; /* Color of the base */
+    border-radius: 50%  /* Adjust the form of */
+  }
