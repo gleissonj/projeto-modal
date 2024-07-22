@@ -2,26 +2,32 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 07-18-2024
+  @last modified on  : 07-21-2024
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
-    <lightning-quick-action-panel header="Edit Fields Action">
-        <lightning-record-edit-form record-id={recordId}
-                                    object-api-name={objectApiName}
-                                    onsuccess={handleSuccess}>
-            <lightning-output-field field-name="Name"></lightning-output-field>
-            <div class="lighthouse">
+    <lightning-modal-header label="Apontamento cadastral"></lightning-modal-header>
+    <!-- <lightning-modal-body>
+        Consulta farol:
+        <div class="lighthouse">
   
-                <div class="base"></div>
-                <div class="tower"></div>
-                <div class="text">Farol Verde</div>
-              </div>
-            <lightning-input-field field-name="Amount"></lightning-input-field>
-            <lightning-input-field field-name="NextStep"></lightning-input-field>
-            <lightning-input-field field-name="StageName"></lightning-input-field>
-            <lightning-button variant="neutral" label="Cancel"></lightning-button>
+            <div class="base"></div>
+            <div class="tower"></div>
+            <div class="text">Farol Verde</div>
+          </div>
+    </lightning-modal-body> -->
+
+
+    <!--  novo html -->
+
+    <div class="lighthouse-container">
+        <div class="lighthouse-circle"></div>
+        <span class="lighthouse-text">Esse cnpj possui de cor de farol verde, sem restrição </span>
+       
+    </div>
+    aq vai um texto
+    <lightning-modal-footer>
+        <lightning-button variant="neutral" label="Cancel"></lightning-button>
             <lightning-button variant="brand" class="slds-m-left_x-small" label="Save" type="submit"></lightning-button>
-        </lightning-record-edit-form>
-    </lightning-quick-action-panel>
+    </lightning-modal-footer>
 </template>

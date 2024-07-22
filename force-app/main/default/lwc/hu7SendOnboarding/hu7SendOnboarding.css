@@ -1,7 +1,9 @@
-.lighthouse {
+/* Css numero 1 */
+
+/* .lighthouse {
     position: relative;
-    width: 100px; /* Adjust size of the lighthouse */
-    height: 100px; /* Adjust size of the lighthouse */
+    width: 100px; 
+    height: 100px; 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -9,16 +11,49 @@
   
   .light {
     position: absolute;
-    top: -10px; /* Position of the light */
-    width: 20px; /* Width of the light */
-    height: 20px; /* Height of the light */
-    background-color: yellow; /* Color of the light */
-    border-radius: 50%; /* Rounded shape */
+    top: -10px; 
+    width: 20px; 
+    height: 20px; 
+    background-color: yellow; 
+    border-radius: 50%; 
   }
   
   .base {
-    width: 30px; /* Width of the base */
-    height: 30px; /* Height of the base */
-    background-color: green; /* Color of the base */
-    border-radius: 50%  /* Adjust the form of */
-  }
+    width: 30px; 
+    height: 30px; 
+    background-color: green; 
+    border-radius: 50%  
+  } */
+
+
+  /* ----- Css numero 1 até aq */
+
+
+  /* Css num 2  */
+
+  body {
+    font-family: Arial, sans-serif;
+}
+
+.lighthouse-container {
+    display: flex;
+    align-items: center;
+    position: fixed;
+    margin-top: 5px;
+}
+
+.lighthouse-circle {
+    width: 22px;
+    height: 22px;
+    background-color: green;
+    border-radius: 50%;
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.lighthouse-text {
+    margin-left: 10px;
+    font-size: 15px;
+    margin-top: 10px;
+    color: black;
+}
