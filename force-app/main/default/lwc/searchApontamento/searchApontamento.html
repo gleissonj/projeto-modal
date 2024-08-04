@@ -1,0 +1,26 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 08-04-2024
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <lightning-modal-header label="Apontamento cadastral"></lightning-modal-header>
+    <template if:true={apontamentos}>
+        <div class="slds-var-m-around_medium">
+            <template for:each={apontamentos} for:item="acc">
+                <lightning-layout key={acc.id_apontamento} class="slds-var-m-vertical_x-small">
+                    <lightning-layout-item>
+                        {acc.valor_apontamento}
+                    </lightning-layout-item>
+                </lightning-layout>
+                
+            </template>
+        </div>
+    </template>
+    <lightning-modal-footer>
+        <lightning-button variant="neutral" label="Cancel"></lightning-button>
+            <lightning-button variant="brand" class="slds-m-left_x-small" label="Save" type="submit" onclick={getApontamentoCadastrais}></lightning-button>
+    </lightning-modal-footer>
+</template>

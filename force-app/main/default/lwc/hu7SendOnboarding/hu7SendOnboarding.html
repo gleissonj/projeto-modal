@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 08-01-2024
+  @last modified on  : 08-03-2024
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -25,9 +25,25 @@
         <span class="lighthouse-text">Esse cnpj possui de cor de farol verde, sem restrição </span>
        
     </div>
+    <!-- filtro -->
+    <!-- <div class="slds-var-m-around_medium">
+        <lightning-input onchange={handonchange} label="search "> </lightning-input>
+    </div> -->
+    <template if:true={accounts}>
+        <div class="slds-var-m-around_medium">
+            <template for:each={accounts} for:item="acc">
+                <lightning-layout key={acc.Id} class="slds-var-m-vertical_x-small">
+                    <lightning-layout-item>
+                        {acc.Name}
+                    </lightning-layout-item>
+                </lightning-layout>
+                
+            </template>
+        </div>
+    </template>
     aq vai um textooooo
     <lightning-modal-footer>
         <lightning-button variant="neutral" label="Cancel"></lightning-button>
-            <lightning-button variant="brand" class="slds-m-left_x-small" label="Save" type="submit"></lightning-button>
+            <lightning-button variant="brand" class="slds-m-left_x-small" label="Save" type="submit" onclick={saveTeste}></lightning-button>
     </lightning-modal-footer>
 </template>
