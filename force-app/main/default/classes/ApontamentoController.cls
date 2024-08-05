@@ -45,20 +45,40 @@ public with sharing class ApontamentoController {
         List<Apontamento> uniqueApontamentos = new List<Apontamento>();
 
         for (Apontamento a : apontamentos) {
-            if(!seenApontamento.contains(a.nome_apontamento)){
+            if(!seenApontamento.contains(a.tipo_apontamento)){
 
-                seenApontamento.add(a.nome_apontamento);
+                seenApontamento.add(a.tipo_apontamento);
                 uniqueApontamentos.add(a);
             }
         }
+
+        String resultApontamentos = getCommaSeparatedApontamentoNames(uniqueApontamentos);
         // Iterate over the list and print the details
         for (Apontamento p : uniqueApontamentos) {
             System.debug('TipoPessoa: ' + p.tipo_pessoa + ', ClassificacaoApontamento: ' + p.classificacao_apontamento);
         }
+
+
         return uniqueApontamentos;
     }
     
-    
+    public static String getCommaSeparatedApontamentoNames(List<Apontamento> apontamentos){
+         // Create a list to hold the names
+         List<String> apontamentoNames = new List<String>();
+
+         // Iterate through the list of products and collect the names
+         for (Apontamento apontamento : apontamentos) {
+            apontamentoNames.add(apontamento.nome_apontamento);
+         }
+ 
+         // Join the list of names with a comma separator
+         String tes = String.join(apontamentoNames, ',');
+         System.debug('String nome : ' + tes);
+
+
+         return tes;
+
+    }
     
     public static String getResponse(){
         String te = '['+
@@ -96,6 +116,20 @@ public with sharing class ApontamentoController {
                 '"valor_apontamento": "87,48",'+
                 '"documento": "4a843b13-ea23-42d8-a905-64f44f350d36",'+
                 '"tipo_apontamento": "002",'+
+                '"nome_apontamento": "TESTE INSPETORIA",'+
+                '"empresa_apontamento": "00",'+
+                '"data_ocorrencia": "2022-09-26",'+
+                '"data_inclusao": "2022-10-07T18:23:47",'+
+                '"classificacao_apontamento": "N",'+
+                '"descricao_inclusao":"",'+
+                '"sequencia_apontamento": 0'+
+            '},'+
+            '{'+
+                '"id_apontamento": "003605ce-b7b3-4956-904b-e7080bbbbb54d",'+
+                '"tipo_pessoa": "J",'+
+                '"valor_apontamento": "87,48",'+
+                '"documento": "4a843b13-ea23-42d8-a905-64f44f350d36",'+
+                '"tipo_apontamento": "003",'+
                 '"nome_apontamento": "TESTE INSPETORIA",'+
                 '"empresa_apontamento": "00",'+
                 '"data_ocorrencia": "2022-09-26",'+

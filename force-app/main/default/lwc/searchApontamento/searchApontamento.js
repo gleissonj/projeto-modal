@@ -4,7 +4,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class SearchApontamento extends LightningElement {
     @track isLoading = false;
-    @track isModalOpen = false;
+    @track isModalOpen = true;
     apontamentos;
     error;
     enableView = false;
@@ -50,5 +50,9 @@ export default class SearchApontamento extends LightningElement {
     refreshPage() {
         // Reloads the entire page
         window.location.reload();
+    }
+
+    closeModal() {
+        this.isModalOpen = false;
     }
 }
