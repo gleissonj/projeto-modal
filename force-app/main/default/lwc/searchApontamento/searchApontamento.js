@@ -4,13 +4,17 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class SearchApontamento extends LightningElement {
     @track isLoading = false;
+    @track isModalOpen = false;
     apontamentos;
     error;
+    enableView = false;
+
 
     getApontamentoCadastrais() {
         this.isLoading = true;
         getApontamento().then((result) => {
             this.apontamentos = result;
+            this.enableView = true;
             this.error = undefined;
             this.showToast();
             this.isLoading = false;
@@ -18,6 +22,7 @@ export default class SearchApontamento extends LightningElement {
             .catch((error) => {
                 this.error = error;
                 this.apontamentos = undefined;
+                this.enableView = true;
                 this.isLoading = false;
             });
     }
@@ -34,7 +39,7 @@ export default class SearchApontamento extends LightningElement {
 
     loadData() {
         this.isLoading = true;
-        
+
         // Simulate an async operation (e.g., server call)
         setTimeout(() => {
             // Data loading complete
@@ -42,8 +47,8 @@ export default class SearchApontamento extends LightningElement {
         }, 2000); // Change the delay as needed
     }
 
-    // refreshPage() {
-    //     // Reloads the entire page
-    //     window.location.reload();
-    // }
+    refreshPage() {
+        // Reloads the entire page
+        window.location.reload();
+    }
 }
