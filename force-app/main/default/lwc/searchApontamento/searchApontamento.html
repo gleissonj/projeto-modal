@@ -7,6 +7,9 @@
 -->
 <template>
     <lightning-modal-header label="Apontamento cadastral"></lightning-modal-header>
+    <template if:true={isLoading}>
+        <lightning-spinner alternative-text="Loading data..." size="large" variant="brand"></lightning-spinner>
+    </template>
     <template if:true={apontamentos}>
         <div class="slds-var-m-around_medium">
             <template for:each={apontamentos} for:item="acc">
@@ -15,12 +18,13 @@
                         {acc.valor_apontamento}
                     </lightning-layout-item>
                 </lightning-layout>
-                
+
             </template>
         </div>
     </template>
     <lightning-modal-footer>
         <lightning-button variant="neutral" label="Cancel"></lightning-button>
-            <lightning-button variant="brand" class="slds-m-left_x-small" label="Save" type="submit" onclick={getApontamentoCadastrais}></lightning-button>
+        <lightning-button variant="brand" class="slds-m-left_x-small" label="Save" type="submit"
+            onclick={getApontamentoCadastrais}></lightning-button>
     </lightning-modal-footer>
 </template>
