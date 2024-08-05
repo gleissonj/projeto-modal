@@ -6,7 +6,7 @@
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class ApontamentoController {
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<Apontamento> getApontamento(){
         // String jsonString = '[\n' +
         //     '    {\n' +
@@ -23,8 +23,22 @@ public with sharing class ApontamentoController {
         
         String test = getResponse();
         System.debug('Teste : ' + test);
+
+        try{
+            Prospect__c pros = new Prospect__c();
+            pros.Name = 'Teste';
+            pros.CNPJ__c = '123456';
+    
+            upsert pros CNPJ__c;
+            System.debug('Upsert operation successful.');
+        }
+        catch(DmlException e){
+            System.debug('Exception: ' + e.getMessage());
+        }
+       
         
-        List<Apontamento> apontamentos = (List<Apontamento>) JSON.deserialize(getResponse(), List<Apontamento>.class);
+        List<Apontamento>
+         apontamentos = (List<Apontamento>) JSON.deserialize(getResponse(), List<Apontamento>.class);
         System.debug('Adcionado o nome : ' + apontamentos);
 
         // Iterate over the list and print the details
