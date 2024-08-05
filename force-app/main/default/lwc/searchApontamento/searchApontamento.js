@@ -41,4 +41,9 @@ export default class SearchApontamento extends LightningElement {
             this.isLoading = false;
         }, 2000); // Change the delay as needed
     }
+
+    // refreshPage() {
+    //     // Reloads the entire page
+    //     window.location.reload();
+    // }
 }
