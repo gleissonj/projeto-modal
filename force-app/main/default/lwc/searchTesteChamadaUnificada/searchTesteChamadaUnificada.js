@@ -37,12 +37,13 @@ export default class SearchTesteChamadaUnificada extends LightningElement {
         ])
         .then((results) => {
             const [resultOne, resultTwo] = results
-            this.dataOne = resultOne;
+            this.apontamentos = resultOne;
             this.dataTwo = resultTwo;
-            console.log("one", this.dataOne);
+            console.log("one", this.apontamentos);
             console.log("two", this.dataTwo);
         })
         .catch((error) => {
+            console.log("result", error)
             this.error = error;
         })
         .finally(() => {

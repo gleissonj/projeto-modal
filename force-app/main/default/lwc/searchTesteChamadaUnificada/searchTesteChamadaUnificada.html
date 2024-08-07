@@ -2,7 +2,7 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 08-06-2024
+  @last modified on  : 08-07-2024
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
@@ -31,7 +31,7 @@
     <lightning-modal-footer if:false={enableView}>
         <lightning-button variant="neutral" label="Cancel"></lightning-button>
         <lightning-button variant="brand" class="slds-m-left_x-small" label="Saveaa" type="submit"
-            onclick={connectedCallback2}></lightning-button>
+            onclick={getTwoEndpoint}></lightning-button>
     </lightning-modal-footer>
 
     <lightning-modal-footer if:true={enableView}>

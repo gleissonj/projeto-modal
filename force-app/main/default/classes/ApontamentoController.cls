@@ -2,7 +2,7 @@
  * @description       :
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             :
- * @last modified on  : 08-05-2024
+ * @last modified on  : 08-07-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class ApontamentoController {
@@ -27,7 +27,8 @@ public with sharing class ApontamentoController {
         //     '    }\n' +
         //     ']';
         
-        String test = getResponse();
+        
+        String test = getPayload('r434242342342', 'teste');
         System.debug('Teste : ' + test);
         
         try{
@@ -88,6 +89,18 @@ public with sharing class ApontamentoController {
         
         return tes;
         
+    }
+
+    public static String getPayload(String cnpj, String nome){
+
+        return '{'+
+            '"cpf_cnpj":' +cnpj+', '+
+            '"nome":' +nome+', '+
+            '"tipo_pessoa": "J" ,'+
+            '"codigo_produto": "MIDDLE_PRINCIPAL",'+
+            '"opera_cambio": false,'+
+            '"ibba": "ULTRA"' +
+            '}';
     }
     
     public static String getResponse(){
