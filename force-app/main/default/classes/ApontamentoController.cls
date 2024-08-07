@@ -27,29 +27,58 @@ public with sharing class ApontamentoController {
         //     '    }\n' +
         //     ']';
         
+
+        System.debug('Teste Payload : ' + getPayload('cnpj', 'xfdfd'));
+
+
+        Http http = new Http();
+        HttpRequest request = new HttpRequest();
+        request.setEndpoint('https://viacep.com.br/ws/37200006/json/');
+        request.setMethod('GET');
+
+        HttpResponse response = http.send(request);
         
+        System.debug('Teste : ' + response.getStatusCode());
+        System.debug('Teste2 : ' + response.getBody());
+
+        Object tes = JSON.deserializeUntyped(response.getBody());
+        if (tes instanceof Map<String, Object>) {
+            Map<String, Object> resultMap = (Map<String, Object>) tes;
+
+            String testes = (String) resultMap.get('bairroer');
+            System.debug('Teste3 : ' + testes);
+            
+
+            return new List<Apontamento>();
+        }
+
+        System.debug('tes : ' + tes);
+
+       
+
+
         String test = getPayload('r434242342342', 'teste');
         System.debug('Teste : ' + test);
         
-        try{
-            Prospect__c pros = new Prospect__c();
-            pros.Id = 'a00bm00000BMfCgAAL';
-            pros.Name = 'Testeee';
-            pros.CNPJ__c = '12345678';
+        // try{
+        //     Prospect__c pros = new Prospect__c();
+        //     pros.Id = 'a00bm00000BMfCgAAL';
+        //     pros.Name = 'Testeee';
+        //     pros.CNPJ__c = '12345678';
             
-            repository.save(pros);
+        //     repository.save(pros);
             
-            //update pros;
-            //upsert pros CNPJ__c;
-            System.debug('Upsert operation successful.');
-        }
-        catch(DmlException e){
-            System.debug('Exception: ' + e.getMessage());
-        }
+        //     //update pros;
+        //     //upsert pros CNPJ__c;
+        //     System.debug('Upsert operation successful.');
+        // }
+        // catch(DmlException e){
+        //     System.debug('Exception: ' + e.getMessage());
+        // }
         
         
         List<Apontamento>
-            apontamentos = (List<Apontamento>) JSON.deserialize(getResponse(), List<Apontamento>.class);
+            apontamentos = (List<Apontamento>) JSON.deserialize(getPayload('32323','rerrere'), List<Apontamento>.class);
         System.debug('Adcionado o nome : ' + apontamentos);
         
         Set<String> seenApontamento = new Set<String>();
@@ -94,7 +123,7 @@ public with sharing class ApontamentoController {
     public static String getPayload(String cnpj, String nome){
 
         return '{'+
-            '"cpf_cnpj":' +cnpj+', '+
+            '"cpf_cnpj":"'+cnpj+'", '+
             '"nome":' +nome+', '+
             '"tipo_pessoa": "J" ,'+
             '"codigo_produto": "MIDDLE_PRINCIPAL",'+

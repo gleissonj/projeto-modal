@@ -21,6 +21,8 @@ export default class SearchApontamento extends LightningElement {
         })
             .catch((error) => {
                 this.error = error;
+                console.log("error", this.error.body)
+                console.log("error2", this.error.body.message)
                 this.apontamentos = undefined;
                 this.enableView = true;
                 this.isLoading = false;
