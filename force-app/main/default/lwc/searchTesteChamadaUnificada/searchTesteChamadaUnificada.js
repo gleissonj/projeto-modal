@@ -11,6 +11,24 @@ export default class SearchTesteChamadaUnificada extends LightningElement {
     enableView = false;
     @track dataOne;
     @track dataTwo;
+    @track array1 = ['Alice', 'Bob', 'Charlie'];
+    @track array2 = [
+        { id: '1', name: 'Alice', age: 30 },
+        { id: '2', name: 'Bob', age: 25 },
+        { id: '3', name: 'David', age: 35 }
+    ];
+
+     array10 = ['apple', 'banana', 'cherry'];
+     array20 = ['banana', 'date', 'fig'];
+
+     foundValues ;
+
+    findCommonElements() {
+        // Using filter() to find elements in arrayA that are present in arrayB
+        const hasCommonElement = this.arrayA.some(itemA => this.arrayB.includes(itemA));
+        console.log('Has common element:', hasCommonElement);
+        return commonElements;
+    }
 
     getTwoEndpoint(){
         Promise.all([
@@ -32,6 +50,23 @@ export default class SearchTesteChamadaUnificada extends LightningElement {
         });
     }
     
+    findMatchingRecords() {
+        const matches = this.array2.filter(record => 
+            this.array1.includes(record.name)
+        );
+
+        if (matches.length > 0) {
+            console.log('Matching records:', matches);
+        } else {
+            console.log('No matching records found');
+        }
+    }
+
+    connectedCallback() {
+        // Call the method to check for matches when the component is loaded
+        this.findMatchingRecords();
+    }
+
 
     getApontamentoCadastrais() {
         this.isLoading = true;
@@ -77,5 +112,16 @@ export default class SearchTesteChamadaUnificada extends LightningElement {
 
     closeModal() {
         this.isModalOpen = false;
+    }
+
+    connectedCallback2() {
+        this.findCommonValues2();
+    }
+
+    findCommonValues2() {
+        this.foundValues = this.array10.filter(item => this.array20.includes(item));
+        this.foundValues = JSON.parse(JSON.stringify(this.foundValues))
+        console.log("arra", this.array20);
+        console.log("teste", this.foundValues )
     }
 }
