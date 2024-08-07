@@ -40,6 +40,7 @@ public with sharing class ApontamentoController {
         
         System.debug('Teste : ' + response.getStatusCode());
         System.debug('Teste2 : ' + response.getBody());
+        cnpj = cnpj.replaceAll('[^0-9]', '');
 
         Object tes = JSON.deserializeUntyped(response.getBody());
         if (tes instanceof Map<String, Object>) {
