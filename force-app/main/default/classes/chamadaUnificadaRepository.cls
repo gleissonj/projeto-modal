@@ -2,10 +2,10 @@
  * @description       : 
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : 
- * @last modified on  : 08-05-2024
+ * @last modified on  : 08-08-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
-public with sharing class chamadaUnificadaRepository {
+public with sharing class ChamadaUnificadaRepository {
     
     virtual
     public List<Prospect__c> save(List<Prospect__c> prospects){
@@ -17,5 +17,10 @@ public with sharing class chamadaUnificadaRepository {
     public Prospect__c save(Prospect__c prospect){
         return save(new List<Prospect__c>{prospect})[0];
     }
+
+    virtual 
+    public List<Account> getListTeste(){
+        return [Select Id, name from Account limit 10];
+    } 
     
 }
