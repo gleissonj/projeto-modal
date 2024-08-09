@@ -5,64 +5,37 @@
  * @last modified on  : 08-08-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
-
-@isTest
-public class ApontamentoTest {
-    @isTest
-    public static void myUnitTest() {
-        
-        ApontamentoRepository uni = new ApontamentoRepository();
-        List<Account> acc = uni.getListTeste();
-
-        String t = 'acc';
-        Assert.isTrue(acc.isEmpty());
-    }
+@IsTest
+public class ApontamentoServiceTest {
 
     @isTest
-    public static void ShouldRetunrListAppointment() {
-        ApontamentoController.service = new ApontamentoMock();
-        ApontamentoController.repository = new ApontamentoMockRepository();
+    public static void myUnitTest51() {
+        //ApontamentoService.service = new ApontamentoMock();
 
-        List<Apontamento> apontamentos = ApontamentoController.GetApontamento(10);
+        ApontamentoService ser = new ApontamentoService();
+
+        OutbondResponse apontamentos = ser.GetApontamento('233');
         
         Assert.isNotNull(apontamentos);
     }
 
-    @isTest
-    public static void ShouldReturnSeparateNote() {
-        List<Apontamento> apontamentoFake = new List<Apontamento>();
+    public class ApontamentoMock extends ApontamentoService{
+        String payload;
 
-        // Atribuindo valores às propriedades
-        Apontamento apontamento = new Apontamento('001', 'Física', '12345678900', 'Débito', 'Pagamento Atrasado', 
-        'Empresa X', '2023-08-08', '2023-08-09', '1000.00', 'Alta', 
-        'Inclusão de débito por atraso', '1');
+        override public OutbondResponse GetApontamento(String cnpj){
+            // Set the mock callout
+        Test.setMock(HttpCalloutMock.class, new PostCalloutMock());
 
-      
-        apontamentoFake.add(apontamento);
-        
-        String apontamentos = ApontamentoController.GetCommaSeparatedApontamentoNames(apontamentoFake);
-        
-        Assert.areEqual('Pagamento Atrasado', apontamentos);
+        // Perform the HTTP callout
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.example.com/test');
+        req.setMethod('GET');
+        HttpResponse res = new Http().send(req);
+
+        return new OutbondResponse(res);
+        }
+
     }
-
-    @isTest
-    public static void ShouldReturnUniqueNote() {
-        List<Apontamento> apontamentoFake = new List<Apontamento>();
-
-        // Atribuindo valores às propriedades
-        Apontamento apontamento = new Apontamento('001', 'Física', '12345678900', 'Débito', 'Pagamento Atrasado', 
-        'Empresa X', '2023-08-08', '2023-08-09', '1000.00', 'Alta', 
-        'Inclusão de débito por atraso', '1');
-
-      
-        apontamentoFake.add(apontamento);
-        
-        List<Apontamento> apontamentos = ApontamentoController.GetUniqueApontamento(apontamentoFake);
-        
-        Assert.isNotNull(apontamentos);
-    }
-
-    
 
     private class PostCalloutMock implements HttpCalloutMock {
         public HttpResponse respond(HttpRequest req) {
@@ -137,38 +110,4 @@ public class ApontamentoTest {
         
         return te;
     }
-
-    public class ApontamentoMock extends ApontamentoService{
-        String payload;
-
-        override public OutbondResponse GetApontamento(String cnpj){
-            // Set the mock callout
-        Test.setMock(HttpCalloutMock.class, new PostCalloutMock());
-
-        // Perform the HTTP callout
-        HttpRequest req = new HttpRequest();
-        req.setEndpoint('https://api.example.com/test');
-        req.setMethod('GET');
-        HttpResponse res = new Http().send(req);
-
-        return new OutbondResponse(res);
-        }
-
-    }
-
-    public class ApontamentoMockRepository extends ApontamentoRepository{
-        
-        override public List<Account> getListTeste(){
-            return new List<Account>();
-        }
-
-        override public Account upadteAccount(Account a){
-            return new Account();
-        }
-
-    }
-
-
-    
-    
 }
