@@ -6,68 +6,66 @@
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class ApontamentoController {
-    public static chamadaUnificadaRepository repository;
-
+    public static ApontamentoRepository repository;
+    public static ApontamentoService service;
     static {
-        repository = new chamadaUnificadaRepository();
+        repository = new ApontamentoRepository();
+        service = new ApontamentoService();
     }
-
+    
     @AuraEnabled(cacheable=false)
-    public static List<Apontamento> getApontamento(){
-        // String jsonString = '[\n' +
-        //     '    {\n' +
-        //     '        "name": "John",\n' +
-        //     '        "age": 30,\n' +
-        //     '        "city": "New York"\n' +
-        //     '    },\n' +
-        //     '    {\n' +
-        //     '        "name": "Jane",\n' +
-        //     '        "age": 25,\n' +
-        //     '        "city": "Los Angeles"\n' +
-        //     '    }\n' +
-        //     ']';
+    public static List<Apontamento> GetApontamento(Integer Id){
+        
         try{
-            System.debug('Teste Payload : ' + getPayload('cnpj', 'xfdfd'));
+            
+            List<Account> account = repository.getListTeste();
 
-
-            Http http = new Http();
-            HttpRequest request = new HttpRequest();
-            request.setEndpoint('https://viacep.com.br/ws/37200006/json/');
-            request.setMethod('GET');
-    
-            HttpResponse response = http.send(request);
+            OutbondResponse response = service.GetApontamento('212121');
+            System.debug('Teste : ' + response.toString());
             
-            System.debug('Teste : ' + response.getStatusCode());
-            System.debug('Teste2 : ' + response.getBody());
-            //cnpj = cnpj.replaceAll('[^0-9]', '');
-           
-    
-    
-            String test = getPayload('r434242342342', 'teste');
-            System.debug('Teste : ' + test);
-            
-            // try{
-            //     Prospect__c pros = new Prospect__c();
-            //     pros.Id = 'a00bm00000BMfCgAAL';
-            //     pros.Name = 'Testeee';
-            //     pros.CNPJ__c = '12345678';
-                
-            //     repository.save(pros);
-                
-            //     //update pros;
-            //     //upsert pros CNPJ__c;
-            //     System.debug('Upsert operation successful.');
-            // }
-            // catch(DmlException e){
-            //     System.debug('Exception: ' + e.getMessage());
-            // }
-            
-            
+            System.debug('Teste : ' + response);
+          
             List<Apontamento>
-                apontamentos = (List<Apontamento>) JSON.deserialize(getResponse(), List<Apontamento>.class);
+                apontamentos = (List<Apontamento>) JSON.deserialize(response.toString(), List<Apontamento>.class);
             System.debug('Adcionado o nome : ' + apontamentos);
             
-            Set<String> seenApontamento = new Set<String>();
+            List<Apontamento> uniqueApontamentos = GetUniqueApontamento(apontamentos);
+            
+            String resultApontamentos = GetCommaSeparatedApontamentoNames(uniqueApontamentos);
+            // Iterate over the list and print the details
+            for (Apontamento p : uniqueApontamentos) {
+                System.debug('TipoPessoa: ' + p.tipo_pessoa + ', ClassificacaoApontamento: ' + p.classificacao_apontamento);
+            }
+            
+            Account acc = repository.upadteAccount(new Account());
+
+            System.debug('Terminou : ' + apontamentos);
+
+            return uniqueApontamentos;
+        }
+        catch(Exception e){
+            System.debug('Exception: ' + e.getMessage());
+            System.debug('Exception: ' + e.getLineNumber());
+            System.debug('Exception: ' + e.getCause());
+            return null;
+        }
+        
+        
+    }
+    
+    public static String GetCommaSeparatedApontamentoNames(List<Apontamento> apontamentos){
+        List<String> apontamentoNames = new List<String>();
+        
+        for (Apontamento apontamento : apontamentos) {
+            apontamentoNames.add(apontamento.nome_apontamento);
+        }
+        return String.join(apontamentoNames, ',');
+    }
+
+    
+
+    public static List<Apontamento> GetUniqueApontamento(List<Apontamento> apontamentos){
+        Set<String> seenApontamento = new Set<String>();
             List<Apontamento> uniqueApontamentos = new List<Apontamento>();
             
             for (Apontamento a : apontamentos) {
@@ -77,46 +75,12 @@ public with sharing class ApontamentoController {
                     uniqueApontamentos.add(a);
                 }
             }
-            
-            String resultApontamentos = getCommaSeparatedApontamentoNames(uniqueApontamentos);
-            // Iterate over the list and print the details
-            for (Apontamento p : uniqueApontamentos) {
-                System.debug('TipoPessoa: ' + p.tipo_pessoa + ', ClassificacaoApontamento: ' + p.classificacao_apontamento);
-            }
-            
-            
-            return uniqueApontamentos;
-        }
-        catch(Exception e){
-            System.debug('Exception: ' + e.getMessage());
-            System.debug('Exception: ' + e.getLineNumber());
-            System.debug('Exception: ' + e.getCause());
-            return null;
-        }
 
-       
+            return uniqueApontamentos;
     }
     
-    public static String getCommaSeparatedApontamentoNames(List<Apontamento> apontamentos){
-        // Create a list to hold the names
-        List<String> apontamentoNames = new List<String>();
+    public static String GetPayload(String cnpj, String nome){
         
-        // Iterate through the list of products and collect the names
-        for (Apontamento apontamento : apontamentos) {
-            apontamentoNames.add(apontamento.nome_apontamento);
-        }
-        
-        // Join the list of names with a comma separator
-        String tes = String.join(apontamentoNames, ',');
-        System.debug('String nome : ' + tes);
-        
-        
-        return tes;
-        
-    }
-
-    public static String getPayload(String cnpj, String nome){
-
         return '{'+
             '"cpf_cnpj":"'+cnpj+'", '+
             '"nome":' +nome+', '+
@@ -127,7 +91,7 @@ public with sharing class ApontamentoController {
             '}';
     }
     
-    public static String getResponse(){
+    public static String GetResponse(){
         String te = '['+
             '{'+
             '"id_apontamento": "003605ce-b7b3-4956-904b-e7080bbbbb54d",'+

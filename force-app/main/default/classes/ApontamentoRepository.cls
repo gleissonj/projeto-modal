@@ -5,8 +5,7 @@
  * @last modified on  : 08-08-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
-public with sharing class ChamadaUnificadaRepository {
-    
+public virtual with sharing class ApontamentoRepository {
     virtual
     public List<Prospect__c> save(List<Prospect__c> prospects){
         update prospects;

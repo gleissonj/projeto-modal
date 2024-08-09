@@ -8,40 +8,10 @@
 
 @isTest
 public class ApontamentoTest {
-
-    // @isTest
-    // public static void myUnitTest() {
-    //     List<Apontamento> apt = new List<Apontamento>();
-
-    //     Apontamento pt = new Apontamento(
-
-    //         id_apontamento = '1',
-    //         tipo_pessoa = '2',
-    //         documento = '3',
-    //         tipo_apontamento = '4',
-    //         nome_apontamento = '5',
-    //         empresa_apontamento = '6',
-    //         data_ocorrencia = '6',
-    //         data_inclusao = '6',
-    //         valor_apontamento = '6',
-    //         classificacao_apontamento = '6',
-    //         descricao_inclusao = '6',
-    //         sequencia_apontamento = '2'
-    //     );
-           
-    //     apt.add(pt);
-        
-    //     ApontamentoController aptControler = new ApontamentoController();
-    //     //String te = aptControler.getCommaSeparatedApontamentoNames(apt);
-
-    //     String rere = 'rere';
-
-    // }
-
     @isTest
     public static void myUnitTest() {
         
-        ChamadaUnificadaRepository uni = new ChamadaUnificadaRepository();
+        ApontamentoRepository uni = new ApontamentoRepository();
         List<Account> acc = uni.getListTeste();
 
         String t = 'acc';
@@ -50,14 +20,49 @@ public class ApontamentoTest {
 
     @isTest
     public static void myUnitTest2() {
-        Test.setMock(HttpCalloutMock.class, new PostCalloutMock());
+        ApontamentoController.service = new ApontamentoMock();
+        ApontamentoController.repository = new ApontamentoMockRepository();
 
-        //ApontamentoController apt = new ApontamentoController();
-
-        List<Apontamento> po = ApontamentoController.getApontamento() ;
-        Assert.isFalse(po.isEmpty());
+        List<Apontamento> apontamentos = ApontamentoController.GetApontamento(10);
         
+        Assert.isNotNull(apontamentos);
     }
+
+    @isTest
+    public static void myUnitTest3() {
+        List<Apontamento> apontamentoFake = new List<Apontamento>();
+
+        // Atribuindo valores às propriedades
+        Apontamento apontamento = new Apontamento('001', 'Física', '12345678900', 'Débito', 'Pagamento Atrasado', 
+        'Empresa X', '2023-08-08', '2023-08-09', '1000.00', 'Alta', 
+        'Inclusão de débito por atraso', '1');
+
+      
+        apontamentoFake.add(apontamento);
+        
+        String apontamentos = ApontamentoController.GetCommaSeparatedApontamentoNames(apontamentoFake);
+        
+        Assert.areEqual('Pagamento Atrasado', apontamentos);
+    }
+
+    @isTest
+    public static void myUnitTest4() {
+        List<Apontamento> apontamentoFake = new List<Apontamento>();
+
+        // Atribuindo valores às propriedades
+        Apontamento apontamento = new Apontamento('001', 'Física', '12345678900', 'Débito', 'Pagamento Atrasado', 
+        'Empresa X', '2023-08-08', '2023-08-09', '1000.00', 'Alta', 
+        'Inclusão de débito por atraso', '1');
+
+      
+        apontamentoFake.add(apontamento);
+        
+        List<Apontamento> apontamentos = ApontamentoController.GetUniqueApontamento(apontamentoFake);
+        
+        Assert.isNotNull(apontamentos);
+    }
+
+    
 
     private class PostCalloutMock implements HttpCalloutMock {
         public HttpResponse respond(HttpRequest req) {
@@ -132,5 +137,38 @@ public class ApontamentoTest {
         
         return te;
     }
+
+    public class ApontamentoMock extends ApontamentoService{
+        String payload;
+
+        override public OutbondResponse GetApontamento(String cnpj){
+            // Set the mock callout
+        Test.setMock(HttpCalloutMock.class, new PostCalloutMock());
+
+        // Perform the HTTP callout
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.example.com/test');
+        req.setMethod('GET');
+        HttpResponse res = new Http().send(req);
+
+        return new OutbondResponse(res);
+        }
+
+    }
+
+    public class ApontamentoMockRepository extends ApontamentoRepository{
+        
+        override public List<Account> getListTeste(){
+            return new List<Account>();
+        }
+
+        override public Account upadteAccount(Account a){
+            return new Account();
+        }
+
+    }
+
+
+    
     
 }
