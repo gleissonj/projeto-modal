@@ -5,7 +5,8 @@
  * @last modified on  : 08-10-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
-public with sharing class Email {
-    @AuraEnabled public String id_email {get;set;}
-    @AuraEnabled public EmailRegistrationData valor_dado_cadastral {get;set;}
+public with sharing class EmailRegistrationData {
+    @AuraEnabled public String principal {get;set;}
+    @AuraEnabled public String email {get;set;}
+    @AuraEnabled public String data_atualizacao {get;set;}
 }
