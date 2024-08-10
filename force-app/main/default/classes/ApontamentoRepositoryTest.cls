@@ -2,9 +2,10 @@
  * @description       : 
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : 
- * @last modified on  : 08-08-2024
+ * @last modified on  : 08-10-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
+@isTest
 public with sharing class ApontamentoRepositoryTest {
     @isTest
     public static void myUnitTest4() {
