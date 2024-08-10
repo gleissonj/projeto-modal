@@ -35,6 +35,8 @@ public with sharing class ContactController {
             ContactResponse contResponse = new ContactResponse();
 
         }
+
+        return new List<ContactResponse>();
     }
     
     public static String GetResponse(){
