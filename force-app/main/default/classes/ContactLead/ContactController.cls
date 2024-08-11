@@ -26,6 +26,10 @@ public with sharing class ContactController {
 
         System.debug('Adcionado o nome : ' + apontamentos.size());
 
+        for (Integer i = 0; i < apontamentos.size(); i++){
+            System.debug('Adcionado o nome : ' + apontamentos[i].telefones[i]);
+        }
+
         // for(Apontamento apontamento : apontamentos){
         //     Lead ac = new Lead(
         //         MobilePhone = '44444',
@@ -69,23 +73,27 @@ public with sharing class ContactController {
                 '"telefones": ['+
                     '{'+
                         '"id_telefone": "1",'+
-                        '"numero_telefone": "87,48",'+
-                        '"ddi": "87,48",'+
-                        '"ddd": "87,48",'+
-                        '"numero": "87,48",'+
-                        '"ramal": "87,48",'+
-                        '"data_atualizacao": "2022-10-07T18:23:47",'+
-                        '"data_criacao": "2022-10-07T18:23:47"'+
+                        '"valor_dado_cadastral": {'+
+                            '"principal": "false",'+
+                            '"ddi": "87,48",'+
+                            '"ddd": "87,48",'+
+                            '"numero": "87,48",'+
+                            '"ramal": "87,48",'+
+                            '"data_atualizacao": "2022-10-07T18:23:47",'+
+                            '"data_criacao": "2022-10-07T18:23:47"'+
+                        '}'+
                     '},'+
                     '{'+
                         '"id_telefone": "2",'+
-                        '"numero_telefone": "87,48",'+
-                        '"ddi": "87,48",'+
-                        '"ddd": "87,48",'+
-                        '"numero": "87,48",'+
-                        '"ramal": "87,48",'+
-                        '"data_atualizacao": "2022-10-07T18:23:47",'+
-                        '"data_criacao": "2022-10-07T18:23:47"'+
+                        '"valor_dado_cadastral": {'+
+                                '"principal": "false",'+
+                                '"ddi": "87,48",'+
+                                '"ddd": "87,48",'+
+                                '"numero": "87,48",'+
+                                '"ramal": "87,48",'+
+                                '"data_atualizacao": "2022-10-07T18:23:47",'+
+                                '"data_criacao": "2022-10-07T18:23:47"'+
+                            '}'+
                     '}'+
                 '],'+
                 '"emails": [' +
@@ -139,23 +147,27 @@ public with sharing class ContactController {
                 '"telefones": ['+
                     '{'+
                         '"id_telefone": "1",'+
-                        '"numero_telefone": "87,48",'+
-                        '"ddi": "87,48",'+
-                        '"ddd": "87,48",'+
-                        '"numero": "87,48",'+
-                        '"ramal": "87,48",'+
-                        '"data_atualizacao": "2022-10-07T18:23:47",'+
-                        '"data_criacao": "2022-10-07T18:23:47"'+
+                        '"valor_dado_cadastral": {'+
+                            '"principal": "false",'+
+                            '"ddi": "87,48",'+
+                            '"ddd": "87,48",'+
+                            '"numero": "87,48",'+
+                            '"ramal": "87,48",'+
+                            '"data_atualizacao": "2022-10-07T18:23:47",'+
+                            '"data_criacao": "2022-10-07T18:23:47"'+
+                        '}'+
                     '},'+
                     '{'+
                         '"id_telefone": "2",'+
-                        '"numero_telefone": "87,48",'+
-                        '"ddi": "87,48",'+
-                        '"ddd": "87,48",'+
-                        '"numero": "87,48",'+
-                        '"ramal": "87,48",'+
-                        '"data_atualizacao": "2022-10-07T18:23:47",'+
-                        '"data_criacao": "2022-10-07T18:23:47"'+
+                        '"valor_dado_cadastral": {'+
+                                '"principal": "false",'+
+                                '"ddi": "87,48",'+
+                                '"ddd": "87,48",'+
+                                '"numero": "87,48",'+
+                                '"ramal": "87,48",'+
+                                '"data_atualizacao": "2022-10-07T18:23:47",'+
+                                '"data_criacao": "2022-10-07T18:23:47"'+
+                            '}'+
                     '}'+
                 '],'+
                 '"emails": [' +
