@@ -27,7 +27,9 @@ public with sharing class ContactController {
         System.debug('Adcionado o nome : ' + apontamentos.size());
 
         for (Integer i = 0; i < apontamentos.size(); i++){
-            System.debug('Adcionado o nome : ' + apontamentos[i].telefones[i]);
+            String isAtvive = apontamentos[i].telefones.size() == 2 ? apontamentos[i].telefones[1].valor_dado_cadastral.numero : '';
+            System.debug('telefone 1 : ' + apontamentos[i].telefones[0]);
+            System.debug('telefone 2 : ' + isAtvive);
         }
 
         // for(Apontamento apontamento : apontamentos){

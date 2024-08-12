@@ -2,16 +2,18 @@
   @description       : 
   @author            : ChangeMeIn@UserSettingsUnder.SFDoc
   @group             : 
-  @last modified on  : 08-10-2024
+  @last modified on  : 08-11-2024
   @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 -->
 <template>
     <div class="container">
         <div class="slds-m-top_small slds-m-bottom_medium">
             <div class="right-button">
+                <button class="custom-button" onclick={handleClick}>Atualizar contatos</button>
+                <!-- <lightning-button variant="neutral" class="custom-button" label="Custom Color Button" onclick={handleClick}></lightning-button> -->
                 <!-- Brand variant: Identifies the primary action in a group of buttons -->
-                <lightning-button variant="brand" label="Atualizar contatos" title="Primary action"
-                    onclick={GetContato} class="slds-m-left_x-small"></lightning-button>
+                <!-- <lightning-button class="custom-button" variant="brand" label="Atualizar contatos" title="Primary action"
+                    onclick={GetContato} ></lightning-button> -->
             </div>
 
         </div>

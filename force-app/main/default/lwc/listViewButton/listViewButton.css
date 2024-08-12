@@ -7,3 +7,22 @@
     display: inline-block;
     /* Add any specific button styling here */
   }
+
+  /* .custom-button .slds-button {
+    background-color: #FF5733; 
+    color: #FFFFFF; 
+} */
+
+.custom-button {
+  background-color: #FF5733; 
+  /* background-color: #FFFF00; */
+  color: #FFFFFF; /* Example text color */
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.custom-button:hover {
+  background-color: #C70039; /* Example hover color */
+}
