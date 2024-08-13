@@ -37,11 +37,11 @@ export default class Teste1 extends LightningElement { @track isLoading = false;
             });
     }
 
-    showToast() {
+    showToast(message, variant, title) {
         const event = new ShowToastEvent({
-            title: 'Sucesso!',
-            message: 'The operation was completed successfully.',
-            variant: 'success',
+            title: title,
+            message: message,
+            variant: variant,
             mode: 'dismissable'
         });
         this.dispatchEvent(event);
