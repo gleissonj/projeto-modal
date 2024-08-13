@@ -2,7 +2,7 @@
  * @description       :
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             :
- * @last modified on  : 08-08-2024
+ * @last modified on  : 08-12-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class ApontamentoController {
@@ -14,7 +14,7 @@ public with sharing class ApontamentoController {
     }
     
     @AuraEnabled(cacheable=false)
-    public static List<Apontamento> GetApontamento(Integer Id){
+    public static List<Apontamento> getApontamento(Integer Id){
         
         try{
             
