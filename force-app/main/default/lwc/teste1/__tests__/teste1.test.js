@@ -34,6 +34,7 @@ describe('c-teste1', () => {
 
         // Check if the data is handled correctly
         console.log('apontamentos:', element._apontamentos); // Log component state
+        
         expect(element.apontamentos).toEqual(MOCK_APONTAMENTO);
         // expect(element.enableView).toBe(true);
         // expect(element.isLoading).toBe(false);

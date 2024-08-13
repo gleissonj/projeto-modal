@@ -1,4 +1,4 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement, track, api } from 'lwc';
 import getApontamento from '@salesforce/apex/ApontamentoController.getApontamento';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
@@ -9,7 +9,7 @@ export default class SearchApontamento extends LightningElement {
     error;
     enableView = false;
 
-
+@api
     getApontamentoCadastrais() {
         this.isLoading = true;
         getApontamento().then((result) => {

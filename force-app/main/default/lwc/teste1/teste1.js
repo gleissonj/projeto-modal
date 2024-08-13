@@ -4,6 +4,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class Teste1 extends LightningElement { @track isLoading = false;
     @track isModalOpen = true;
+
     _apontamentos;
     error;
     enableView = false;
@@ -37,6 +38,7 @@ export default class Teste1 extends LightningElement { @track isLoading = false;
             });
     }
 
+    @api
     showToast(message, variant, title) {
         const event = new ShowToastEvent({
             title: title,
@@ -47,11 +49,13 @@ export default class Teste1 extends LightningElement { @track isLoading = false;
         this.dispatchEvent(event);
     }
 
+    @api
     refreshPage() {
         // Reloads the entire page
         window.location.reload();
     }
 
+    @api
     closeModal() {
         this.isModalOpen = false;
     }
