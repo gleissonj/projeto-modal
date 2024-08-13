@@ -1,11 +1,11 @@
 import { createElement } from 'lwc';
 import MyComponent from 'c/myComponent'; // Replace with your component's name
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 describe('c-my-component', () => {
     it('should dispatch a success toast event with the correct message', () => {
-        // Create a mock for ShowToastEvent
-        const showToastEventSpy = jest.spyOn(window, 'ShowToastEvent').mockImplementation((eventDetail) => eventDetail);
+        // Mock ShowToastEvent
+        const ShowToastEventMock = jest.fn();
+        globalThis.ShowToastEvent = ShowToastEventMock;
 
         // Create the component
         const element = createElement('c-my-component', {
@@ -29,9 +29,10 @@ describe('c-my-component', () => {
             variant: 'success'
         };
         const dispatchedEvent = dispatchEventSpy.mock.calls[0][0];
+        expect(ShowToastEventMock).toHaveBeenCalledWith(expectedEventDetail);
         expect(dispatchedEvent.detail).toEqual(expectedEventDetail);
 
-        // Restore the original implementation
-        showToastEventSpy.mockRestore();
+        // Cleanup
+        delete globalThis.ShowToastEvent;
     });
 });
