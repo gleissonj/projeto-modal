@@ -1,9 +1,9 @@
 import { createElement } from 'lwc';
 import MyComponent from 'c/myComponent';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { CloseActionScreenEvent } from 'lightning/actions';
 
 describe('c-my-component', () => {
-    it('should dispatch a ShowToastEvent with correct parameters', () => {
+    it('should dispatch a CloseActionScreenEvent with correct parameters', () => {
         // Create an instance of the component
         const element = createElement('c-my-component', { is: MyComponent });
         document.body.appendChild(element);
@@ -11,25 +11,18 @@ describe('c-my-component', () => {
         // Spy on dispatchEvent
         element.dispatchEvent = jest.fn();
 
-        // Call the method
-        const message = 'Test message';
-        const variant = 'success';
-        const title = 'Test title';
-        element.showToast(message, variant, title);
+        // Call the handleCancel method
+        element.handleCancel();
 
         // Assert dispatchEvent was called
         expect(element.dispatchEvent).toHaveBeenCalledTimes(1);
 
         // Assert the correct event type
         const event = element.dispatchEvent.mock.calls[0][0];
-        expect(event).toBeInstanceOf(ShowToastEvent);
+        expect(event).toBeInstanceOf(CloseActionScreenEvent);
 
-        // Assert the event details
-        expect(event.detail).toEqual({
-            title,
-            message,
-            variant,
-            mode: 'dismissable'
-        });
+        // Assert event parameters
+        expect(event.bubbles).toBe(true);
+        expect(event.composed).toBe(true);
     });
 });
