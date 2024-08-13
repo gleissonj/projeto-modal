@@ -2,13 +2,30 @@ import { createElement } from 'lwc';
 import MyComponent from 'c/myComponent';
 
 describe('c-my-component', () => {
+    let originalLocation;
+
+    beforeEach(() => {
+        // Save the original window.location object
+        originalLocation = window.location;
+        
+        // Replace window.location with a mock object
+        delete window.location;
+        window.location = { reload: jest.fn() };
+        
+        jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+        // Restore the original window.location object
+        window.location = originalLocation;
+        
+        jest.useRealTimers();
+    });
+
     it('should call window.location.reload after 3 seconds', () => {
         // Create an instance of the component
         const element = createElement('c-my-component', { is: MyComponent });
         document.body.appendChild(element);
-
-        // Spy on window.location.reload
-        jest.spyOn(window.location, 'reload').mockImplementation(() => {});
 
         // Call the refreshPage method
         element.refreshPage();
