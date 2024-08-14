@@ -1,38 +1,89 @@
 import { createElement } from 'lwc';
-import MyComponent from 'c/myComponent'; // Replace with your component's name
+import MyComponent from 'c/myComponent'; // Replace with your actual component name
 
 describe('c-my-component', () => {
-    it('should dispatch a success toast event with the correct message', () => {
-        // Mock ShowToastEvent
-        const ShowToastEventMock = jest.fn();
-        globalThis.ShowToastEvent = ShowToastEventMock;
+    let element;
 
-        // Create the component
-        const element = createElement('c-my-component', {
+    beforeEach(() => {
+        element = createElement('c-my-component', {
             is: MyComponent
         });
-
-        // Append the component to the DOM
         document.body.appendChild(element);
-
-        // Mock dispatchEvent to track dispatched events
-        const dispatchEventSpy = jest.spyOn(element, 'dispatchEvent');
-
-        // Call the showSuccessToast method
-        const message = 'This is a success message!';
-        element.showSuccessToast(message);
-
-        // Check that dispatchEvent was called with a ShowToastEvent
-        const expectedEventDetail = {
-            title: 'Sucesso',
-            message: message,
-            variant: 'success'
-        };
-        const dispatchedEvent = dispatchEventSpy.mock.calls[0][0];
-        expect(ShowToastEventMock).toHaveBeenCalledWith(expectedEventDetail);
-        expect(dispatchedEvent.detail).toEqual(expectedEventDetail);
-
-        // Cleanup
-        delete globalThis.ShowToastEvent;
     });
-});
+
+    afterEach(() => {
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+    });
+
+    it('displays the spinner when isLoading is true', async () => {
+        // Set isLoading to true
+        element.isLoading = true;
+        await Promise.resolve(); // Wait for re-render
+
+        // Check if spinner is present
+        const spinner = element.shadowRoot.querySelector('lightning-spinner');
+        expect(spinner).not.toBeNull();
+
+        // Check that input fields are not rendered
+        const inputFields = element.shadowRoot.querySelectorAll('lightning-input-field');
+        expect(inputFields.length).toBe(0);
+    });
+
+    it('displays the input fields when isLoading is false', async () => {
+        // Set isLoading to false
+        element.isLoading = false;
+        await Promise.resolve(); // Wait for re-render
+
+        // Check that spinner is not present
+        const spinner = element.shadowRoot.querySelector('lightning-spinner');
+        expect(spinner).toBeNull();
+
+        // Check if input fields are present
+        const inputFields = element.shadowRoot.querySelectorAll('lightning-input-field');
+        expect(inputFields.length).toBe(3); // Ensure all fields are rendered
+    });
+
+    it('calls handleLoad when the form is loaded', async () => {
+        // Mock the handleLoad method
+        element.handleLoad = jest.fn();
+        await Promise.resolve(); // Wait for re-render
+
+        // Simulate the onload event
+        const form = element.shadowRoot.querySelector('lightning-record-edit-form');
+        form.dispatchEvent(new CustomEvent('load'));
+
+        // Check if handleLoad was called
+        expect(element.handleLoad).toHaveBeenCalled();
+    });
+
+    it('calls handleSubmit when the form is submitted', async () => {
+        // Mock the handleSubmit method
+        element.handleSubmit = jest.fn();
+        await Promise.resolve(); // Wait for re-render
+
+        // Simulate the onsubmit event
+        const form = element.shadowRoot.querySelector('lightning-record-edit-form');
+        form.dispatchEvent(new CustomEvent('submit', {
+            detail: { fields: {} }
+        }));
+
+        // Check if handleSubmit was called
+        expect(element.handleSubmit).toHaveBeenCalled();
+    });
+
+    it('calls handleSuccess when the form submission is successful', async () => {
+        // Mock the handleSuccess method
+        element.handleSuccess = jest.fn();
+        await Promise.resolve(); // Wait for re-render
+
+        // Simulate the onsuccess event
+        const form = element.shadowRoot.querySelector('lightning-record-edit-form');
+        form.dispatchEvent(new CustomEvent('success'));
+
+        // Check if handleSuccess was called
+        expect(element.handleSuccess).toHaveBeenCalled();
+    });
+
+    it('calls

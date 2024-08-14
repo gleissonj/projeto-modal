@@ -1,3 +1,52 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 08-14-2024
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
 <template>
-    
+    <lightning-modal-header label="Verificacao de riscos e restricoes">
+    </lightning-modal-header>
+
+    <lightning-record-edit-form 
+        object-api-name="HU7_Group_Lead__c"
+        record-id={Id}
+        onload={handleLoad}
+        onsuccess={handleSuccess}
+        onsubmit={handleSubmit}>
+
+        <lightning-modal-body>
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Carregando" class="slds-align_absolute-center slds-is-relative" size="">
+                </lightning-spinner>
+            </template>
+            
+            <template if:false="{isLoading}">
+                <lightning-input-field field-name="FS1_Cluster__c" required></lightning-input-field>
+
+                <lightning-input-field field-name="FS1_SubsetorSerasa__c" required></lightning-input-field>
+                <lightning-input-field field-name="HU7_Status__c" value={HU7_Status__c} class="slds-hide"></lightning-input-field>
+
+            </template>
+        </lightning-modal-body>
+
+        <lightning-modal-footer>
+
+            <lightning-button
+            id="cancel"
+            type="cacnel"
+            label="Cancelar"
+            onclick={handleCancel}
+            ></lightning-button>
+
+            <lightning-button
+            id="submit"
+            type="submti"
+            label="Salvar"
+            variant="brand"
+            class="slds-m-left_x-small"></lightning-button>
+
+        </lightning-modal-footer>
+    </lightning-record-edit-form>
 </template>
