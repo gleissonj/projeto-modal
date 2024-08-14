@@ -1,5 +1,5 @@
 import { createElement } from 'lwc';
-import MyComponent from 'c/myComponent'; // Adjust the import path according to your actual component path
+import MyComponent from 'c/myComponent'; // Replace with the actual component path
 
 describe('c-my-component', () => {
     let element;
@@ -7,46 +7,46 @@ describe('c-my-component', () => {
     beforeEach(() => {
         element = createElement('c-my-component', { is: MyComponent });
         document.body.appendChild(element);
-        
+
         // Mock the showError method
         element.showError = jest.fn();
     });
 
     afterEach(() => {
+        // Clean up the DOM after each test
         document.body.removeChild(element);
+        jest.clearAllMocks();
     });
 
-    it('calls showError when selectedLeads contains a lead without HU7_IdEQ3__c', () => {
-        // Set up mock data
+    it('calls showError and returns true when selectedLeads contains a lead with falsy HU7_IdEQ3__c', () => {
+        // Arrange: Mock the selectedLeads array with a lead having a falsy HU7_IdEQ3__c
         element.selectedLeads = [
-            { Prospect__r: { HU7_IdEQ3__c: 'someValue' } },
-            { Prospect__r: { HU7_IdEQ3__c: null } } // This lead should trigger the showError call
+            { Prospect__r: { HU7_IdEQ3__c: null } }, // Falsy value
+            { Prospect__r: { HU7_IdEQ3__c: 'some_value' } } // Truthy value
         ];
 
-        // Call the method that contains the if condition
-        const result = element.someMethod(); // Replace `someMethod` with the actual method name
+        // Act: Call the method
+        const result = element.checkIdEq3();
 
-        // Check if showError was called
+        // Assert: Check if showError was called with the correct argument
         expect(element.showError).toHaveBeenCalledWith('Nao é possivel enviar o convite');
-
-        // Check if the method returns true when showError is not triggered
-        expect(result).toBeUndefined(); // Adjust based on your method logic
+        // Assert: Check the return value
+        expect(result).toBe(true);
     });
 
-    it('returns true when all leads have HU7_IdEQ3__c', () => {
-        // Set up mock data
+    it('does not call showError and returns false when all leads have truthy HU7_IdEQ3__c', () => {
+        // Arrange: Mock the selectedLeads array with all leads having a truthy HU7_IdEQ3__c
         element.selectedLeads = [
-            { Prospect__r: { HU7_IdEQ3__c: 'someValue' } },
-            { Prospect__r: { HU7_IdEQ3__c: 'anotherValue' } }
+            { Prospect__r: { HU7_IdEQ3__c: 'value1' } },
+            { Prospect__r: { HU7_IdEQ3__c: 'value2' } }
         ];
 
-        // Call the method that contains the if condition
-        const result = element.someMethod(); // Replace `someMethod` with the actual method name
+        // Act: Call the method
+        const result = element.checkIdEq3();
 
-        // Check if showError was not called
+        // Assert: Check if showError was not called
         expect(element.showError).not.toHaveBeenCalled();
-
-        // Check if the method returns true when all conditions pass
-        expect(result).toBe(true);
+        // Assert: Check the return value
+        expect(result).toBe(false);
     });
 });
