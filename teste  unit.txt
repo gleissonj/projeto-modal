@@ -1,13 +1,5 @@
 import { createElement } from 'lwc';
-import MyComponent from 'c/myComponent'; // Adjust this import according to your actual component's path
-import { LightningElement } from 'lwc';
-
-// Mock the `lightning-datatable` component
-jest.mock('lightning/datatable', () => {
-    return {
-        LightningDatatable: LightningElement
-    };
-});
+import MyComponent from 'c/myComponent'; // Adjust the import path according to your actual component path
 
 describe('c-my-component', () => {
     let element;
@@ -15,62 +7,46 @@ describe('c-my-component', () => {
     beforeEach(() => {
         element = createElement('c-my-component', { is: MyComponent });
         document.body.appendChild(element);
+        
+        // Mock the showError method
+        element.showError = jest.fn();
     });
 
     afterEach(() => {
-        // Cleanup DOM after each test
         document.body.removeChild(element);
     });
 
-    it('renders the modal header correctly', () => {
-        const header = element.shadowRoot.querySelector('.modal-header');
-        expect(header).not.toBeNull();
-        expect(header.querySelector('h4.title').textContent).toBe('Selecao');
+    it('calls showError when selectedLeads contains a lead without HU7_IdEQ3__c', () => {
+        // Set up mock data
+        element.selectedLeads = [
+            { Prospect__r: { HU7_IdEQ3__c: 'someValue' } },
+            { Prospect__r: { HU7_IdEQ3__c: null } } // This lead should trigger the showError call
+        ];
+
+        // Call the method that contains the if condition
+        const result = element.someMethod(); // Replace `someMethod` with the actual method name
+
+        // Check if showError was called
+        expect(element.showError).toHaveBeenCalledWith('Nao é possivel enviar o convite');
+
+        // Check if the method returns true when showError is not triggered
+        expect(result).toBeUndefined(); // Adjust based on your method logic
     });
 
-    it('shows the spinner when isLoading is true', async () => {
-        element.isLoading = true;
-        await element.updateComplete;
+    it('returns true when all leads have HU7_IdEQ3__c', () => {
+        // Set up mock data
+        element.selectedLeads = [
+            { Prospect__r: { HU7_IdEQ3__c: 'someValue' } },
+            { Prospect__r: { HU7_IdEQ3__c: 'anotherValue' } }
+        ];
 
-        const spinner = element.shadowRoot.querySelector('lightning-spinner');
-        expect(spinner).not.toBeNull();
+        // Call the method that contains the if condition
+        const result = element.someMethod(); // Replace `someMethod` with the actual method name
+
+        // Check if showError was not called
+        expect(element.showError).not.toHaveBeenCalled();
+
+        // Check if the method returns true when all conditions pass
+        expect(result).toBe(true);
     });
-
-    it('does not show the spinner when isLoading is false', async () => {
-        element.isLoading = false;
-        await element.updateComplete;
-
-        const spinner = element.shadowRoot.querySelector('lightning-spinner');
-        expect(spinner).toBeNull();
-    });
-
-    it('renders the lightning-datatable when isLoading is false and withoutLeads is false', async () => {
-        element.isLoading = false;
-        element.withoutLeads = false;
-        await element.updateComplete;
-
-        const datatable = element.shadowRoot.querySelector('lightning-datatable');
-        expect(datatable).not.toBeNull();
-    });
-
-    it('renders the message when withoutLeads is true', async () => {
-        element.isLoading = false;
-        element.withoutLeads = true;
-        await element.updateComplete;
-
-        const message = element.shadowRoot.querySelector('.title.slds-text-align_center');
-        expect(message).not.toBeNull();
-        expect(message.textContent).toBe('Esse prospect nao possui');
-    });
-
-    it('renders the footer buttons correctly', async () => {
-        element.isLoading = false;
-        element.withoutLeads = false;
-        await element.updateComplete;
-
-        const cancelButton = element.shadowRoot.querySelector('button.slds-button_neutral');
-        expect(cancelButton).not.toBeNull();
-        expect(cancelButton.textContent).toBe('Cancel');
-
-        const deleteButton = element.shadowRoot.querySelector('button.slds-button_brand');
-        expect(deleteButton
+});

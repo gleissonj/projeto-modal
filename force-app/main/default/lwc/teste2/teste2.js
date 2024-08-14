@@ -84,7 +84,6 @@ export default class Teste2 extends LightningElement {
         this.dispatchEvent(event);
     }
 
-    @api
     connectedCallback(){
         this.steps = [
             {
@@ -101,7 +100,7 @@ export default class Teste2 extends LightningElement {
         this.template.querySelector('lightning-record-edit-form').submit(fields);
     }
 
-    @api
+
     refreshPage(){
         setTimeout(()=>{
             window.location.reload();
