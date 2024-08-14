@@ -43,6 +43,8 @@ describe('c-teste2', () => {
         });
         element.recordId = mockRecordId;
         document.body.appendChild(element);
+        element.close = jest.fn();
+        return Promise.resolve();
     });
 
     afterEach(() => {
@@ -130,4 +132,36 @@ describe('c-teste2', () => {
         expect(toastEvent.detail.title).toBe('Erro!');
         expect(toastEvent.detail.message).toBe('Servico pld indisponicel');
     });
+
+    it('calls submit method on lightning-record-edit-form', () => {
+        // Create an instance of the component
+        const element = createElement('c-teste2', {
+            is: Teste2
+        });
+
+        // Append the component to the DOM
+        document.body.appendChild(element);
+
+        // Create a mock event with the required structure
+        const mockFields = { /* mock field data */ };
+        const mockEvent = {
+            preventDefault: jest.fn(),
+            detail: { fields: mockFields }
+        };
+
+        // Mock the lightning-record-edit-form element
+        const formElement = document.createElement('lightning-record-edit-form');
+        formElement.submit = jest.fn();
+        element.appendChild(formElement);
+
+        // Call handleSubmit with the mock event
+        element.handleSubmit(mockEvent);
+
+        // Verify preventDefault was called
+        expect(mockEvent.preventDefault).toHaveBeenCalled();
+
+        // Verify submit was called on the lightning-record-edit-form with correct arguments
+        expect(formElement.submit).toHaveBeenCalledWith(mockFields);
+    });
+    
 });

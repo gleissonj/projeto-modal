@@ -14,6 +14,7 @@ export default class Teste2 extends LightningElement {
     errorPld;
     enableMsgView;
     isLoading;
+    @track steps = [];
 
     @api recordId;
 
@@ -74,7 +75,7 @@ export default class Teste2 extends LightningElement {
         this.dispatchEvent(event);
     }
 
-    @api
+    
     handleCancel(){
         const event = new CustomEvent('closeactionscreen', {
             bubbles: true,
@@ -83,6 +84,23 @@ export default class Teste2 extends LightningElement {
         this.dispatchEvent(event);
     }
 
+    @api
+    connectedCallback(){
+        this.steps = [
+            {
+                id: '9999',
+                group: 'exat brasil',
+                accounts: '2'
+            }
+        ]
+    }
+
+    @api
+    handleSubmit(event){
+        event.preventDefault();
+        const fields = event.detail.fields;
+        this.template.querySelector('lightning-record-edit-form').submit(fields);
+    }
 
     @api
     refreshPage(){
@@ -90,5 +108,7 @@ export default class Teste2 extends LightningElement {
             window.location.reload();
         }, 3000);
     }
+
+
 
 }
