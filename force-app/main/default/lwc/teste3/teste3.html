@@ -1,0 +1,43 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 08-14-2024
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <div class="modal-header slds-modal__header slds-size_1-of-1">
+        <h4 class="title slds-text-heading--medium"> Selecao </h4>
+        <p class="slds-m-top_x-small">Favor selecionar</p>
+    </div>
+    <div class="slds-modal__content slds-p-around_medium">
+        <div class="slds-p-around_medium">
+            <div if:true={isLoading} class="slds-is-relative">
+                <lightning-spinner alternative-text="Carregando" variant="neutral"></lightning-spinner>
+            </div>
+            <div if:false={isLoading} class="slds-is-relative">
+                <div if:false={withoutLeads}>
+                    <lightning-datatable
+                    key-field="id"
+                    data={data}
+                    columns={columns}
+                    onrowselection={handleRowSelection}
+                    >
+                    </lightning-datatable>
+                </div>
+                <div if:true={withoutLeads}>
+                    <div class="title slds-text-align_center slds-text-heading_small slds-text-align_center">Esse prospect nao possui</div>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div if:false={isLoading}>
+                <div class="modal-footer slds-modal_footer">
+                    <button class="slds-button slds-button_neutral" onclick={handleCancel}> Cancel</button>
+                    <template if:false={withoutLeads}>
+                        <button class="slds-button slds-button_brand slds-var-m-left_small" onclick={handleDeleteInvite}> Excluir</button>
+                    </template>
+                </div>
+            </div>
+            
+</template>

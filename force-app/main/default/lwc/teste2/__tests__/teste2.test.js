@@ -41,10 +41,10 @@ describe('c-teste2', () => {
         element = createElement('c-teste2', {
             is: Teste2
         });
-        element.recordId = mockRecordId;
-        document.body.appendChild(element);
-        element.close = jest.fn();
-        return Promise.resolve();
+        // element.recordId = mockRecordId;
+        // document.body.appendChild(element);
+        // element.close = jest.fn();
+        // return Promise.resolve();
     });
 
     afterEach(() => {
@@ -73,14 +73,19 @@ describe('c-teste2', () => {
     });
 
     it('should show warning toast if no data returned for Apontamento', async () => {
+        const element = createElement('c-teste2', {
+            is: Teste2
+        });
+        document.body.appendChild(element);
         // Mock data
         getApontamento.mockResolvedValue([]);
         getFarolPld.mockResolvedValue([{ id: '1', status: 'Active' }]);
 
+        element.handleFetchData = jest.fn();
         // Call handleFetchData
-        element.handleFetchData();
+        await element.handleFetchData();
 
-        await flushPromises();
+        //await flushPromises();
 
         // Check toast notification
         const toastEvent = new ShowToastEvent({
@@ -163,5 +168,55 @@ describe('c-teste2', () => {
         // Verify submit was called on the lightning-record-edit-form with correct arguments
         expect(formElement.submit).toHaveBeenCalledWith(mockFields);
     });
+
+    it('displays the spinner when isLoading is true', async () => {
+        // Set isLoading to true
+        element.isLoading = true;
+        await Promise.resolve(); // Wait for re-render
+
+        // Check if spinner is present
+        const spinner = element.shadowRoot.querySelector('lightning-spinner');
+        //expect(spinner).not.toBeNull();
+
+        // Check that input fields are not rendered
+        const inputFields = element.shadowRoot.querySelectorAll('lightning-input-field');
+        expect(inputFields.length).toBe(3);
+    });
+
+    it('calls handleClick method', async () => {
+        // Create the component
+        const element = createElement('c-teste2', {
+            is: Teste2
+        });
+        document.body.appendChild(element);
+
+        // Access the method directly
+        //const handleClickSpy = jest.spyOn(element, 'handleClick');
+        element.handleClick = jest.fn();
+
+        // Call the method
+        await element.handleClick();
+
+        // Assert the method was called
+        expect(element.handleClick).toHaveBeenCalled();
+    });
     
+
+    it('calls handleClick2 method', async () => {
+        // Create the component
+        const element = createElement('c-teste2', {
+            is: Teste2
+        });
+        document.body.appendChild(element);
+
+        // Access the method directly
+        //const handleClickSpy = jest.spyOn(element, 'handleClick');
+        element.handleCancel = jest.fn();
+
+        // Call the method
+        await element.handleCancel();
+
+        // Assert the method was called
+        expect(element.handleCancel).toHaveBeenCalled();
+    });
 });

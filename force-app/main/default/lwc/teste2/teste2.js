@@ -18,7 +18,7 @@ export default class Teste2 extends LightningElement {
 
     @api recordId;
 
-    @api
+    
     handleFetchData(){
         this.isloading = false;
         Promise.all([
@@ -64,7 +64,7 @@ export default class Teste2 extends LightningElement {
         
     }
 
-    @api
+    
     showToast(message, variant, title){
 
         const event = new ShowToastEvent({
@@ -95,7 +95,6 @@ export default class Teste2 extends LightningElement {
         ]
     }
 
-    @api
     handleSubmit(event){
         event.preventDefault();
         const fields = event.detail.fields;

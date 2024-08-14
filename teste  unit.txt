@@ -1,89 +1,76 @@
 import { createElement } from 'lwc';
-import MyComponent from 'c/myComponent'; // Replace with your actual component name
+import MyComponent from 'c/myComponent'; // Adjust this import according to your actual component's path
+import { LightningElement } from 'lwc';
+
+// Mock the `lightning-datatable` component
+jest.mock('lightning/datatable', () => {
+    return {
+        LightningDatatable: LightningElement
+    };
+});
 
 describe('c-my-component', () => {
     let element;
 
     beforeEach(() => {
-        element = createElement('c-my-component', {
-            is: MyComponent
-        });
+        element = createElement('c-my-component', { is: MyComponent });
         document.body.appendChild(element);
     });
 
     afterEach(() => {
-        while (document.body.firstChild) {
-            document.body.removeChild(document.body.firstChild);
-        }
+        // Cleanup DOM after each test
+        document.body.removeChild(element);
     });
 
-    it('displays the spinner when isLoading is true', async () => {
-        // Set isLoading to true
-        element.isLoading = true;
-        await Promise.resolve(); // Wait for re-render
+    it('renders the modal header correctly', () => {
+        const header = element.shadowRoot.querySelector('.modal-header');
+        expect(header).not.toBeNull();
+        expect(header.querySelector('h4.title').textContent).toBe('Selecao');
+    });
 
-        // Check if spinner is present
+    it('shows the spinner when isLoading is true', async () => {
+        element.isLoading = true;
+        await element.updateComplete;
+
         const spinner = element.shadowRoot.querySelector('lightning-spinner');
         expect(spinner).not.toBeNull();
-
-        // Check that input fields are not rendered
-        const inputFields = element.shadowRoot.querySelectorAll('lightning-input-field');
-        expect(inputFields.length).toBe(0);
     });
 
-    it('displays the input fields when isLoading is false', async () => {
-        // Set isLoading to false
+    it('does not show the spinner when isLoading is false', async () => {
         element.isLoading = false;
-        await Promise.resolve(); // Wait for re-render
+        await element.updateComplete;
 
-        // Check that spinner is not present
         const spinner = element.shadowRoot.querySelector('lightning-spinner');
         expect(spinner).toBeNull();
-
-        // Check if input fields are present
-        const inputFields = element.shadowRoot.querySelectorAll('lightning-input-field');
-        expect(inputFields.length).toBe(3); // Ensure all fields are rendered
     });
 
-    it('calls handleLoad when the form is loaded', async () => {
-        // Mock the handleLoad method
-        element.handleLoad = jest.fn();
-        await Promise.resolve(); // Wait for re-render
+    it('renders the lightning-datatable when isLoading is false and withoutLeads is false', async () => {
+        element.isLoading = false;
+        element.withoutLeads = false;
+        await element.updateComplete;
 
-        // Simulate the onload event
-        const form = element.shadowRoot.querySelector('lightning-record-edit-form');
-        form.dispatchEvent(new CustomEvent('load'));
-
-        // Check if handleLoad was called
-        expect(element.handleLoad).toHaveBeenCalled();
+        const datatable = element.shadowRoot.querySelector('lightning-datatable');
+        expect(datatable).not.toBeNull();
     });
 
-    it('calls handleSubmit when the form is submitted', async () => {
-        // Mock the handleSubmit method
-        element.handleSubmit = jest.fn();
-        await Promise.resolve(); // Wait for re-render
+    it('renders the message when withoutLeads is true', async () => {
+        element.isLoading = false;
+        element.withoutLeads = true;
+        await element.updateComplete;
 
-        // Simulate the onsubmit event
-        const form = element.shadowRoot.querySelector('lightning-record-edit-form');
-        form.dispatchEvent(new CustomEvent('submit', {
-            detail: { fields: {} }
-        }));
-
-        // Check if handleSubmit was called
-        expect(element.handleSubmit).toHaveBeenCalled();
+        const message = element.shadowRoot.querySelector('.title.slds-text-align_center');
+        expect(message).not.toBeNull();
+        expect(message.textContent).toBe('Esse prospect nao possui');
     });
 
-    it('calls handleSuccess when the form submission is successful', async () => {
-        // Mock the handleSuccess method
-        element.handleSuccess = jest.fn();
-        await Promise.resolve(); // Wait for re-render
+    it('renders the footer buttons correctly', async () => {
+        element.isLoading = false;
+        element.withoutLeads = false;
+        await element.updateComplete;
 
-        // Simulate the onsuccess event
-        const form = element.shadowRoot.querySelector('lightning-record-edit-form');
-        form.dispatchEvent(new CustomEvent('success'));
+        const cancelButton = element.shadowRoot.querySelector('button.slds-button_neutral');
+        expect(cancelButton).not.toBeNull();
+        expect(cancelButton.textContent).toBe('Cancel');
 
-        // Check if handleSuccess was called
-        expect(element.handleSuccess).toHaveBeenCalled();
-    });
-
-    it('calls
+        const deleteButton = element.shadowRoot.querySelector('button.slds-button_brand');
+        expect(deleteButton
