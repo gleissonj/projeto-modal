@@ -1,89 +1,20 @@
-describe('handleCopyLink', () => {
-    it('should copy the link to the clipboard', () => {
-        // Arrange
-        const mockCreateElement = jest.spyOn(document, 'createElement');
-        const mockAppendChild = jest.spyOn(document.body, 'appendChild');
-        const mockSelect = jest.fn();
-        const mockExecCommand = jest.spyOn(document, 'execCommand').mockImplementation(() => true);
-        const mockRemoveChild = jest.spyOn(document.body, 'removeChild');
+describe('generateNewPathValues', () => {
+    it('should generate correct path values based on currentStatus', () => {
+        // Create an instance of your component or class
+        const component = new YourComponentOrClass();
 
-        // Mock the input element and its methods
-        const mockInput = {
-            setAttribute: jest.fn(),
-            select: mockSelect,
-        };
-        mockCreateElement.mockReturnValue(mockInput);
+        // Call the method with a specific currentStatus
+        const currentStatus = 'Finalizado';
+        component.generateNewPathValues(currentStatus);
 
-        // Act
-        handleCopyLink();
-
-        // Assert
-        expect(mockCreateElement).toHaveBeenCalledWith('input');
-        expect(mockInput.setAttribute).toHaveBeenCalledWith('value', 'https://onboarding-digital-atacado.cloud');
-        expect(mockAppendChild).toHaveBeenCalledWith(mockInput);
-        expect(mockSelect).toHaveBeenCalled();
-        expect(mockExecCommand).toHaveBeenCalledWith('copy');
-        expect(mockRemoveChild).toHaveBeenCalledWith(mockInput);
-
-        // Clean up mocks
-        mockCreateElement.mockRestore();
-        mockAppendChild.mockRestore();
-        mockExecCommand.mockRestore();
-        mockRemoveChild.mockRestore();
-    });
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-describe('handleCopyLink', () => {
-    it('should copy the link to the clipboard', () => {
-        // Create a spy for document.execCommand
-        const execCommandSpy = jest.spyOn(document, 'execCommand').mockImplementation(() => true);
-
-        // Create a spy for document.createElement
-        const createElementSpy = jest.spyOn(document, 'createElement');
-
-        // Mock appendChild, removeChild, and select functions
-        const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(() => {});
-        const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(() => {});
-        const selectMock = jest.fn();
-        
-        // Mock the input element
-        createElementSpy.mockReturnValue({
-            setAttribute: jest.fn(),
-            select: selectMock,
-        });
-
-        // Call the method
-        handleCopyLink();
+        // Expected pathValues array
+        const expectedPathValues = [
+            {"attributes": null, "label": 'Nao iniciado', "value": 'Nao iniciado'},
+            {"attributes": null, "label": 'Em prospeccao', "value": 'Em prospeccao'},
+            {"attributes": null, "label": currentStatus, "value": currentStatus},
+        ];
 
         // Assertions
-        expect(createElementSpy).toHaveBeenCalledWith('input');
-        expect(appendChildSpy).toHaveBeenCalled();
-        expect(selectMock).toHaveBeenCalled();
-        expect(execCommandSpy).toHaveBeenCalledWith('copy');
-        expect(removeChildSpy).toHaveBeenCalled();
-
-        // Cleanup
-        execCommandSpy.mockRestore();
-        createElementSpy.mockRestore();
-        appendChildSpy.mockRestore();
-        removeChildSpy.mockRestore();
+        expect(component.pathValues).toEqual(expectedPathValues);
     });
 });
-
-
-
-
-
