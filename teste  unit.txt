@@ -1,52 +1,89 @@
-import { createElement } from 'lwc';
-import MyComponent from 'c/myComponent'; // Replace with the actual component path
+describe('handleCopyLink', () => {
+    it('should copy the link to the clipboard', () => {
+        // Arrange
+        const mockCreateElement = jest.spyOn(document, 'createElement');
+        const mockAppendChild = jest.spyOn(document.body, 'appendChild');
+        const mockSelect = jest.fn();
+        const mockExecCommand = jest.spyOn(document, 'execCommand').mockImplementation(() => true);
+        const mockRemoveChild = jest.spyOn(document.body, 'removeChild');
 
-describe('c-my-component', () => {
-    let element;
+        // Mock the input element and its methods
+        const mockInput = {
+            setAttribute: jest.fn(),
+            select: mockSelect,
+        };
+        mockCreateElement.mockReturnValue(mockInput);
 
-    beforeEach(() => {
-        element = createElement('c-my-component', { is: MyComponent });
-        document.body.appendChild(element);
+        // Act
+        handleCopyLink();
 
-        // Mock the showError method
-        element.showError = jest.fn();
-    });
+        // Assert
+        expect(mockCreateElement).toHaveBeenCalledWith('input');
+        expect(mockInput.setAttribute).toHaveBeenCalledWith('value', 'https://onboarding-digital-atacado.cloud');
+        expect(mockAppendChild).toHaveBeenCalledWith(mockInput);
+        expect(mockSelect).toHaveBeenCalled();
+        expect(mockExecCommand).toHaveBeenCalledWith('copy');
+        expect(mockRemoveChild).toHaveBeenCalledWith(mockInput);
 
-    afterEach(() => {
-        // Clean up the DOM after each test
-        document.body.removeChild(element);
-        jest.clearAllMocks();
-    });
-
-    it('calls showError and returns true when selectedLeads contains a lead with falsy HU7_IdEQ3__c', () => {
-        // Arrange: Mock the selectedLeads array with a lead having a falsy HU7_IdEQ3__c
-        element.selectedLeads = [
-            { Prospect__r: { HU7_IdEQ3__c: null } }, // Falsy value
-            { Prospect__r: { HU7_IdEQ3__c: 'some_value' } } // Truthy value
-        ];
-
-        // Act: Call the method
-        const result = element.checkIdEq3();
-
-        // Assert: Check if showError was called with the correct argument
-        expect(element.showError).toHaveBeenCalledWith('Nao é possivel enviar o convite');
-        // Assert: Check the return value
-        expect(result).toBe(true);
-    });
-
-    it('does not call showError and returns false when all leads have truthy HU7_IdEQ3__c', () => {
-        // Arrange: Mock the selectedLeads array with all leads having a truthy HU7_IdEQ3__c
-        element.selectedLeads = [
-            { Prospect__r: { HU7_IdEQ3__c: 'value1' } },
-            { Prospect__r: { HU7_IdEQ3__c: 'value2' } }
-        ];
-
-        // Act: Call the method
-        const result = element.checkIdEq3();
-
-        // Assert: Check if showError was not called
-        expect(element.showError).not.toHaveBeenCalled();
-        // Assert: Check the return value
-        expect(result).toBe(false);
+        // Clean up mocks
+        mockCreateElement.mockRestore();
+        mockAppendChild.mockRestore();
+        mockExecCommand.mockRestore();
+        mockRemoveChild.mockRestore();
     });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+describe('handleCopyLink', () => {
+    it('should copy the link to the clipboard', () => {
+        // Create a spy for document.execCommand
+        const execCommandSpy = jest.spyOn(document, 'execCommand').mockImplementation(() => true);
+
+        // Create a spy for document.createElement
+        const createElementSpy = jest.spyOn(document, 'createElement');
+
+        // Mock appendChild, removeChild, and select functions
+        const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation(() => {});
+        const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation(() => {});
+        const selectMock = jest.fn();
+        
+        // Mock the input element
+        createElementSpy.mockReturnValue({
+            setAttribute: jest.fn(),
+            select: selectMock,
+        });
+
+        // Call the method
+        handleCopyLink();
+
+        // Assertions
+        expect(createElementSpy).toHaveBeenCalledWith('input');
+        expect(appendChildSpy).toHaveBeenCalled();
+        expect(selectMock).toHaveBeenCalled();
+        expect(execCommandSpy).toHaveBeenCalledWith('copy');
+        expect(removeChildSpy).toHaveBeenCalled();
+
+        // Cleanup
+        execCommandSpy.mockRestore();
+        createElementSpy.mockRestore();
+        appendChildSpy.mockRestore();
+        removeChildSpy.mockRestore();
+    });
+});
+
+
+
+
+
