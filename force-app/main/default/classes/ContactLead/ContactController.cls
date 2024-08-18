@@ -2,7 +2,7 @@
  * @description       :
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             :
- * @last modified on  : 08-11-2024
+ * @last modified on  : 08-18-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class ContactController {
@@ -26,11 +26,14 @@ public with sharing class ContactController {
 
         System.debug('Adcionado o nome : ' + apontamentos.size());
 
-        for (Integer i = 0; i < apontamentos.size(); i++){
-            String isAtvive = apontamentos[i].telefones.size() == 2 ? apontamentos[i].telefones[1].valor_dado_cadastral.numero : '';
-            System.debug('telefone 1 : ' + apontamentos[i].telefones[0]);
-            System.debug('telefone 2 : ' + isAtvive);
-        }
+        System.debug('Adcionado o nome : ' + apontamentos[0].optOutTelefone.data.indicador_possui_telefone_bloqueado);
+
+        // for (Integer i = 0; i < apontamentos.size(); i++){
+        //     String isAtvive = apontamentos[i].telefones.size() == 2 ? apontamentos[i].telefones[1].valor_dado_cadastral.numero : '';
+        //     System.debug('telefone 1 : ' + apontamentos[i].telefones[0]);
+        //     System.debug('telefone 2 : ' + isAtvive);
+        // }
+
 
         // for(Apontamento apontamento : apontamentos){
         //     Lead ac = new Lead(
@@ -136,7 +139,13 @@ public with sharing class ContactController {
                         '"indicador_preferencia": "434",'+
                         '"data_atualizacao": "434"'+
                     '}' +
-                ']' +
+                '],' +
+                '"optOutTelefone":' +
+                    '{' +
+                        '"data":{' +
+                            '"indicador_possui_telefone_bloqueado": "N"'+
+                            '}' +
+                    '}' +
             '},' +
             '{'+
                 '"nome": "003605ce-b7b3-4956-904b-e7080bbbbb54d",'+
@@ -210,7 +219,13 @@ public with sharing class ContactController {
                         '"indicador_preferencia": "434",'+
                         '"data_atualizacao": "434"'+
                     '}' +
-                ']' +
+                '],' +
+                '"optOutTelefone":' +
+                    '{' +
+                        '"data":{' +
+                            '"indicador_possui_telefone_bloqueado": "N"'+
+                            '}' +
+                    '}' +
             '}' +
        ']';
         

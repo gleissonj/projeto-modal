@@ -1,5 +1,5 @@
 import { LightningElement, track } from 'lwc';
-import getContato from '@salesforce/apex/ContactController.GetContato';
+import GetContato from '@salesforce/apex/ContactController.GetContato';
 
 export default class ListViewButton extends LightningElement {
     @track isLoading = false;
@@ -7,14 +7,14 @@ export default class ListViewButton extends LightningElement {
 
     // Simulate data loading
     handleLoadData() {
-        this.isLoading = true;
+        //this.isLoading = true;
         this.data = null;
-              GetContato().then((result) => {
+        GetContato().then((result) => {
             this.apontamentos = result;
             this.enableView = true;
             this.error = undefined;
-           // this.showToast();
-            this.isLoading = false;
+            // this.showToast();
+            // this.isLoading = false;
         })
             .catch((error) => {
                 this.error = error;
@@ -27,7 +27,7 @@ export default class ListViewButton extends LightningElement {
     }
     // @track isLoading = false;
     // @track isModalOpen = true;
-    
+
     // apontamentos;
     // error;
     // enableView = false;
@@ -36,7 +36,7 @@ export default class ListViewButton extends LightningElement {
     // }
 
     // GetContato() {
-        
+
     //     GetContato().then((result) => {
     //         this.apontamentos = result;
     //         this.enableView = true;

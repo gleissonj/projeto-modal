@@ -2,7 +2,7 @@
  * @description       : 
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : 
- * @last modified on  : 08-10-2024
+ * @last modified on  : 08-18-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 public with sharing class ContactResponse {
@@ -16,6 +16,7 @@ public with sharing class ContactResponse {
     @AuraEnabled public List<Telephone> telefones {get;set;}
     @AuraEnabled public List<Email> emails {get;set;}
     @AuraEnabled public List<OptOut> optOut {get;set;}
+    @AuraEnabled public optOutTelefoneResponse optOutTelefone {get;set;}
 
 
 }
