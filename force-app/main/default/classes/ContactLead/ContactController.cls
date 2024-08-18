@@ -28,11 +28,12 @@ public with sharing class ContactController {
 
         System.debug('Adcionado o nome : ' + apontamentos[0].optOutTelefone.data.indicador_possui_telefone_bloqueado);
 
-        // for (Integer i = 0; i < apontamentos.size(); i++){
-        //     String isAtvive = apontamentos[i].telefones.size() == 2 ? apontamentos[i].telefones[1].valor_dado_cadastral.numero : '';
-        //     System.debug('telefone 1 : ' + apontamentos[i].telefones[0]);
-        //     System.debug('telefone 2 : ' + isAtvive);
-        // }
+        for (Integer i = 0; i < apontamentos.size(); i++){
+            String telefone1 = apontamentos[i].telefones.size() > 0 && apontamentos[i].optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' ? apontamentos[i].telefones[0].valor_dado_cadastral.numero : '';
+            String telefone2 = apontamentos[i].telefones.size() == 2 && apontamentos[i].optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' ? apontamentos[i].telefones[1].valor_dado_cadastral.numero : '';
+            System.debug('telefone 1 : ' + telefone1);
+            System.debug('telefone 2 : ' + telefone2);
+        }
 
 
         // for(Apontamento apontamento : apontamentos){
@@ -143,7 +144,7 @@ public with sharing class ContactController {
                 '"optOutTelefone":' +
                     '{' +
                         '"data":{' +
-                            '"indicador_possui_telefone_bloqueado": "N"'+
+                            '"indicador_possui_telefone_bloqueado": "S"'+
                             '}' +
                     '}' +
             '},' +
