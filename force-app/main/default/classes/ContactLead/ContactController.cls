@@ -22,6 +22,14 @@ public with sharing class ContactController {
         
         List<ContactResponse>
             apontamentos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
+
+            Map<String, String> nameParts = splitName('Gleisson de Jesus Evangelista');
+
+            System.debug('First Name: ' + nameParts.get('firstName')); // Output: John
+            System.debug('Last Name: ' + nameParts.get('lastName'));  // Output: Doe
+
+            System.debug('Nome : ' + nameParts);
+
         System.debug('Adcionado o nome : ' + apontamentos);
 
         System.debug('Adcionado o nome : ' + apontamentos.size());
@@ -29,8 +37,8 @@ public with sharing class ContactController {
         System.debug('Adcionado o nome : ' + apontamentos[0].optOutTelefone.data.indicador_possui_telefone_bloqueado);
 
         for (Integer i = 0; i < apontamentos.size(); i++){
-            String telefone1 = apontamentos[i].telefones.size() > 0 && apontamentos[i].optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' ? apontamentos[i].telefones[0].valor_dado_cadastral.numero : '';
-            String telefone2 = apontamentos[i].telefones.size() == 2 && apontamentos[i].optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' ? apontamentos[i].telefones[1].valor_dado_cadastral.numero : '';
+            String telefone1 = apontamentos[i].telefones.size() > 0 && (apontamentos[i].optOutTelefone?.data?.indicador_possui_telefone_bloqueado == 'N'|| apontamentos[i].optOutTelefone?.data?.indicador_possui_telefone_bloqueado == null) ? apontamentos[i].telefones[0].valor_dado_cadastral.numero : '';
+            String telefone2 = apontamentos[i].telefones.size() == 2 && (apontamentos[i].optOutTelefone?.data?.indicador_possui_telefone_bloqueado == 'N' || apontamentos[i].optOutTelefone?.data?.indicador_possui_telefone_bloqueado == null) ? apontamentos[i].telefones[1].valor_dado_cadastral.numero : '';
             System.debug('telefone 1 : ' + telefone1);
             System.debug('telefone 2 : ' + telefone2);
         }
@@ -65,6 +73,34 @@ public with sharing class ContactController {
 
     //     return new List<ContactResponse>();
     // }
+
+    public static Map<String, String> splitName(String fullName) {
+        Map<String, String> nameParts = new Map<String, String>();
+
+        if (String.isEmpty(fullName)) {
+            nameParts.put('firstName', '');
+            nameParts.put('lastName', '');
+            return nameParts;
+        }
+
+        // Dividindo o nome completo por espaço
+        List<String> nameArray = fullName.split(' ');
+
+        if (nameArray.size() > 1) {
+            // O primeiro elemento será o primeiro nome
+            nameParts.put('firstName', nameArray[0]);
+
+            // O restante será considerado como o sobrenome
+            nameArray.remove(0);
+            nameParts.put('lastName', String.join(nameArray, ' '));
+        } else {
+            // Se só houver um nome, assume que é o primeiro nome
+            nameParts.put('firstName', fullName);
+            nameParts.put('lastName', '');
+        }
+
+        return nameParts;
+    }
     
     public static String GetResponse(){
         String te = '['+
