@@ -1,20 +1,18 @@
-describe('generateNewPathValues', () => {
-    it('should generate correct path values based on currentStatus', () => {
-        // Create an instance of your component or class
-        const component = new YourComponentOrClass();
+%dw 2.0
 
-        // Call the method with a specific currentStatus
-        const currentStatus = 'Finalizado';
-        component.generateNewPathValues(currentStatus);
+output application/json
+---
 
-        // Expected pathValues array
-        const expectedPathValues = [
-            {"attributes": null, "label": 'Nao iniciado', "value": 'Nao iniciado'},
-            {"attributes": null, "label": 'Em prospeccao', "value": 'Em prospeccao'},
-            {"attributes": null, "label": currentStatus, "value": currentStatus},
-        ];
-
-        // Assertions
-        expect(component.pathValues).toEqual(expectedPathValues);
-    });
-});
+	 
+		{
+			"id_telefone": "",
+			"valor_data_cadastral": {
+				"principal": false,
+				"tipo": '',
+				"ddi": payload.ddi,
+				"ddd": payload.ddd,
+				"numero": payload.numero_telefone,
+				"ramal": '',
+				"data_atualizacao":payload.data_processamento
+			}
+		}
