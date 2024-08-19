@@ -1,18 +1,4 @@
 %dw 2.0
-
 output application/json
 ---
-
-	 
-		{
-			"id_telefone": "",
-			"valor_data_cadastral": {
-				"principal": false,
-				"tipo": '',
-				"ddi": payload.ddi,
-				"ddd": payload.ddd,
-				"numero": payload.numero_telefone,
-				"ramal": '',
-				"data_atualizacao":payload.data_processamento
-			}
-		}
+vars.arrayTelefoneBeaurau << payload
