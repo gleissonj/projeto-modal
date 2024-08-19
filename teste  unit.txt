@@ -1,4 +1,6 @@
 %dw 2.0
 output application/json
 ---
-vars.arrayTelefoneBeaurau << payload
+{
+	"telefones": vars.arrayTelefoneBeaurau orderBy (item) -> item.valor_data_cadastral.ddd
+}
