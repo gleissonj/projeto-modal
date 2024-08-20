@@ -1,6 +1,19 @@
-%dw 2.0
-output application/json
----
-{
-	"telefones": vars.arrayTelefoneBeaurau orderBy (item) -> item.valor_data_cadastral.ddd
+public class CPFFormatter {
+    public static String formatCPF(String cpf) {
+        // Remove any non-numeric characters
+        String cleanCPF = cpf.replaceAll('[^0-9]', '');
+        
+        // Check if the CPF has the correct length (11 digits)
+        if (cleanCPF.length() != 11) {
+            throw new IllegalArgumentException('CPF must have 11 digits.');
+        }
+        
+        // Apply the CPF mask
+        String formattedCPF = cleanCPF.substring(0, 3) + '.' +
+                              cleanCPF.substring(3, 6) + '.' +
+                              cleanCPF.substring(6, 9) + '-' +
+                              cleanCPF.substring(9, 11);
+                              
+        return formattedCPF;
+    }
 }
