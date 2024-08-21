@@ -2,7 +2,7 @@
  * @description       : 
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : 
- * @last modified on  : 08-08-2024
+ * @last modified on  : 08-21-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 
@@ -62,7 +62,82 @@ public class ApontamentoTest {
         Assert.isNotNull(apontamentos);
     }
 
-    
+    @isTest
+    public static void testValidCPF() {
+        String inputCPF = '12345678909';
+        String expectedCPF = '123.456.789-09';
+        Test.startTest();
+        String result = ApontamentoController.formatCPF(inputCPF);
+        Test.stopTest();
+        Assert.areEqual(expectedCPF, result, 'O CPF deve ser formatado corretamente.');
+        //System.assertEquals(expectedCPF, result, 'The CPF should be formatted correctly.');
+    }
+
+    @isTest
+    static void testCPFWithNonNumericCharacters() {
+        String inputCPF = '123.456.789-09';
+        String expectedCPF = '123.456.789-09';
+        Test.startTest();
+        String result = ApontamentoController.formatCPF(inputCPF);
+        Test.stopTest();
+        Assert.areEqual(expectedCPF, result, 'O CPF deve estar formatado corretamente, mesmo com caracteres não numéricos.');
+    }
+
+    // @isTest
+    // public static void testCPFWithIncorrectLength() {
+    //     String inputCPF = '12345678'; // 8 digits instead of 11
+    //     try {
+    //         Test.startTest();
+    //         ApontamentoController.formatCPF(inputCPF);
+    //         Test.stopTest();
+    //         System.assert(false, 'O método deve lançar uma exceção para um comprimento de CPF incorreto.');
+    //     } catch (IllegalArgumentException e) {
+    //         Assert.areEqual('CPF deve ter 11 dígitos.', e.getMessage(), 'A mensagem de exceção deverá indicar que o CPF deve ter 11 dígitos.');
+    //     }
+    // }
+
+    @isTest
+    static void testEmptyCPF() {
+        String inputCPF = ''; // Empty string
+        try {
+            Test.startTest();
+            ApontamentoController.formatCPF(inputCPF);
+            Test.stopTest();
+            System.assert(false, 'The method should throw an exception for an empty CPF.');
+        } catch (IllegalArgumentException e) {
+            System.assertEquals('CPF must have 11 digits.', e.getMessage(), 'The exception message should indicate the CPF must have 11 digits.');
+        }
+    }
+
+    @isTest
+    public static void testEmptyFullName() {
+        // Test when the fullName is empty
+        String fullName = '';
+        Map<String, String> result = ApontamentoController.splitName(fullName);
+        
+        Assert.areEqual('', result.get('firstName'), 'Primeiro nome deve ser vazio');
+        Assert.areEqual('', result.get('lastName'), 'Ultimo nome deve ser vazio');
+    }
+
+    @isTest
+    public static void testFirstNameOnly() {
+        // Test when the fullName contains only a first name
+        String fullName = 'Jon';
+        Map<String, String> result = ApontamentoController.splitName(fullName);
+        
+        Assert.areEqual('Jon', result.get('firstName'), 'Primeiro nome deve ser Jon');
+        Assert.areEqual('', result.get('lastName'), 'Ultimo nome deve ser vazio');
+    }
+
+    @IsTest
+    public static void testFirstAndLastName() {
+        // Test when the fullName contains a first and last name
+        String fullName = 'Jon Doe';
+        Map<String, String> result = ApontamentoController.splitName(fullName);
+        
+        Assert.areEqual('Jon', result.get('firstName'), 'Primeiro nome deve ser Jon');
+        Assert.areEqual('Doe', result.get('lastName'), 'Ultimo nome deve ser Doe');
+    }
 
     private class PostCalloutMock implements HttpCalloutMock {
         public HttpResponse respond(HttpRequest req) {

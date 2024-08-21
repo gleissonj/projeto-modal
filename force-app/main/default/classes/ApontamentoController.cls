@@ -2,7 +2,7 @@
  * @description       :
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             :
- * @last modified on  : 08-12-2024
+ * @last modified on  : 08-21-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class ApontamentoController {
@@ -77,6 +77,52 @@ public with sharing class ApontamentoController {
             }
 
             return uniqueApontamentos;
+    }
+
+    public static String formatCPF(String cpf) {
+        // Remove any non-numeric characters
+        String cleanCPF = cpf.replaceAll('[^0-9]', '');
+        
+        // Check if the CPF has the correct length (11 digits)
+        if (cleanCPF.length() != 11) {
+            throw new IllegalArgumentException('CPF must have 11 digits.');
+        }
+        
+        // Apply the CPF mask
+        String formattedCPF = cleanCPF.substring(0, 3) + '.' +
+                              cleanCPF.substring(3, 6) + '.' +
+                              cleanCPF.substring(6, 9) + '-' +
+                              cleanCPF.substring(9, 11);
+                              
+        return formattedCPF;
+    }
+
+    public static Map<String, String> splitName(String fullName) {
+        Map<String, String> nameParts = new Map<String, String>();
+
+        if (String.isEmpty(fullName)) {
+            nameParts.put('firstName', '');
+            nameParts.put('lastName', '');
+            return nameParts;
+        }
+
+        // Dividindo o nome completo por espaço
+        List<String> nameArray = fullName.split(' ');
+
+        if (nameArray.size() > 1) {
+            // O primeiro elemento será o primeiro nome
+            nameParts.put('firstName', nameArray[0]);
+
+            // O restante será considerado como o sobrenome
+            nameArray.remove(0);
+            nameParts.put('lastName', String.join(nameArray, ' '));
+        } else {
+            // Se só houver um nome, assume que é o primeiro nome
+            nameParts.put('firstName', fullName);
+            nameParts.put('lastName', '');
+        }
+
+        return nameParts;
     }
     
     public static String GetPayload(String cnpj, String nome){

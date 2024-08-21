@@ -1,19 +1,50 @@
-public class CPFFormatter {
-    public static String formatCPF(String cpf) {
-        // Remove any non-numeric characters
-        String cleanCPF = cpf.replaceAll('[^0-9]', '');
-        
-        // Check if the CPF has the correct length (11 digits)
-        if (cleanCPF.length() != 11) {
-            throw new IllegalArgumentException('CPF must have 11 digits.');
-        }
-        
-        // Apply the CPF mask
-        String formattedCPF = cleanCPF.substring(0, 3) + '.' +
-                              cleanCPF.substring(3, 6) + '.' +
-                              cleanCPF.substring(6, 9) + '-' +
-                              cleanCPF.substring(9, 11);
-                              
-        return formattedCPF;
+private static void processApontamento(FS1_ContactSocioResponse apontamento, Id recordTypeId) {
+    List<Lead> existingLeads = [SELECT Id FROM Lead WHERE Prospect__c = :recordIdPage AND HU7_Cpf__c = :apontamento.cpf LIMIT 1];
+
+    if (existingLeads.isEmpty()) {
+        Lead newLead = new Lead(
+            HU7_Cpf__c = apontamento.cpf,
+            Email = apontamento.emails.size() == 1 ? apontamento.emails[0].valor_dado_cadastral.email : '',
+            MobilePhone = apontamento.telefones.size() == 2 && 
+                         (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
+                          apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
+                         apontamento.telefones[1].valor_dado_cadastral.ddi + 
+                         apontamento.telefones[1].valor_dado_cadastral.ddd + 
+                         apontamento.telefones[1].valor_dado_cadastral.numero : '',
+            FirstName = apontamento.nome,
+            LastName = apontamento.nome,
+            Phone = apontamento.telefones.size() == 1 && 
+                    (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
+                     apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
+                    apontamento.telefones[0].valor_dado_cadastral.ddi + 
+                    apontamento.telefones[0].valor_dado_cadastral.ddd + 
+                    apontamento.telefones[0].valor_dado_cadastral.numero : '',
+            RecordTypeId = recordTypeId,
+            Prospect__c = recordIdPage
+        );
+
+        respositoryLead.insertLead(newLead);
+    } else {
+        Lead existingLead = existingLeads[0];
+        existingLead.FirstName = apontamento.nome;
+        existingLead.LastName = apontamento.nome;
+        existingLead.Phone = apontamento.telefones.size() == 1 && 
+                             (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
+                              apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
+                             apontamento.telefones[0].valor_dado_cadastral.ddi + 
+                             apontamento.telefones[0].valor_dado_cadastral.ddd + 
+                             apontamento.telefones[0].valor_dado_cadastral.numero : '';
+        existingLead.MobilePhone = apontamento.telefones.size() == 2 && 
+                                   (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
+                                    apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
+                                   apontamento.telefones[0].valor_dado_cadastral.ddi + 
+                                   apontamento.telefones[0].valor_dado_cadastral.ddd + 
+                                   apontamento.telefones[0].valor_dado_cadastral.numero : '';
+        RecordTypeId = recordTypeId;
+        existingLead.Email = apontamento.emails.size() == 1 ? 
+                             apontamento.emails[0].valor_dado_cadastral.email : '';
+        existingLead.HU7_Cpf__c = apontamento.cpf;
+
+        repositoryLead.updateLead(existingLead);
     }
 }
