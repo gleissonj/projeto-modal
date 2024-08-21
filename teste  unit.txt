@@ -3,23 +3,57 @@ using Moq;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 using System.Threading.Tasks;
+using System;
 
 public class JobServiceTests
 {
+    public class JobService
+    {
+        public virtual IAmazonGlue CreateGlueClient()
+        {
+            return new AmazonGlueClient();
+        }
+
+        public async Task<DomainResponse> ExecutarJob(string job)
+        {
+            try
+            {
+                var glueClient = CreateGlueClient();
+
+                var request = new StartJobRunRequest
+                {
+                    JobName = job
+                };
+
+                var response = await glueClient.StartJobRunAsync(request);
+
+                return new DomainResponse(new { Status = $"O servico {job} iniciou." });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("o nome do job esta inco");
+            }
+        }
+    }
+
     [Fact]
     public async Task ExecutarJob_ShouldReturnSuccessStatus_WhenJobStartsSuccessfully()
     {
         // Arrange
         var jobName = "testJob";
+        var mockService = new Mock<JobService>();
+
         var mockGlueClient = new Mock<IAmazonGlue>();
         mockGlueClient
             .Setup(client => client.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
             .ReturnsAsync(new StartJobRunResponse());
 
-        var jobService = new JobService(mockGlueClient.Object); // Assuming JobService contains the ExecutarJob method
+        mockService
+            .Setup(service => service.CreateGlueClient())
+            .Returns(mockGlueClient.Object);
 
         // Act
-        var result = await jobService.ExecutarJob(jobName);
+        var result = await mockService.Object.ExecutarJob(jobName);
 
         // Assert
         Assert.NotNull(result);
@@ -31,15 +65,29 @@ public class JobServiceTests
     {
         // Arrange
         var jobName = "invalidJob";
+        var mockService = new Mock<JobService>();
+
         var mockGlueClient = new Mock<IAmazonGlue>();
         mockGlueClient
             .Setup(client => client.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
             .ThrowsAsync(new Exception("o nome do job esta inco"));
 
-        var jobService = new JobService(mockGlueClient.Object);
+        mockService
+            .Setup(service => service.CreateGlueClient())
+            .Returns(mockGlueClient.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() => jobService.ExecutarJob(jobName));
+        var exception = await Assert.ThrowsAsync<Exception>(() => mockService.Object.ExecutarJob(jobName));
         Assert.Equal("o nome do job esta inco", exception.Message);
+    }
+}
+
+public class DomainResponse
+{
+    public string Status { get; }
+
+    public DomainResponse(object obj)
+    {
+        Status = obj.GetType().GetProperty("Status").GetValue(obj, null).ToString();
     }
 }
