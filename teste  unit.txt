@@ -1,93 +1,75 @@
-using Xunit;
+using Amazon.CloudWatchEvents;
+using Amazon.CloudWatchEvents.Model;
 using Moq;
-using Amazon.Glue;
-using Amazon.Glue.Model;
 using System.Threading.Tasks;
-using System;
+using Xunit;
 
-public class JobServiceTests
+public class YourClassTests
 {
-    public class JobService
-    {
-        public virtual IAmazonGlue CreateGlueClient()
-        {
-            return new AmazonGlueClient();
-        }
-
-        public async Task<DomainResponse> ExecutarJob(string job)
-        {
-            try
-            {
-                var glueClient = CreateGlueClient();
-
-                var request = new StartJobRunRequest
-                {
-                    JobName = job
-                };
-
-                var response = await glueClient.StartJobRunAsync(request);
-
-                return new DomainResponse(new { Status = $"O servico {job} iniciou." });
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("o nome do job esta inco");
-            }
-        }
-    }
-
     [Fact]
-    public async Task ExecutarJob_ShouldReturnSuccessStatus_WhenJobStartsSuccessfully()
+    public async Task AlteraCronStep_ShouldUpdateRule_WithModifiedScheduleExpression()
     {
         // Arrange
-        var jobName = "testJob";
-        var mockService = new Mock<JobService>();
+        var mockClient = new Mock<IAmazonCloudWatchEvents>();
 
-        var mockGlueClient = new Mock<IAmazonGlue>();
-        mockGlueClient
-            .Setup(client => client.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
-            .ReturnsAsync(new StartJobRunResponse());
+        var ruleName = "YourCloudWatchRuleName";
+        var stateMachineArn = "fdfd";
+        var originalScheduleExpression = "rate(5 minutes)";
+        var modifiedScheduleExpression = "rate(10 minutes)"; // Assuming ModifyRule changes it to this.
 
-        mockService
-            .Setup(service => service.CreateGlueClient())
-            .Returns(mockGlueClient.Object);
+        mockClient.Setup(c => c.DescribeRuleAsync(It.Is<DescribeRuleRequest>(r => r.Name == ruleName), default))
+            .ReturnsAsync(new DescribeRuleResponse
+            {
+                Name = ruleName,
+                ScheduleExpression = originalScheduleExpression
+            });
+
+        mockClient.Setup(c => c.PutRuleAsync(It.IsAny<PutRuleRequest>(), default))
+            .Returns(Task.CompletedTask);
+
+        var yourClass = new YourClass(mockClient.Object);
 
         // Act
-        var result = await mockService.Object.ExecutarJob(jobName);
+        await yourClass.AlteraCronStep();
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal($"O servico {jobName} iniciou.", result.Status);
-    }
-
-    [Fact]
-    public async Task ExecutarJob_ShouldThrowException_WhenJobNameIsIncorrect()
-    {
-        // Arrange
-        var jobName = "invalidJob";
-        var mockService = new Mock<JobService>();
-
-        var mockGlueClient = new Mock<IAmazonGlue>();
-        mockGlueClient
-            .Setup(client => client.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
-            .ThrowsAsync(new Exception("o nome do job esta inco"));
-
-        mockService
-            .Setup(service => service.CreateGlueClient())
-            .Returns(mockGlueClient.Object);
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() => mockService.Object.ExecutarJob(jobName));
-        Assert.Equal("o nome do job esta inco", exception.Message);
+        mockClient.Verify(c => c.DescribeRuleAsync(It.Is<DescribeRuleRequest>(r => r.Name == ruleName), default), Times.Once);
+        mockClient.Verify(c => c.PutRuleAsync(It.Is<PutRuleRequest>(r => 
+            r.Name == ruleName && r.ScheduleExpression == modifiedScheduleExpression), default), Times.Once);
     }
 }
 
-public class DomainResponse
+public class YourClass
 {
-    public string Status { get; }
+    private readonly IAmazonCloudWatchEvents _client;
 
-    public DomainResponse(object obj)
+    public YourClass(IAmazonCloudWatchEvents client)
     {
-        Status = obj.GetType().GetProperty("Status").GetValue(obj, null).ToString();
+        _client = client;
+    }
+
+    public async Task AlteraCronStep()
+    {
+        var ruleName = "YourCloudWatchRuleName";
+        var stateMachineArn = "fdfd";
+
+        var getRuleResponse = await _client.DescribeRuleAsync(new DescribeRuleRequest
+        {
+            Name = ruleName
+        });
+
+        var updateRule = ModifyRule(getRuleResponse.ScheduleExpression, stateMachineArn);
+
+        await _client.PutRuleAsync(new PutRuleRequest
+        {
+            Name = ruleName,
+            ScheduleExpression = updateRule
+        });
+    }
+
+    private string ModifyRule(string scheduleExpression, string stateMachineArn)
+    {
+        // Logic to modify the schedule expression
+        return "rate(10 minutes)";
     }
 }
