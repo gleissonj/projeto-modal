@@ -1,50 +1,45 @@
-private static void processApontamento(FS1_ContactSocioResponse apontamento, Id recordTypeId) {
-    List<Lead> existingLeads = [SELECT Id FROM Lead WHERE Prospect__c = :recordIdPage AND HU7_Cpf__c = :apontamento.cpf LIMIT 1];
+using Xunit;
+using Moq;
+using Amazon.Glue;
+using Amazon.Glue.Model;
+using System.Threading.Tasks;
 
-    if (existingLeads.isEmpty()) {
-        Lead newLead = new Lead(
-            HU7_Cpf__c = apontamento.cpf,
-            Email = apontamento.emails.size() == 1 ? apontamento.emails[0].valor_dado_cadastral.email : '',
-            MobilePhone = apontamento.telefones.size() == 2 && 
-                         (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
-                          apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
-                         apontamento.telefones[1].valor_dado_cadastral.ddi + 
-                         apontamento.telefones[1].valor_dado_cadastral.ddd + 
-                         apontamento.telefones[1].valor_dado_cadastral.numero : '',
-            FirstName = apontamento.nome,
-            LastName = apontamento.nome,
-            Phone = apontamento.telefones.size() == 1 && 
-                    (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
-                     apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
-                    apontamento.telefones[0].valor_dado_cadastral.ddi + 
-                    apontamento.telefones[0].valor_dado_cadastral.ddd + 
-                    apontamento.telefones[0].valor_dado_cadastral.numero : '',
-            RecordTypeId = recordTypeId,
-            Prospect__c = recordIdPage
-        );
+public class JobServiceTests
+{
+    [Fact]
+    public async Task ExecutarJob_ShouldReturnSuccessStatus_WhenJobStartsSuccessfully()
+    {
+        // Arrange
+        var jobName = "testJob";
+        var mockGlueClient = new Mock<IAmazonGlue>();
+        mockGlueClient
+            .Setup(client => client.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
+            .ReturnsAsync(new StartJobRunResponse());
 
-        respositoryLead.insertLead(newLead);
-    } else {
-        Lead existingLead = existingLeads[0];
-        existingLead.FirstName = apontamento.nome;
-        existingLead.LastName = apontamento.nome;
-        existingLead.Phone = apontamento.telefones.size() == 1 && 
-                             (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
-                              apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
-                             apontamento.telefones[0].valor_dado_cadastral.ddi + 
-                             apontamento.telefones[0].valor_dado_cadastral.ddd + 
-                             apontamento.telefones[0].valor_dado_cadastral.numero : '';
-        existingLead.MobilePhone = apontamento.telefones.size() == 2 && 
-                                   (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || 
-                                    apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? 
-                                   apontamento.telefones[0].valor_dado_cadastral.ddi + 
-                                   apontamento.telefones[0].valor_dado_cadastral.ddd + 
-                                   apontamento.telefones[0].valor_dado_cadastral.numero : '';
-        RecordTypeId = recordTypeId;
-        existingLead.Email = apontamento.emails.size() == 1 ? 
-                             apontamento.emails[0].valor_dado_cadastral.email : '';
-        existingLead.HU7_Cpf__c = apontamento.cpf;
+        var jobService = new JobService(mockGlueClient.Object); // Assuming JobService contains the ExecutarJob method
 
-        repositoryLead.updateLead(existingLead);
+        // Act
+        var result = await jobService.ExecutarJob(jobName);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal($"O servico {jobName} iniciou.", result.Status);
+    }
+
+    [Fact]
+    public async Task ExecutarJob_ShouldThrowException_WhenJobNameIsIncorrect()
+    {
+        // Arrange
+        var jobName = "invalidJob";
+        var mockGlueClient = new Mock<IAmazonGlue>();
+        mockGlueClient
+            .Setup(client => client.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
+            .ThrowsAsync(new Exception("o nome do job esta inco"));
+
+        var jobService = new JobService(mockGlueClient.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() => jobService.ExecutarJob(jobName));
+        Assert.Equal("o nome do job esta inco", exception.Message);
     }
 }
