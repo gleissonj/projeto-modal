@@ -1,75 +1,58 @@
-using Amazon.CloudWatchEvents;
-using Amazon.CloudWatchEvents.Model;
 using Moq;
+using Amazon.S3;
+using Amazon.S3.Model;
+using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 
-public class YourClassTests
+public class S3ServiceTests
 {
     [Fact]
-    public async Task AlteraCronStep_ShouldUpdateRule_WithModifiedScheduleExpression()
+    public async Task GetObjectAsync_Should_Return_Correct_Response()
     {
         // Arrange
-        var mockClient = new Mock<IAmazonCloudWatchEvents>();
+        var mockS3Client = new Mock<IAmazonS3>();
 
-        var ruleName = "YourCloudWatchRuleName";
-        var stateMachineArn = "fdfd";
-        var originalScheduleExpression = "rate(5 minutes)";
-        var modifiedScheduleExpression = "rate(10 minutes)"; // Assuming ModifyRule changes it to this.
-
-        mockClient.Setup(c => c.DescribeRuleAsync(It.Is<DescribeRuleRequest>(r => r.Name == ruleName), default))
-            .ReturnsAsync(new DescribeRuleResponse
+        var expectedResponse = new GetObjectResponse
+        {
+            HttpStatusCode = System.Net.HttpStatusCode.OK,
+            BucketName = "example-bucket",
+            Key = "example-object-key",
+            ResponseStream = GenerateSampleStream("sample data"), // Mocked response stream
+            Metadata = new System.Collections.Generic.Dictionary<string, string>
             {
-                Name = ruleName,
-                ScheduleExpression = originalScheduleExpression
-            });
+                { "key1", "value1" },
+                { "key2", "value2" }
+            }
+        };
 
-        mockClient.Setup(c => c.PutRuleAsync(It.IsAny<PutRuleRequest>(), default))
-            .Returns(Task.CompletedTask);
+        mockS3Client
+            .Setup(x => x.GetObjectAsync(It.Is<GetObjectRequest>(r =>
+                r.BucketName == "example-bucket" &&
+                r.Key == "example-object-key"), default))
+            .ReturnsAsync(expectedResponse);
 
-        var yourClass = new YourClass(mockClient.Object);
+        var s3Service = new S3Service(mockS3Client.Object);
 
         // Act
-        await yourClass.AlteraCronStep();
+        var response = await s3Service.GetObjectAsync("example-bucket", "example-object-key");
 
         // Assert
-        mockClient.Verify(c => c.DescribeRuleAsync(It.Is<DescribeRuleRequest>(r => r.Name == ruleName), default), Times.Once);
-        mockClient.Verify(c => c.PutRuleAsync(It.Is<PutRuleRequest>(r => 
-            r.Name == ruleName && r.ScheduleExpression == modifiedScheduleExpression), default), Times.Once);
-    }
-}
-
-public class YourClass
-{
-    private readonly IAmazonCloudWatchEvents _client;
-
-    public YourClass(IAmazonCloudWatchEvents client)
-    {
-        _client = client;
+        Assert.NotNull(response);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.HttpStatusCode);
+        Assert.Equal("sample data", await new StreamReader(response.ResponseStream).ReadToEndAsync());
+        Assert.Contains("key1", response.Metadata);
+        Assert.Contains("value1", response.Metadata);
     }
 
-    public async Task AlteraCronStep()
+    // Helper method to create a sample stream
+    private Stream GenerateSampleStream(string data)
     {
-        var ruleName = "YourCloudWatchRuleName";
-        var stateMachineArn = "fdfd";
-
-        var getRuleResponse = await _client.DescribeRuleAsync(new DescribeRuleRequest
-        {
-            Name = ruleName
-        });
-
-        var updateRule = ModifyRule(getRuleResponse.ScheduleExpression, stateMachineArn);
-
-        await _client.PutRuleAsync(new PutRuleRequest
-        {
-            Name = ruleName,
-            ScheduleExpression = updateRule
-        });
-    }
-
-    private string ModifyRule(string scheduleExpression, string stateMachineArn)
-    {
-        // Logic to modify the schedule expression
-        return "rate(10 minutes)";
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        writer.Write(data);
+        writer.Flush();
+        stream.Position = 0; // Reset the stream position to the beginning
+        return stream;
     }
 }
