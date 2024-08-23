@@ -60,3 +60,59 @@ describe('c-your-component', () => {
         expect(element.isLoading).toBe(false);
     });
 });
+
+
+
+import { createElement } from 'lwc';
+import YourComponent from 'c/yourComponent';
+
+describe('c-your-component - getCor method', () => {
+    let element;
+
+    beforeEach(() => {
+        element = createElement('c-your-component', {
+            is: YourComponent
+        });
+        document.body.appendChild(element);
+    });
+
+    afterEach(() => {
+        // Clean up the DOM after each test
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+    });
+
+    it('should set isColorGreen to true for BAIXO', () => {
+        element.getCor('BAIXO');
+
+        expect(element.isColorGreen).toBe(true);
+        expect(element.isColorYellow).toBeUndefined();
+        expect(element.isColorRed).toBeUndefined();
+    });
+
+    it('should set isColorYellow to true for MEDIO', () => {
+        element.getCor('MEDIO');
+
+        expect(element.isColorYellow).toBe(true);
+        expect(element.isColorGreen).toBeUndefined();
+        expect(element.isColorRed).toBeUndefined();
+    });
+
+    it('should set isColorRed to true for ALTO', () => {
+        element.getCor('ALTO');
+
+        expect(element.isColorRed).toBe(true);
+        expect(element.isColorGreen).toBeUndefined();
+        expect(element.isColorYellow).toBeUndefined();
+    });
+
+    it('should reset all color properties for an unknown risco value', () => {
+        element.getCor('UNKNOWN');
+
+        expect(element.isColorGreen).toBe(false);
+        expect(element.isColorRed).toBe(false);
+        expect(element.isColorYellow).toBe(false);
+    });
+});
+
