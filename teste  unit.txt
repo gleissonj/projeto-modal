@@ -1,5 +1,5 @@
-using Amazon.Glue;
-using Amazon.Glue.Model;
+using Amazon.CloudWatchEvents;
+using Amazon.CloudWatchEvents.Model;
 using Moq;
 using System.Threading.Tasks;
 using Xunit;
@@ -7,41 +7,51 @@ using Xunit;
 public class YourClassTests
 {
     [Fact]
-    public async Task StartJobRunAsync_WithSpecificRequest_ReturnsMockedResponse()
+    public async Task PutRuleAsync_WithSpecificRequest_ReturnsMockedResponse()
     {
         // Arrange
-        var mockAmazonGlueClient = new Mock<IAmazonGlue>();
+        var mockCloudWatchEventsClient = new Mock<IAmazonCloudWatchEvents>();
 
-        // Create a specific StartJobRunRequest
-        var startJobRunRequest = new StartJobRunRequest
+        // Define the specific values for the request
+        string ruleName = "TestRule";
+        string cron = "cron(0 12 * * ? *)";
+        bool status = true;
+
+        // Create a mock DescribeRuleResponse (if needed)
+        var describeRuleResponse = new DescribeRuleResponse
         {
-            JobName = "TestJob",
-            Arguments = new Dictionary<string, string>
-            {
-                { "--arg1", "value1" }
-            }
+            ScheduleExpression = "cron(0 15 * * ? *)"
         };
 
-        // Create a mock StartJobRunResponse
-        var mockResponse = new StartJobRunResponse
+        // Define the expected request based on the logic
+        var expectedRequest = new PutRuleRequest
         {
-            JobRunId = "mockJobRunId"
+            Name = ruleName,
+            ScheduleExpression = cron ?? describeRuleResponse.ScheduleExpression,
+            State = status ? RuleState.ENABLED : RuleState.DISABLED
         };
 
-        // Setup the mock to return the mock response when StartJobRunAsync is called with the specific request
-        mockAmazonGlueClient.Setup(client => client.StartJobRunAsync(It.Is<StartJobRunRequest>(r =>
-                r.JobName == startJobRunRequest.JobName &&
-                r.Arguments["--arg1"] == "value1"), default))
+        // Create a mock response for PutRuleAsync
+        var mockResponse = new PutRuleResponse
+        {
+            RuleArn = "mockRuleArn"
+        };
+
+        // Set up the mock to return the mock response when PutRuleAsync is called with the expected request
+        mockCloudWatchEventsClient.Setup(client => client.PutRuleAsync(It.Is<PutRuleRequest>(r =>
+                r.Name == expectedRequest.Name &&
+                r.ScheduleExpression == expectedRequest.ScheduleExpression &&
+                r.State == expectedRequest.State), default))
             .ReturnsAsync(mockResponse);
 
-        // If you have a class that uses IAmazonGlue, you would inject the mock here
-        var yourClass = new YourClass(mockAmazonGlueClient.Object);
+        // If you have a class that uses IAmazonCloudWatchEvents, inject the mock here
+        var yourClass = new YourClass(mockCloudWatchEventsClient.Object);
 
         // Act
-        var result = await yourClass.YourMethodThatCallsStartJobRunAsync(startJobRunRequest);
+        var result = await yourClass.YourMethodThatCallsPutRuleAsync(ruleName, cron, status, describeRuleResponse);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("mockJobRunId", result.JobRunId);
+        Assert.Equal("mockRuleArn", result.RuleArn);
     }
 }
