@@ -1,87 +1,62 @@
-using Moq;
-using Amazon.S3;
-using Amazon.S3.Model;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
+import { createElement } from 'lwc';
+import YourComponent from 'c/yourComponent';
+import getApontamento from '@salesforce/apex/YourApexClass.getApontamento';
 
-public class S3ServiceTests
-{
-    [Fact]
-    public async Task ListObjectsV2Async_Should_Return_Correct_Response()
-    {
-        // Arrange
-        var mockS3Client = new Mock<IAmazonS3>();
+// Mock the imported Apex method
+jest.mock('@salesforce/apex/YourApexClass.getApontamento', () => {
+    return {
+        default: jest.fn()
+    };
+});
 
-        var expectedResponse = new ListObjectsV2Response
-        {
-            HttpStatusCode = System.Net.HttpStatusCode.OK,
-            IsTruncated = false, // Indicates whether there are more objects to retrieve
-            NextContinuationToken = null, // For pagination, if needed
-            S3Objects = new List<S3Object>
-            {
-                new S3Object
-                {
-                    Key = "object1.txt",
-                    Size = 1234,
-                    ETag = "\"etag1\"",
-                    LastModified = DateTime.UtcNow
-                },
-                new S3Object
-                {
-                    Key = "object2.jpg",
-                    Size = 5678,
-                    ETag = "\"etag2\"",
-                    LastModified = DateTime.UtcNow
-                }
-            }
-        };
+describe('c-your-component', () => {
+    afterEach(() => {
+        // Clean up the DOM after each test
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+        jest.clearAllMocks();
+    });
 
-        mockS3Client
-            .Setup(x => x.ListObjectsV2Async(It.Is<ListObjectsV2Request>(r =>
-                r.BucketName == "example-bucket"), default))
-            .ReturnsAsync(expectedResponse);
+    it('should set isLoading to true, call getApontamento, and set isLoading to false after success', async () => {
+        // Mock the Apex method to resolve with a value
+        getApontamento.mockResolvedValue({ /* mock result here */ });
 
-        var s3Service = new S3Service(mockS3Client.Object);
+        const element = createElement('c-your-component', {
+            is: YourComponent
+        });
 
-        // Act
-        var response = await s3Service.ListObjectsV2Async("example-bucket");
+        document.body.appendChild(element);
 
-        // Assert
-        Assert.NotNull(response);
-        Assert.Equal(System.Net.HttpStatusCode.OK, response.HttpStatusCode);
-        Assert.False(response.IsTruncated);
+        // Simulate the method call
+        await element.getApontamentoCadastral();
 
-        // Check S3Objects
-        Assert.NotNull(response.S3Objects);
-        Assert.Equal(2, response.S3Objects.Count);
+        // Assertions
+        expect(element.isLoading).toBe(true);
+        expect(getApontamento).toHaveBeenCalledWith({ apontamentoId: element.recordId });
+        await Promise.resolve(); // Wait for any pending promises to resolve
+        expect(element.apontamentos).toEqual({ /* expected result here */ });
+        expect(element.handleSendLink).toHaveBeenCalled();
+        expect(element.isLoading).toBe(false);
+    });
 
-        var object1 = response.S3Objects[0];
-        Assert.Equal("object1.txt", object1.Key);
-        Assert.Equal(1234, object1.Size);
+    it('should set isLoading to false after an error', async () => {
+        // Mock the Apex method to reject with an error
+        getApontamento.mockRejectedValue(new Error('Some error'));
 
-        var object2 = response.S3Objects[1];
-        Assert.Equal("object2.jpg", object2.Key);
-        Assert.Equal(5678, object2.Size);
-    }
-}
+        const element = createElement('c-your-component', {
+            is: YourComponent
+        });
 
-public class S3Service
-{
-    private readonly IAmazonS3 _s3Client;
+        document.body.appendChild(element);
 
-    public S3Service(IAmazonS3 s3Client)
-    {
-        _s3Client = s3Client;
-    }
+        // Simulate the method call
+        await element.getApontamentoCadastral();
 
-    public async Task<ListObjectsV2Response> ListObjectsV2Async(string bucketName)
-    {
-        var request = new ListObjectsV2Request
-        {
-            BucketName = bucketName
-        };
-
-        return await _s3Client.ListObjectsV2Async(request);
-    }
-}
+        // Assertions
+        expect(element.isLoading).toBe(true);
+        expect(getApontamento).toHaveBeenCalledWith({ apontamentoId: element.recordId });
+        await Promise.resolve(); // Wait for any pending promises to resolve
+        expect(element.isLoading).toBe(false);
+    });
+});
