@@ -1,118 +1,47 @@
-import { createElement } from 'lwc';
-import YourComponent from 'c/yourComponent';
-import getApontamento from '@salesforce/apex/YourApexClass.getApontamento';
+using Amazon.Glue;
+using Amazon.Glue.Model;
+using Moq;
+using System.Threading.Tasks;
+using Xunit;
 
-// Mock the imported Apex method
-jest.mock('@salesforce/apex/YourApexClass.getApontamento', () => {
-    return {
-        default: jest.fn()
-    };
-});
+public class YourClassTests
+{
+    [Fact]
+    public async Task StartJobRunAsync_WithSpecificRequest_ReturnsMockedResponse()
+    {
+        // Arrange
+        var mockAmazonGlueClient = new Mock<IAmazonGlue>();
 
-describe('c-your-component', () => {
-    afterEach(() => {
-        // Clean up the DOM after each test
-        while (document.body.firstChild) {
-            document.body.removeChild(document.body.firstChild);
-        }
-        jest.clearAllMocks();
-    });
+        // Create a specific StartJobRunRequest
+        var startJobRunRequest = new StartJobRunRequest
+        {
+            JobName = "TestJob",
+            Arguments = new Dictionary<string, string>
+            {
+                { "--arg1", "value1" }
+            }
+        };
 
-    it('should set isLoading to true, call getApontamento, and set isLoading to false after success', async () => {
-        // Mock the Apex method to resolve with a value
-        getApontamento.mockResolvedValue({ /* mock result here */ });
+        // Create a mock StartJobRunResponse
+        var mockResponse = new StartJobRunResponse
+        {
+            JobRunId = "mockJobRunId"
+        };
 
-        const element = createElement('c-your-component', {
-            is: YourComponent
-        });
+        // Setup the mock to return the mock response when StartJobRunAsync is called with the specific request
+        mockAmazonGlueClient.Setup(client => client.StartJobRunAsync(It.Is<StartJobRunRequest>(r =>
+                r.JobName == startJobRunRequest.JobName &&
+                r.Arguments["--arg1"] == "value1"), default))
+            .ReturnsAsync(mockResponse);
 
-        document.body.appendChild(element);
+        // If you have a class that uses IAmazonGlue, you would inject the mock here
+        var yourClass = new YourClass(mockAmazonGlueClient.Object);
 
-        // Simulate the method call
-        await element.getApontamentoCadastral();
+        // Act
+        var result = await yourClass.YourMethodThatCallsStartJobRunAsync(startJobRunRequest);
 
-        // Assertions
-        expect(element.isLoading).toBe(true);
-        expect(getApontamento).toHaveBeenCalledWith({ apontamentoId: element.recordId });
-        await Promise.resolve(); // Wait for any pending promises to resolve
-        expect(element.apontamentos).toEqual({ /* expected result here */ });
-        expect(element.handleSendLink).toHaveBeenCalled();
-        expect(element.isLoading).toBe(false);
-    });
-
-    it('should set isLoading to false after an error', async () => {
-        // Mock the Apex method to reject with an error
-        getApontamento.mockRejectedValue(new Error('Some error'));
-
-        const element = createElement('c-your-component', {
-            is: YourComponent
-        });
-
-        document.body.appendChild(element);
-
-        // Simulate the method call
-        await element.getApontamentoCadastral();
-
-        // Assertions
-        expect(element.isLoading).toBe(true);
-        expect(getApontamento).toHaveBeenCalledWith({ apontamentoId: element.recordId });
-        await Promise.resolve(); // Wait for any pending promises to resolve
-        expect(element.isLoading).toBe(false);
-    });
-});
-
-
-
-import { createElement } from 'lwc';
-import YourComponent from 'c/yourComponent';
-
-describe('c-your-component - getCor method', () => {
-    let element;
-
-    beforeEach(() => {
-        element = createElement('c-your-component', {
-            is: YourComponent
-        });
-        document.body.appendChild(element);
-    });
-
-    afterEach(() => {
-        // Clean up the DOM after each test
-        while (document.body.firstChild) {
-            document.body.removeChild(document.body.firstChild);
-        }
-    });
-
-    it('should set isColorGreen to true for BAIXO', () => {
-        element.getCor('BAIXO');
-
-        expect(element.isColorGreen).toBe(true);
-        expect(element.isColorYellow).toBeUndefined();
-        expect(element.isColorRed).toBeUndefined();
-    });
-
-    it('should set isColorYellow to true for MEDIO', () => {
-        element.getCor('MEDIO');
-
-        expect(element.isColorYellow).toBe(true);
-        expect(element.isColorGreen).toBeUndefined();
-        expect(element.isColorRed).toBeUndefined();
-    });
-
-    it('should set isColorRed to true for ALTO', () => {
-        element.getCor('ALTO');
-
-        expect(element.isColorRed).toBe(true);
-        expect(element.isColorGreen).toBeUndefined();
-        expect(element.isColorYellow).toBeUndefined();
-    });
-
-    it('should reset all color properties for an unknown risco value', () => {
-        element.getCor('UNKNOWN');
-
-        expect(element.isColorGreen).toBe(false);
-        expect(element.isColorRed).toBe(false);
-        expect(element.isColorYellow).toBe(false);
-    });
-});
-
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("mockJobRunId", result.JobRunId);
+    }
+}
