@@ -1,57 +1,33 @@
-using Amazon.CloudWatchEvents;
-using Amazon.CloudWatchEvents.Model;
 using Moq;
+using Amazon.StepFunctions;
+using Amazon.StepFunctions.Model;
 using System.Threading.Tasks;
-using Xunit;
 
-public class YourClassTests
+public class YourTestClass
 {
-    [Fact]
-    public async Task PutRuleAsync_WithSpecificRequest_ReturnsMockedResponse()
+    public void YourTestMethod()
     {
         // Arrange
-        var mockCloudWatchEventsClient = new Mock<IAmazonCloudWatchEvents>();
-
-        // Define the specific values for the request
-        string ruleName = "TestRule";
-        string cron = "cron(0 12 * * ? *)";
-        bool status = true;
-
-        // Create a mock DescribeRuleResponse (if needed)
-        var describeRuleResponse = new DescribeRuleResponse
+        var mockStepFunctionsClient = new Mock<IAmazonStepFunctions>();
+        var startExecutionResponse = new StartExecutionResponse
         {
-            ScheduleExpression = "cron(0 15 * * ? *)"
+            // Set up any properties you need for the response
+            ExecutionArn = "arn:aws:states:region:account-id:execution:your-state-machine-name:your-execution-name",
+            StartDate = DateTime.UtcNow
         };
 
-        // Define the expected request based on the logic
-        var expectedRequest = new PutRuleRequest
-        {
-            Name = ruleName,
-            ScheduleExpression = cron ?? describeRuleResponse.ScheduleExpression,
-            State = status ? RuleState.ENABLED : RuleState.DISABLED
-        };
-
-        // Create a mock response for PutRuleAsync
-        var mockResponse = new PutRuleResponse
-        {
-            RuleArn = "mockRuleArn"
-        };
-
-        // Set up the mock to return the mock response when PutRuleAsync is called with the expected request
-        mockCloudWatchEventsClient.Setup(client => client.PutRuleAsync(It.Is<PutRuleRequest>(r =>
-                r.Name == expectedRequest.Name &&
-                r.ScheduleExpression == expectedRequest.ScheduleExpression &&
-                r.State == expectedRequest.State), default))
-            .ReturnsAsync(mockResponse);
-
-        // If you have a class that uses IAmazonCloudWatchEvents, inject the mock here
-        var yourClass = new YourClass(mockCloudWatchEventsClient.Object);
+        mockStepFunctionsClient.Setup(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(startExecutionResponse);
 
         // Act
-        var result = await yourClass.YourMethodThatCallsPutRuleAsync(ruleName, cron, status, describeRuleResponse);
+        var response = await mockStepFunctionsClient.Object.StartExecutionAsync(new StartExecutionRequest
+        {
+            // Your request parameters here
+            StateMachineArn = "arn:aws:states:region:account-id:stateMachine:your-state-machine-name",
+            Input = "{ \"key\": \"value\" }"
+        });
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("mockRuleArn", result.RuleArn);
+        Assert.Equal("arn:aws:states:region:account-id:execution:your-state-machine-name:your-execution-name", response.ExecutionArn);
     }
 }
