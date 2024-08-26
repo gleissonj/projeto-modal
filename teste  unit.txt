@@ -1,33 +1,75 @@
-using Moq;
-using Amazon.StepFunctions;
-using Amazon.StepFunctions.Model;
-using System.Threading.Tasks;
+import { createElement } from 'lwc';
+import YourComponent from 'c/yourComponent';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getContato from '@salesforce/apex/YourApexClass.getContato';
 
-public class YourTestClass
-{
-    public void YourTestMethod()
-    {
-        // Arrange
-        var mockStepFunctionsClient = new Mock<IAmazonStepFunctions>();
-        var startExecutionResponse = new StartExecutionResponse
-        {
-            // Set up any properties you need for the response
-            ExecutionArn = "arn:aws:states:region:account-id:execution:your-state-machine-name:your-execution-name",
-            StartDate = DateTime.UtcNow
-        };
+// Mock the imported Apex method
+jest.mock('@salesforce/apex/YourApexClass.getContato', () => ({
+    default: jest.fn()
+}));
 
-        mockStepFunctionsClient.Setup(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(startExecutionResponse);
+describe('c-your-component', () => {
+    afterEach(() => {
+        // Cleanup the DOM after each test
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+        jest.clearAllMocks();
+    });
 
-        // Act
-        var response = await mockStepFunctionsClient.Object.StartExecutionAsync(new StartExecutionRequest
-        {
-            // Your request parameters here
-            StateMachineArn = "arn:aws:states:region:account-id:stateMachine:your-state-machine-name",
-            Input = "{ \"key\": \"value\" }"
+    it('handles successful getContato response', async () => {
+        const mockResult = [{ Id: '003', Name: 'John Doe' }];
+        getContato.mockResolvedValue(mockResult);
+
+        const element = createElement('c-your-component', {
+            is: YourComponent
         });
+        document.body.appendChild(element);
 
-        // Assert
-        Assert.Equal("arn:aws:states:region:account-id:execution:your-state-machine-name:your-execution-name", response.ExecutionArn);
-    }
-}
+        // Mocking the showToast and refreshPage methods
+        element.showToast = jest.fn();
+        element.refreshPage = jest.fn();
+
+        // Simulate method call
+        await element.getContato();
+
+        // Validate that the method updates contacts and calls showToast
+        expect(element.contacts).toEqual(mockResult);
+        expect(element.error).toBeUndefined();
+        expect(element.isLoading).toBe(false);
+        expect(element.showToast).toHaveBeenCalledWith(
+            'Dados Atualizados, aguarde a pagina atualizar',
+            'success',
+            'Sucesso'
+        );
+        expect(element.refreshPage).toHaveBeenCalled();
+    });
+
+    it('handles getContato error response', async () => {
+        const mockError = new Error('Service unavailable');
+        getContato.mockRejectedValue(mockError);
+
+        const element = createElement('c-your-component', {
+            is: YourComponent
+        });
+        document.body.appendChild(element);
+
+        // Mocking the showToast and refreshPage methods
+        element.showToast = jest.fn();
+        element.refreshPage = jest.fn();
+
+        // Simulate method call
+        await element.getContato();
+
+        // Validate that the method updates the error and calls showToast
+        expect(element.error).toEqual(mockError);
+        expect(element.contacts).toBeUndefined();
+        expect(element.isLoading).toBe(false);
+        expect(element.showToast).toHaveBeenCalledWith(
+            'Servico de consulta de contatos indisponivel',
+            'error',
+            'Erro'
+        );
+        expect(element.refreshPage).not.toHaveBeenCalled();
+    });
+});
