@@ -1,0 +1,82 @@
+@isTest
+public class ProcessApontamentoTest {
+
+    @testSetup
+    static void setupTestData() {
+        // Create any required test data such as RecordType, existing Leads, etc.
+        RecordType rt = new RecordType(Name = 'Test Record Type', SObjectType = 'Lead');
+        insert rt;
+        
+        Lead lead = new Lead(
+            FirstName = 'Test',
+            LastName = 'Lead',
+            HU7_Cpf__c = '12345678901',
+            RecordTypeId = rt.Id
+        );
+        insert lead;
+    }
+
+    @isTest
+    static void testProcessApontamentoInsert() {
+        // Mock input data
+        FS1_ContactSocioResponse leadResponse = new FS1_ContactSocioResponse();
+        leadResponse.cpf = '09876543210';
+        leadResponse.nome = 'John Doe';
+        leadResponse.emails = new List<EmailType>{
+            new EmailType('johndoe@example.com')
+        };
+        leadResponse.telefones = new List<TelefoneType>{
+            new TelefoneType('55', '11', '912345678')
+        };
+        leadResponse.optOutTelefone = new OptOutTelefoneType(new OptOutTelefoneDataType('N'));
+
+        Id recordTypeId = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1].Id;
+        Id recordIdPage = '003000000000001';
+
+        Test.startTest();
+        // Call the method
+        MyClass.processApontamento(leadResponse, recordTypeId, recordIdPage);
+        Test.stopTest();
+
+        // Verify Lead was inserted
+        Lead newLead = [SELECT FirstName, LastName, Email, MobilePhone, Phone, HU7_Cpf__c 
+                        FROM Lead WHERE HU7_Cpf__c = '09876543210' LIMIT 1];
+
+        System.assertEquals('John', newLead.FirstName);
+        System.assertEquals('Doe', newLead.LastName);
+        System.assertEquals('johndoe@example.com', newLead.Email);
+        System.assertEquals('+5511912345678', newLead.MobilePhone);
+    }
+
+    @isTest
+    static void testProcessApontamentoUpdate() {
+        // Mock input data for an existing lead
+        FS1_ContactSocioResponse leadResponse = new FS1_ContactSocioResponse();
+        leadResponse.cpf = '12345678901'; // Existing CPF
+        leadResponse.nome = 'Jane Doe';
+        leadResponse.emails = new List<EmailType>{
+            new EmailType('janedoe@example.com')
+        };
+        leadResponse.telefones = new List<TelefoneType>{
+            new TelefoneType('55', '21', '998765432')
+        };
+        leadResponse.optOutTelefone = new OptOutTelefoneType(new OptOutTelefoneDataType('N'));
+
+        Id recordTypeId = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1].Id;
+        Id recordIdPage = '003000000000002';
+
+        Test.startTest();
+        // Call the method
+        MyClass.processApontamento(leadResponse, recordTypeId, recordIdPage);
+        Test.stopTest();
+
+        // Verify Lead was updated
+        Lead updatedLead = [SELECT FirstName, LastName, Email, MobilePhone, Phone, HU7_Cpf__c 
+                            FROM Lead WHERE HU7_Cpf__c = '12345678901' LIMIT 1];
+
+        System.assertEquals('Jane', updatedLead.FirstName);
+        System.assertEquals('Doe', updatedLead.LastName);
+        System.assertEquals('janedoe@example.com', updatedLead.Email);
+        System.assertEquals('+5521998765432', updatedLead.MobilePhone);
+    }
+}

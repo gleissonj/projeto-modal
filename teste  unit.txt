@@ -1,75 +1,106 @@
-import { createElement } from 'lwc';
-import YourComponent from 'c/yourComponent';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import getContato from '@salesforce/apex/YourApexClass.getContato';
-
-// Mock the imported Apex method
-jest.mock('@salesforce/apex/YourApexClass.getContato', () => ({
-    default: jest.fn()
-}));
-
-describe('c-your-component', () => {
-    afterEach(() => {
-        // Cleanup the DOM after each test
-        while (document.body.firstChild) {
-            document.body.removeChild(document.body.firstChild);
-        }
-        jest.clearAllMocks();
-    });
-
-    it('handles successful getContato response', async () => {
-        const mockResult = [{ Id: '003', Name: 'John Doe' }];
-        getContato.mockResolvedValue(mockResult);
-
-        const element = createElement('c-your-component', {
-            is: YourComponent
-        });
-        document.body.appendChild(element);
-
-        // Mocking the showToast and refreshPage methods
-        element.showToast = jest.fn();
-        element.refreshPage = jest.fn();
-
-        // Simulate method call
-        await element.getContato();
-
-        // Validate that the method updates contacts and calls showToast
-        expect(element.contacts).toEqual(mockResult);
-        expect(element.error).toBeUndefined();
-        expect(element.isLoading).toBe(false);
-        expect(element.showToast).toHaveBeenCalledWith(
-            'Dados Atualizados, aguarde a pagina atualizar',
-            'success',
-            'Sucesso'
+@isTest
+private class ProcessApontamentoTest {
+    
+    @testSetup
+    static void setupTestData() {
+        // Create test data here
+        // Example: inserting a record type
+        RecordType rt = new RecordType(
+            Name = 'Test Record Type',
+            SObjectType = Lead.SObjectType.getDescribe().getName()
         );
-        expect(element.refreshPage).toHaveBeenCalled();
-    });
-
-    it('handles getContato error response', async () => {
-        const mockError = new Error('Service unavailable');
-        getContato.mockRejectedValue(mockError);
-
-        const element = createElement('c-your-component', {
-            is: YourComponent
-        });
-        document.body.appendChild(element);
-
-        // Mocking the showToast and refreshPage methods
-        element.showToast = jest.fn();
-        element.refreshPage = jest.fn();
-
-        // Simulate method call
-        await element.getContato();
-
-        // Validate that the method updates the error and calls showToast
-        expect(element.error).toEqual(mockError);
-        expect(element.contacts).toBeUndefined();
-        expect(element.isLoading).toBe(false);
-        expect(element.showToast).toHaveBeenCalledWith(
-            'Servico de consulta de contatos indisponivel',
-            'error',
-            'Erro'
+        insert rt;
+        
+        // Example: inserting a Lead
+        Lead existingLead = new Lead(
+            FirstName = 'John',
+            LastName = 'Doe',
+            HU7_Cpf__c = '12345678901',
+            Email = 'john.doe@example.com',
+            RecordTypeId = rt.Id
         );
-        expect(element.refreshPage).not.toHaveBeenCalled();
-    });
-});
+        insert existingLead;
+    }
+    
+    @isTest
+    static void testProcessApontamentoInsertNewLead() {
+        // Arrange
+        RecordType rt = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1];
+        Id recordIdPage = 'someRecordId'; // Replace with actual ID if needed
+        FS1_ContactSocioResponse lead = new FS1_ContactSocioResponse();
+        lead.cpf = '98765432100';
+        lead.nome = 'Jane Doe';
+        lead.emails = new List<EmailWrapper>{
+            new EmailWrapper('jane.doe@example.com')
+        };
+        lead.telefones = new List<TelefoneWrapper>{
+            new TelefoneWrapper('55', '11', '987654321')
+        };
+        lead.optOutTelefone = new OptOutTelefoneWrapper(false);
+        
+        // Act
+        Test.startTest();
+        MyClass.processApontamento(lead, rt.Id, recordIdPage);
+        Test.stopTest();
+        
+        // Assert
+        Lead insertedLead = [SELECT Id, FirstName, LastName, HU7_Cpf__c FROM Lead WHERE HU7_Cpf__c = :lead.cpf];
+        System.assertNotEquals(null, insertedLead, 'New Lead should have been inserted');
+        System.assertEquals('Jane', insertedLead.FirstName);
+        System.assertEquals('Doe', insertedLead.LastName);
+    }
+    
+    @isTest
+    static void testProcessApontamentoUpdateExistingLead() {
+        // Arrange
+        Lead existingLead = [SELECT Id, FirstName, LastName, HU7_Cpf__c FROM Lead WHERE HU7_Cpf__c = '12345678901' LIMIT 1];
+        RecordType rt = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1];
+        Id recordIdPage = 'someRecordId'; // Replace with actual ID if needed
+        FS1_ContactSocioResponse lead = new FS1_ContactSocioResponse();
+        lead.cpf = '12345678901';
+        lead.nome = 'John Smith';
+        lead.emails = new List<EmailWrapper>{
+            new EmailWrapper('john.smith@example.com')
+        };
+        lead.telefones = new List<TelefoneWrapper>{
+            new TelefoneWrapper('55', '11', '987654321')
+        };
+        lead.optOutTelefone = new OptOutTelefoneWrapper(false);
+        
+        // Act
+        Test.startTest();
+        MyClass.processApontamento(lead, rt.Id, recordIdPage);
+        Test.stopTest();
+        
+        // Assert
+        Lead updatedLead = [SELECT Id, FirstName, LastName, HU7_Cpf__c FROM Lead WHERE Id = :existingLead.Id];
+        System.assertEquals('John', updatedLead.FirstName);
+        System.assertEquals('Smith', updatedLead.LastName);
+    }
+}
+
+// Helper classes for the test
+private class EmailWrapper {
+    public String valor_dado_cadastral;
+    public EmailWrapper(String email) {
+        this.valor_dado_cadastral = email;
+    }
+}
+
+private class TelefoneWrapper {
+    public String ddi;
+    public String ddd;
+    public String numero;
+    public TelefoneWrapper(String ddi, String ddd, String numero) {
+        this.ddi = ddi;
+        this.ddd = ddd;
+        this.numero = numero;
+    }
+}
+
+private class OptOutTelefoneWrapper {
+    public Boolean indicador_possui_telefone_bloqueado;
+    public OptOutTelefoneWrapper(Boolean isBlocked) {
+        this.indicador_possui_telefone_bloqueado = isBlocked;
+    }
+}

@@ -2,7 +2,7 @@
  * @description       : 
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             : 
- * @last modified on  : 08-21-2024
+ * @last modified on  : 08-27-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
 **/
 
@@ -139,6 +139,66 @@ public class ApontamentoTest {
         Assert.areEqual('Doe', result.get('lastName'), 'Ultimo nome deve ser Doe');
     }
 
+    @IsTest
+    static void testEmptyFullName() {
+        // Test when fullName is an empty string
+        Map<String, String> result = ContactController.splitName('');
+        
+        // Assertions
+        Assert.areEqual('', result.get('firstName'), 'First name should be empty');
+        Assert.areEqual('', result.get('lastName'), 'Last name should be empty');
+        // System.assertEquals('', result.get('firstName'), 'First name should be empty');
+        // System.assertEquals('', result.get('lastName'), 'Last name should be empty');
+    }
+
+    @IsTest
+    static void testSingleName() {
+        // Test when fullName contains only one name
+        Map<String, String> result = ContactController.splitName('John');
+        
+        // Assertions
+        Assert.areEqual('John', result.get('firstName'), 'First name should be John');
+        Assert.areEqual('', result.get('lastName'), 'Last name should be empty');
+    }
+
+    @IsTest
+    static void testFirstAndLastName() {
+        // Test when fullName contains first and last name
+        Map<String, String> result = ContactController.splitName('John Doe');
+        
+        // Assertions
+        Assert.areEqual('John', result.get('firstName'), 'First name should be John');
+        Assert.areEqual('Doe', result.get('lastName'), 'Last name should be Doe');
+    }
+
+    @IsTest
+    static void testMultipleLastNames() {
+        // Test when fullName contains first name and multiple last names
+        Map<String, String> result = ContactController.splitName('John Michael Doe');
+        
+        // Assertions
+        System.assertEquals('John', result.get('firstName'), 'First name should be John');
+        System.assertEquals('Michael Doe', result.get('lastName'), 'Last name should be Michael Doe');
+    }
+
+    @IsTest
+    static void testTrailingSpaces() {
+        // Test when fullName contains trailing spaces
+        Map<String, String> result = ContactController.splitName('  John Doe  ');
+        
+        // Assertions
+        System.assertEquals('John', result.get('firstName'), 'First name should be John');
+        System.assertEquals('Doe', result.get('lastName'), 'Last name should be Doe');
+    }
+
+    @IsTest
+    static void testValidCPF() {
+        // Test with a valid CPF
+        String cpf = '12345678909';
+        String result = YourClassName.formatCPF(cpf);
+        Assert.areEqual('123.456.789-09', result, 'The CPF should be formatted correctly');
+    }
+
     private class PostCalloutMock implements HttpCalloutMock {
         public HttpResponse respond(HttpRequest req) {
             // Creating a mock HTTP response
@@ -149,6 +209,50 @@ public class ApontamentoTest {
         }
     }
 
+    @IsTest
+    static void testCPFWithExtraCharacters() {
+        // Test with a CPF that has additional non-numeric characters
+        String cpf = 'abc123.456.789-09xyz';
+        String result = YourClassName.formatCPF(cpf);
+        Assert.areEqual('123.456.789-09', result, 'The CPF should be formatted correctly after removing all non-numeric characters');
+    }
+
+    @IsTest
+    static void testNewLeadCreation() {
+        // Prepare mock data
+        ContactResponse lead = new ContactResponse();
+        lead.cpf = '12345678909';
+        lead.nome = 'John Doe';
+        lead.emails = new List<EmailType>{ new EmailType('john.doe@example.com') };
+        lead.telefones = new List<TelefoneType>{
+            new TelefoneType('55', '11', '999999999'),
+            new TelefoneType('55', '11', '988888888')
+        };
+        lead.optOutTelefone = new OptOutTelefoneType('N');
+        
+        Id recordTypeId = Schema.SObjectType.Lead.getRecordTypeInfosByName().get('Record Type Name').getRecordTypeId();
+        Id recordIdPage = '003000000000001';
+
+        // Mock the repository methods
+        Test.startTest();
+        Test.setMock(LeadRepositoryMock.class, new LeadRepositoryMock(new List<Lead>()));
+        
+        // Call the method
+        testeRefatorado.processApontamento(lead, recordTypeId, recordIdPage);
+        
+        // Verify the behavior
+        Lead insertedLead = [SELECT FirstName, LastName, Email, MobilePhone, Phone, RecordTypeId, Prospect__c, HU7_Cpf__c 
+                             FROM Lead WHERE HU7_Cpf__c = :formatCPF(lead.cpf)];
+                             
+        System.assertEquals('John', insertedLead.FirstName);
+        System.assertEquals('Doe', insertedLead.LastName);
+        System.assertEquals('john.doe@example.com', insertedLead.Email);
+        System.assertEquals('+55 11 988888888', insertedLead.MobilePhone);
+        System.assertEquals(recordTypeId, insertedLead.RecordTypeId);
+        System.assertEquals(recordIdPage, insertedLead.Prospect__c);
+        System.assertEquals(formatCPF(lead.cpf), insertedLead.HU7_Cpf__c);
+        Test.stopTest();
+    }
 
     public static String getResponse(){
         String te = '['+

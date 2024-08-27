@@ -2,7 +2,7 @@
  * @description       :
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             :
- * @last modified on  : 08-21-2024
+ * @last modified on  : 08-27-2024
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class testeRefatorado {
@@ -35,17 +35,18 @@ public with sharing class testeRefatorado {
         return null; // Retorne null caso não precise retornar nada
     }
     
-    private static void processApontamento(FS1_ContactSocioResponse apontamento, Id recordTypeId) {
-        List<Lead> existingLeads = [SELECT Id FROM Lead WHERE Prospect__c = :recordIdPage AND HU7_Cpf__c = :apontamento.cpf LIMIT 1];
+    public static void processApontamento(FS1_ContactSocioResponse lead, Id recordTypeId, Id recordIdPage) {
+        List<Lead> existingLeads = repositoryLead.findLeadByLeadCPF(recordIdPage, lead.cpf);
+		Map<String, String>nameParts = splitName(lead.nome);
         
         if (existingLeads.isEmpty()) {
             Lead newLead = new Lead(
-                HU7_Cpf__c = apontamento.cpf,
-            Email = apontamento.emails.size() == 1 ? apontamento.emails[0].valor_dado_cadastral.email : '',
-            MobilePhone = apontamento.telefones.size() == 2 && (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? apontamento.telefones[1].valor_dado_cadastral.ddi + apontamento.telefones[1].valor_dado_cadastral.ddd + apontamento.telefones[1].valor_dado_cadastral.numero : '',
-            FirstName = apontamento.nome,
-            LastName = apontamento.nome,
-            Phone = apontamento.telefones.size() == 1 && (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null)  ? apontamento.telefones[0].valor_dado_cadastral.ddi + apontamento.telefones[0].valor_dado_cadastral.ddd + apontamento.telefones[0].valor_dado_cadastral.numero : '',
+                HU7_Cpf__c = format(lead.cpf),
+            Email = lead.emails.size() == 1 ? lead.emails[0].valor_dado_cadastral.email : '',
+            MobilePhone = lead.telefones.size() >1 && (lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == null) ? '+' + lead.telefones[1].valor_dado_cadastral.ddi + lead.telefones[1].valor_dado_cadastral.ddd + lead.telefones[1].valor_dado_cadastral.numero : '',
+            FirstName = nameParts.get('firstName'),
+            LastName = nameParts.get('lastName'),
+            Phone = lead.telefones.size() == 0 && (lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == null)  ? '+' + lead.telefones[0].valor_dado_cadastral.ddi + lead.telefones[0].valor_dado_cadastral.ddd + lead.telefones[0].valor_dado_cadastral.numero : '',
             RecordTypeId = recordTypeId,
             Prospect__c = recordIdPage
                 );
@@ -53,13 +54,13 @@ public with sharing class testeRefatorado {
             respositoryLead.insertLead(newLead);
         } else {
             Lead existingLead = existingLeads[0];
-            existingLead.FirstName = apontamento.nome;
-            existingLead.LastName = apontamento.nome;
-            existingLead.Phone = apontamento.telefones.size() == 1 && (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null)  ? apontamento.telefones[0].valor_dado_cadastral.ddi + apontamento.telefones[0].valor_dado_cadastral.ddd + apontamento.telefones[0].valor_dado_cadastral.numero : '';
-            existingLead.MobilePhone = apontamento.telefones.size() == 2 && (apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || apontamento.optOutTelefone.data.indicador_possui_telefone_bloqueado == null)  ? apontamento.telefones[0].valor_dado_cadastral.ddi + apontamento.telefones[0].valor_dado_cadastral.ddd + apontamento.telefones[0].valor_dado_cadastral.numero : '';
+            existingLead.FirstName = nameParts.get('firstName');
+            existingLead.LastName = nameParts.get('lastName');
+            existingLead.Phone = lead.telefones.size() > 0 && (lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == null)  ? '+' + lead.telefones[0].valor_dado_cadastral.ddi + lead.telefones[0].valor_dado_cadastral.ddd + lead.telefones[0].valor_dado_cadastral.numero : '';
+            existingLead.MobilePhone = lead.telefones.size() > 1 && (lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == 'N' || lead.optOutTelefone.data.indicador_possui_telefone_bloqueado == null)  ? '+' + lead.telefones[0].valor_dado_cadastral.ddi + lead.telefones[0].valor_dado_cadastral.ddd + lead.telefones[0].valor_dado_cadastral.numero : '';
             RecordTypeId = recordTypeId;
-            existingLead.Email = apontamento.emails.size() == 1 ? apontamento.emails[0].valor_dado_cadastral.email : '';
-            existingLead.HU7_Cpf__c = apontamento.cpf;
+            existingLead.Email = lead.emails.size() > 0 ? lead.emails[0].valor_dado_cadastral.email : '';
+            existingLead.HU7_Cpf__c = formatCPF(lead.cpf);
             
             repositoryLead.updateLead(existingLead);
         }
