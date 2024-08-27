@@ -1,106 +1,63 @@
 @isTest
-private class ProcessApontamentoTest {
-    
-    @testSetup
-    static void setupTestData() {
-        // Create test data here
-        // Example: inserting a record type
-        RecordType rt = new RecordType(
-            Name = 'Test Record Type',
-            SObjectType = Lead.SObjectType.getDescribe().getName()
-        );
-        insert rt;
-        
-        // Example: inserting a Lead
-        Lead existingLead = new Lead(
-            FirstName = 'John',
-            LastName = 'Doe',
-            HU7_Cpf__c = '12345678901',
-            Email = 'john.doe@example.com',
-            RecordTypeId = rt.Id
-        );
-        insert existingLead;
-    }
-    
+private class TestGetContato {
+
     @isTest
-    static void testProcessApontamentoInsertNewLead() {
-        // Arrange
-        RecordType rt = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1];
-        Id recordIdPage = 'someRecordId'; // Replace with actual ID if needed
-        FS1_ContactSocioResponse lead = new FS1_ContactSocioResponse();
-        lead.cpf = '98765432100';
-        lead.nome = 'Jane Doe';
-        lead.emails = new List<EmailWrapper>{
-            new EmailWrapper('jane.doe@example.com')
-        };
-        lead.telefones = new List<TelefoneWrapper>{
-            new TelefoneWrapper('55', '11', '987654321')
-        };
-        lead.optOutTelefone = new OptOutTelefoneWrapper(false);
-        
-        // Act
+    static void testGetContato() {
+        // Configura o mock para o repositório e o serviço
         Test.startTest();
-        MyClass.processApontamento(lead, rt.Id, recordIdPage);
+
+        // Cria um mock para o repositório
+        HU7_Group_Lead__c mockGroupLead = new HU7_Group_Lead__c(
+            FS1_Cnpj14__c = '12.345.678/0001-90' // Um CNPJ fictício
+        );
+        // Mock do método getProspect
+        Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(mockGroupLead));
+
+        // Cria um mock para a resposta do serviço
+        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
+        mockResponse.setStatusCode(200);
+        mockResponse.setBody(JSON.serialize(new List<FS1_ContactSocioResponse>{
+            new FS1_ContactSocioResponse(
+                // Preencha com dados fictícios conforme necessário
+            )
+        }));
+        Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(mockResponse));
+
+        // Chama o método a ser testado
+        List<ContactResponse> result = YourClass.GetContato(); // Substitua 'YourClass' pelo nome da sua classe
+
+        // Verifique se o resultado é como esperado
+        System.assertNotEquals(null, result, 'O resultado não deve ser null');
+        System.assertEquals(0, result.size(), 'A lista de resultados deve estar vazia'); // Ajuste conforme o comportamento esperado
+
         Test.stopTest();
-        
-        // Assert
-        Lead insertedLead = [SELECT Id, FirstName, LastName, HU7_Cpf__c FROM Lead WHERE HU7_Cpf__c = :lead.cpf];
-        System.assertNotEquals(null, insertedLead, 'New Lead should have been inserted');
-        System.assertEquals('Jane', insertedLead.FirstName);
-        System.assertEquals('Doe', insertedLead.LastName);
     }
     
-    @isTest
-    static void testProcessApontamentoUpdateExistingLead() {
-        // Arrange
-        Lead existingLead = [SELECT Id, FirstName, LastName, HU7_Cpf__c FROM Lead WHERE HU7_Cpf__c = '12345678901' LIMIT 1];
-        RecordType rt = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1];
-        Id recordIdPage = 'someRecordId'; // Replace with actual ID if needed
-        FS1_ContactSocioResponse lead = new FS1_ContactSocioResponse();
-        lead.cpf = '12345678901';
-        lead.nome = 'John Smith';
-        lead.emails = new List<EmailWrapper>{
-            new EmailWrapper('john.smith@example.com')
-        };
-        lead.telefones = new List<TelefoneWrapper>{
-            new TelefoneWrapper('55', '11', '987654321')
-        };
-        lead.optOutTelefone = new OptOutTelefoneWrapper(false);
+    // Mock para HttpCallout
+    private class MockHttpResponseGenerator implements HttpCalloutMock {
+        private HU7_Group_Lead__c groupLead;
+        private FS1_OutboundResponse response;
         
-        // Act
-        Test.startTest();
-        MyClass.processApontamento(lead, rt.Id, recordIdPage);
-        Test.stopTest();
+        MockHttpResponseGenerator(HU7_Group_Lead__c groupLead) {
+            this.groupLead = groupLead;
+        }
         
-        // Assert
-        Lead updatedLead = [SELECT Id, FirstName, LastName, HU7_Cpf__c FROM Lead WHERE Id = :existingLead.Id];
-        System.assertEquals('John', updatedLead.FirstName);
-        System.assertEquals('Smith', updatedLead.LastName);
-    }
-}
-
-// Helper classes for the test
-private class EmailWrapper {
-    public String valor_dado_cadastral;
-    public EmailWrapper(String email) {
-        this.valor_dado_cadastral = email;
-    }
-}
-
-private class TelefoneWrapper {
-    public String ddi;
-    public String ddd;
-    public String numero;
-    public TelefoneWrapper(String ddi, String ddd, String numero) {
-        this.ddi = ddi;
-        this.ddd = ddd;
-        this.numero = numero;
-    }
-}
-
-private class OptOutTelefoneWrapper {
-    public Boolean indicador_possui_telefone_bloqueado;
-    public OptOutTelefoneWrapper(Boolean isBlocked) {
-        this.indicador_possui_telefone_bloqueado = isBlocked;
+        MockHttpResponseGenerator(FS1_OutboundResponse response) {
+            this.response = response;
+        }
+        
+        public HTTPResponse respond(HTTPRequest req) {
+            HttpResponse res = new HttpResponse();
+            if (groupLead != null) {
+                res.setHeader('Content-Type', 'application/json');
+                res.setBody(JSON.serialize(groupLead));
+                res.setStatusCode(200);
+            } else if (response != null) {
+                res.setHeader('Content-Type', 'application/json');
+                res.setBody(response.toString());
+                res.setStatusCode(response.getStatusCode());
+            }
+            return res;
+        }
     }
 }
