@@ -1,63 +1,67 @@
-@isTest
-private class TestGetContato {
+using Amazon.S3;
+using Amazon.S3.Model;
+using Moq;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
-    @isTest
-    static void testGetContato() {
-        // Configura o mock para o repositório e o serviço
-        Test.startTest();
+public class S3ServiceTests
+{
+    [Fact]
+    public async Task CompleteMultipartUploadAsync_ShouldReturnExpectedResult()
+    {
+        // Arrange
+        var mockS3Client = new Mock<IAmazonS3>();
 
-        // Cria um mock para o repositório
-        HU7_Group_Lead__c mockGroupLead = new HU7_Group_Lead__c(
-            FS1_Cnpj14__c = '12.345.678/0001-90' // Um CNPJ fictício
-        );
-        // Mock do método getProspect
-        Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(mockGroupLead));
+        var expectedResponse = new CompleteMultipartUploadResponse
+        {
+            HttpStatusCode = System.Net.HttpStatusCode.OK,
+            BucketName = "my-test-bucket",
+            Key = "my-test-file",
+            Location = "https://my-test-bucket.s3.amazonaws.com/my-test-file"
+        };
 
-        // Cria um mock para a resposta do serviço
-        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
-        mockResponse.setStatusCode(200);
-        mockResponse.setBody(JSON.serialize(new List<FS1_ContactSocioResponse>{
-            new FS1_ContactSocioResponse(
-                // Preencha com dados fictícios conforme necessário
-            )
-        }));
-        Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(mockResponse));
+        mockS3Client
+            .Setup(client => client.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
 
-        // Chama o método a ser testado
-        List<ContactResponse> result = YourClass.GetContato(); // Substitua 'YourClass' pelo nome da sua classe
+        var s3Service = new S3Service(mockS3Client.Object);
 
-        // Verifique se o resultado é como esperado
-        System.assertNotEquals(null, result, 'O resultado não deve ser null');
-        System.assertEquals(0, result.size(), 'A lista de resultados deve estar vazia'); // Ajuste conforme o comportamento esperado
-
-        Test.stopTest();
-    }
-    
-    // Mock para HttpCallout
-    private class MockHttpResponseGenerator implements HttpCalloutMock {
-        private HU7_Group_Lead__c groupLead;
-        private FS1_OutboundResponse response;
-        
-        MockHttpResponseGenerator(HU7_Group_Lead__c groupLead) {
-            this.groupLead = groupLead;
-        }
-        
-        MockHttpResponseGenerator(FS1_OutboundResponse response) {
-            this.response = response;
-        }
-        
-        public HTTPResponse respond(HTTPRequest req) {
-            HttpResponse res = new HttpResponse();
-            if (groupLead != null) {
-                res.setHeader('Content-Type', 'application/json');
-                res.setBody(JSON.serialize(groupLead));
-                res.setStatusCode(200);
-            } else if (response != null) {
-                res.setHeader('Content-Type', 'application/json');
-                res.setBody(response.toString());
-                res.setStatusCode(response.getStatusCode());
+        var request = new CompleteMultipartUploadRequest
+        {
+            BucketName = "my-test-bucket",
+            Key = "my-test-file",
+            UploadId = "my-upload-id",
+            MultipartUpload = new MultipartUpload
+            {
+                Parts = new List<PartETag>
+                {
+                    new PartETag(1, "etag-1"),
+                    new PartETag(2, "etag-2")
+                }
             }
-            return res;
-        }
+        };
+
+        // Act
+        var result = await s3Service.CompleteUploadAsync(request);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("https://my-test-bucket.s3.amazonaws.com/my-test-file", result.Location);
+    }
+}
+
+public class S3Service
+{
+    private readonly IAmazonS3 _s3Client;
+
+    public S3Service(IAmazonS3 s3Client)
+    {
+        _s3Client = s3Client;
+    }
+
+    public async Task<CompleteMultipartUploadResponse> CompleteUploadAsync(CompleteMultipartUploadRequest request)
+    {
+        return await _s3Client.CompleteMultipartUploadAsync(request);
     }
 }
