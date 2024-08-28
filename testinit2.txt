@@ -1,74 +1,83 @@
-import { createElement } from 'lwc';
-import YourComponent from 'c/yourComponent';
-import { ShowToastEventName } from 'lightning/platformShowToastEvent';
+@isTest
+private class FS1_ProposalTrackingControllerTest {
 
-// Mock dependencies
-jest.mock('lightning/platformShowToastEvent');
+    @isTest
+    static void testGetContato_Success() {
+        // Arrange
+        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
+        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
 
-describe('c-your-component', () => {
-    let element;
+        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
+        mockResponse.setStatusCode(200);
+        mockResponse.setResponseBody('[{"someField": "someValue"}]');
+        Test.setMock(Service.class, new ServiceMock(mockResponse));
+        
+        // Act
+        List<ContactResponse> result = FS1_ProposalTrackingController.GetContato();
+        
+        // Assert
+        System.assertNotEquals(null, result, 'Expected non-null result');
+        System.assertEquals(1, result.size(), 'Expected one contact in the result');
+    }
 
-    beforeEach(() => {
-        element = createElement('c-your-component', {
-            is: YourComponent
-        });
-        document.body.appendChild(element);
-    });
+    @isTest
+    static void testGetContato_NoContacts() {
+        // Arrange
+        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
+        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
 
-    afterEach(() => {
-        while (document.body.firstChild) {
-            document.body.removeChild(document.body.firstChild);
+        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
+        mockResponse.setStatusCode(200);
+        mockResponse.setResponseBody('[]'); // Empty list response
+        Test.setMock(Service.class, new ServiceMock(mockResponse));
+        
+        // Act
+        List<ContactResponse> result = FS1_ProposalTrackingController.GetContato();
+        
+        // Assert
+        System.assertEquals(null, result, 'Expected null result');
+    }
+
+    @isTest
+    static void testGetContato_ServiceFailure() {
+        // Arrange
+        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
+        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
+
+        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
+        mockResponse.setStatusCode(500); // Simulate service failure
+        Test.setMock(Service.class, new ServiceMock(mockResponse));
+        
+        // Act
+        Test.startTest();
+        try {
+            FS1_ProposalTrackingController.GetContato();
+            System.assert(false, 'Expected AuraHandledException to be thrown');
+        } catch (AuraHandledException ex) {
+            System.assertEquals('exceptionText', ex.getMessage(), 'Expected specific exception message');
         }
-    });
+        Test.stopTest();
+    }
 
-    it('should process the contact response successfully', async () => {
-        // Mock getProspect to return a valid response
-        const mockProspect = {
-            FS1_Cnpj14__c: '12.345.678/0001-99'
-        };
-        repositorGroupLead.getProspect = jest.fn().mockResolvedValue(mockProspect);
+    @isTest
+    static void testGetContato_JSONException() {
+        // Arrange
+        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
+        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
 
-        // Mock getContactSocio to return a valid response
-        const mockContactSocioResponse = {
-            getResponse: jest.fn().mockReturnValue({
-                getStatusCode: jest.fn().mockReturnValue(200)
-            }),
-            toString: jest.fn().mockReturnValue(JSON.stringify([{
-                firstName: 'John',
-                lastName: 'Doe',
-                cpf: '12345678901'
-            }]))
-        };
-        service.getContactSocio = jest.fn().mockResolvedValue(mockContactSocioResponse);
-
-        // Call the method to test
-        const result = await element.GetContato();
-
-        // Validate the result and interactions
-        expect(result).not.toBeNull();
-        expect(service.getContactSocio).toHaveBeenCalledWith('12345678000199');
-        // Additional assertions as per your logic
-    });
-
-    it('should handle JSON deserialization failure', async () => {
-        // Mock getProspect to return a valid response
-        const mockProspect = {
-            FS1_Cnpj14__c: '12.345.678/0001-99'
-        };
-        repositorGroupLead.getProspect = jest.fn().mockResolvedValue(mockProspect);
-
-        // Mock getContactSocio to return a malformed JSON string
-        const mockContactSocioResponse = {
-            getResponse: jest.fn().mockReturnValue({
-                getStatusCode: jest.fn().mockReturnValue(200)
-            }),
-            toString: jest.fn().mockReturnValue('Invalid JSON')
-        };
-        service.getContactSocio = jest.fn().mockResolvedValue(mockContactSocioResponse);
-
-        await expect(element.GetContato()).rejects.toThrow('JSONException');
-        // Additional assertions for logging or other side effects
-    });
-
-    // Add more test cases as needed
-});
+        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
+        mockResponse.setStatusCode(200);
+        mockResponse.setResponseBody('Invalid JSON'); // Simulate invalid JSON response
+        Test.setMock(Service.class, new ServiceMock(mockResponse));
+        
+        // Act
+        Test.startTest();
+        try {
+            FS1_ProposalTrackingController.GetContato();
+            System.assert(false, 'Expected AuraHandledException to be thrown');
+        } catch (AuraHandledException ex) {
+            System.assertEquals('exceptionText', ex.getMessage(), 'Expected specific exception message');
+        }
+        Test.stopTest();
+    }
+}
