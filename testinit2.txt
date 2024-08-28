@@ -1,82 +1,74 @@
-@isTest
-public class ProcessApontamentoTest {
+import { createElement } from 'lwc';
+import YourComponent from 'c/yourComponent';
+import { ShowToastEventName } from 'lightning/platformShowToastEvent';
 
-    @testSetup
-    static void setupTestData() {
-        // Create any required test data such as RecordType, existing Leads, etc.
-        RecordType rt = new RecordType(Name = 'Test Record Type', SObjectType = 'Lead');
-        insert rt;
-        
-        Lead lead = new Lead(
-            FirstName = 'Test',
-            LastName = 'Lead',
-            HU7_Cpf__c = '12345678901',
-            RecordTypeId = rt.Id
-        );
-        insert lead;
-    }
+// Mock dependencies
+jest.mock('lightning/platformShowToastEvent');
 
-    @isTest
-    static void testProcessApontamentoInsert() {
-        // Mock input data
-        FS1_ContactSocioResponse leadResponse = new FS1_ContactSocioResponse();
-        leadResponse.cpf = '09876543210';
-        leadResponse.nome = 'John Doe';
-        leadResponse.emails = new List<EmailType>{
-            new EmailType('johndoe@example.com')
+describe('c-your-component', () => {
+    let element;
+
+    beforeEach(() => {
+        element = createElement('c-your-component', {
+            is: YourComponent
+        });
+        document.body.appendChild(element);
+    });
+
+    afterEach(() => {
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+    });
+
+    it('should process the contact response successfully', async () => {
+        // Mock getProspect to return a valid response
+        const mockProspect = {
+            FS1_Cnpj14__c: '12.345.678/0001-99'
         };
-        leadResponse.telefones = new List<TelefoneType>{
-            new TelefoneType('55', '11', '912345678')
+        repositorGroupLead.getProspect = jest.fn().mockResolvedValue(mockProspect);
+
+        // Mock getContactSocio to return a valid response
+        const mockContactSocioResponse = {
+            getResponse: jest.fn().mockReturnValue({
+                getStatusCode: jest.fn().mockReturnValue(200)
+            }),
+            toString: jest.fn().mockReturnValue(JSON.stringify([{
+                firstName: 'John',
+                lastName: 'Doe',
+                cpf: '12345678901'
+            }]))
         };
-        leadResponse.optOutTelefone = new OptOutTelefoneType(new OptOutTelefoneDataType('N'));
+        service.getContactSocio = jest.fn().mockResolvedValue(mockContactSocioResponse);
 
-        Id recordTypeId = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1].Id;
-        Id recordIdPage = '003000000000001';
+        // Call the method to test
+        const result = await element.GetContato();
 
-        Test.startTest();
-        // Call the method
-        MyClass.processApontamento(leadResponse, recordTypeId, recordIdPage);
-        Test.stopTest();
+        // Validate the result and interactions
+        expect(result).not.toBeNull();
+        expect(service.getContactSocio).toHaveBeenCalledWith('12345678000199');
+        // Additional assertions as per your logic
+    });
 
-        // Verify Lead was inserted
-        Lead newLead = [SELECT FirstName, LastName, Email, MobilePhone, Phone, HU7_Cpf__c 
-                        FROM Lead WHERE HU7_Cpf__c = '09876543210' LIMIT 1];
-
-        System.assertEquals('John', newLead.FirstName);
-        System.assertEquals('Doe', newLead.LastName);
-        System.assertEquals('johndoe@example.com', newLead.Email);
-        System.assertEquals('+5511912345678', newLead.MobilePhone);
-    }
-
-    @isTest
-    static void testProcessApontamentoUpdate() {
-        // Mock input data for an existing lead
-        FS1_ContactSocioResponse leadResponse = new FS1_ContactSocioResponse();
-        leadResponse.cpf = '12345678901'; // Existing CPF
-        leadResponse.nome = 'Jane Doe';
-        leadResponse.emails = new List<EmailType>{
-            new EmailType('janedoe@example.com')
+    it('should handle JSON deserialization failure', async () => {
+        // Mock getProspect to return a valid response
+        const mockProspect = {
+            FS1_Cnpj14__c: '12.345.678/0001-99'
         };
-        leadResponse.telefones = new List<TelefoneType>{
-            new TelefoneType('55', '21', '998765432')
+        repositorGroupLead.getProspect = jest.fn().mockResolvedValue(mockProspect);
+
+        // Mock getContactSocio to return a malformed JSON string
+        const mockContactSocioResponse = {
+            getResponse: jest.fn().mockReturnValue({
+                getStatusCode: jest.fn().mockReturnValue(200)
+            }),
+            toString: jest.fn().mockReturnValue('Invalid JSON')
         };
-        leadResponse.optOutTelefone = new OptOutTelefoneType(new OptOutTelefoneDataType('N'));
+        service.getContactSocio = jest.fn().mockResolvedValue(mockContactSocioResponse);
 
-        Id recordTypeId = [SELECT Id FROM RecordType WHERE Name = 'Test Record Type' LIMIT 1].Id;
-        Id recordIdPage = '003000000000002';
+        await expect(element.GetContato()).rejects.toThrow('JSONException');
+        // Additional assertions for logging or other side effects
+    });
 
-        Test.startTest();
-        // Call the method
-        MyClass.processApontamento(leadResponse, recordTypeId, recordIdPage);
-        Test.stopTest();
-
-        // Verify Lead was updated
-        Lead updatedLead = [SELECT FirstName, LastName, Email, MobilePhone, Phone, HU7_Cpf__c 
-                            FROM Lead WHERE HU7_Cpf__c = '12345678901' LIMIT 1];
-
-        System.assertEquals('Jane', updatedLead.FirstName);
-        System.assertEquals('Doe', updatedLead.LastName);
-        System.assertEquals('janedoe@example.com', updatedLead.Email);
-        System.assertEquals('+5521998765432', updatedLead.MobilePhone);
-    }
-}
+    // Add more test cases as needed
+});

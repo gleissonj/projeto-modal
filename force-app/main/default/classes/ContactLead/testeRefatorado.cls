@@ -9,30 +9,57 @@ public with sharing class testeRefatorado {
     @AuraEnabled(cacheable=false)
     public static List<ContactResponse> GetContato() {
         // Recupera o prospect associado ao recordIdPage
-        HU7_Group_Lead__c cnpj = repositorGroupLead.getProspect(recordIdPage);
+        try{
+            HU7_Group_Lead__c cnpj = repositorGroupLead.getProspect(recordIdPage);
         
-        // Converte o CNPJ para uma string numérica
-        String cnpjConvertido = cnpj.FS1_Cnpj14__c.replaceAll('[^0-9]', '');
-        
-        // Realiza a chamada ao serviço para obter os contatos associados
-        FS1_OutboundResponse response = service.getContactSocio(cnpjConvertido);
-        
-        // Verifica se a resposta do serviço foi bem-sucedida e se contém dados
-        if (response.getResponse().getStatusCode() == 200 && String.isNotBlank(response.toString())) {
-            List<FS1_ContactSocioResponse> apontamentos = (List<FS1_ContactSocioResponse>) JSON.deserialize(response.toString(), List<FS1_ContactSocioResponse>.class);
+            // Converte o CNPJ para uma string numérica
+            String cnpjConvertido = cnpj.FS1_Cnpj14__c.replaceAll('[^0-9]', '');
             
-            if (!apontamentos.isEmpty()) {
-                RecordType recordTypeFunction = [SELECT Id FROM RecordType WHERE DeveloperName = 'ProspectLead' LIMIT 1];
+            // Realiza a chamada ao serviço para obter os contatos associados
+            FS1_OutboundResponse response = service.getContactSocio(cnpjConvertido);
+            
+            // Verifica se a resposta do serviço foi bem-sucedida e se contém dados
+            if (response.getResponse().getStatusCode() == 200 && String.isNotBlank(response.toString())) {
+                List<FS1_ContactSocioResponse> apontamentos = (List<FS1_ContactSocioResponse>) JSON.deserialize(response.toString(), List<FS1_ContactSocioResponse>.class);
                 
-                for (FS1_ContactSocioResponse apontamento : apontamentos) {
-                    processApontamento(apontamento, recordTypeFunction.Id);
+                if (!apontamentos.isEmpty()) {
+                    Id recordTypeFunction = FS1_LeadRecordType.prospectId();
+                    
+                    for (FS1_ContactSocioResponse apontamento : apontamentos) {
+                        processApontamento(apontamento, recordTypeFunctionId, recordIdPage);
+                    }
                 }
+            } else {
+                return new List<ContactResponse>();
             }
-        } else {
-            return new List<ContactResponse>();
+            
+            return null; // Retorne null caso não precise retornar nada
         }
-        
-        return null; // Retorne null caso não precise retornar nada
+        catch(JSONException ex){
+            Log log = new Log();
+            log.setSigla('FS1');
+            log.setClass('FS1_ProposalTrackingController');
+            log.setMethod('GetContato');
+            log.addAttributes('Server', response.toString());
+            log.warn('Outbound tracking request');
+            throw new AuraHandledException('exceptionText');
+        } catch (AuraHandledException ex){
+            throw ex;
+        } catch (Exception ex){
+            Log log = new Log();
+            log.setSigla('FS1');
+            log.setClass('FS1_ProposalTrackingController');
+            log.setMethod('GetContato');
+            log.addAttributes('Server', response.toString());
+            log.error('Outbound tracking request');
+            throw new AuraHandledException(ex.getMessage() + '\n' + ex.getStackTraceString());
+        }
+    }
+    
+    private static void processApontamento(FS1_ContactSocioResponse apontamento, Id recordTypeId, Id recordIdPage) {
+        if (apontamento.codigo_sap != '') {
+        }
+        }
     }
     
     public static void processApontamento(FS1_ContactSocioResponse lead, Id recordTypeId, Id recordIdPage) {

@@ -1,67 +1,77 @@
-using Amazon.S3;
-using Amazon.S3.Model;
+using Amazon.StepFunctions;
+using Amazon.StepFunctions.Model;
 using Moq;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
+using System.Threading.Tasks;
 
-public class S3ServiceTests
+public class StepFunctionServiceTests
 {
     [Fact]
-    public async Task CompleteMultipartUploadAsync_ShouldReturnExpectedResult()
+    public async Task ExecutarStepFunction_ShouldReturnSuccessMessage_WhenExecutionIsStarted()
     {
         // Arrange
-        var mockS3Client = new Mock<IAmazonS3>();
+        var arn = "arn:aws:states:us-west-2:123456789012:stateMachine:myStateMachine";
+        var mockClient = new Mock<AmazonStepFunctionsClient>(MockBehavior.Strict);
+        var mockResponse = new StartExecutionResponse();
 
-        var expectedResponse = new CompleteMultipartUploadResponse
-        {
-            HttpStatusCode = System.Net.HttpStatusCode.OK,
-            BucketName = "my-test-bucket",
-            Key = "my-test-file",
-            Location = "https://my-test-bucket.s3.amazonaws.com/my-test-file"
-        };
+        mockClient.Setup(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), default))
+                  .ReturnsAsync(mockResponse);
 
-        mockS3Client
-            .Setup(client => client.CompleteMultipartUploadAsync(It.IsAny<CompleteMultipartUploadRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedResponse);
-
-        var s3Service = new S3Service(mockS3Client.Object);
-
-        var request = new CompleteMultipartUploadRequest
-        {
-            BucketName = "my-test-bucket",
-            Key = "my-test-file",
-            UploadId = "my-upload-id",
-            MultipartUpload = new MultipartUpload
-            {
-                Parts = new List<PartETag>
-                {
-                    new PartETag(1, "etag-1"),
-                    new PartETag(2, "etag-2")
-                }
-            }
-        };
+        var service = new StepFunctionService(mockClient.Object);
 
         // Act
-        var result = await s3Service.CompleteUploadAsync(request);
+        var result = await service.ExecutarStepFunction(arn);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("https://my-test-bucket.s3.amazonaws.com/my-test-file", result.Location);
+        Assert.Equal($"O serviço {arn} iniciou.", result.Status);
+        mockClient.Verify(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecutarStepFunction_ShouldThrowException_WhenExecutionFails()
+    {
+        // Arrange
+        var arn = "arn:aws:states:us-west-2:123456789012:stateMachine:myStateMachine";
+        var mockClient = new Mock<AmazonStepFunctionsClient>(MockBehavior.Strict);
+
+        mockClient.Setup(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), default))
+                  .ThrowsAsync(new Exception("Execution failed"));
+
+        var service = new StepFunctionService(mockClient.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() => service.ExecutarStepFunction(arn));
+        Assert.Equal("Execution failed", exception.Message);
     }
 }
 
-public class S3Service
+// You may need to modify the constructor of StepFunctionService to accept an IAmazonStepFunctions parameter
+public class StepFunctionService
 {
-    private readonly IAmazonS3 _s3Client;
+    private readonly IAmazonStepFunctions _client;
 
-    public S3Service(IAmazonS3 s3Client)
+    public StepFunctionService(IAmazonStepFunctions client)
     {
-        _s3Client = s3Client;
+        _client = client;
     }
 
-    public async Task<CompleteMultipartUploadResponse> CompleteUploadAsync(CompleteMultipartUploadRequest request)
+    public async Task<DomainResponse> ExecutarStepFunction(string arn)
     {
-        return await _s3Client.CompleteMultipartUploadAsync(request);
+        try
+        {
+            var startExecutionRequest = new StartExecutionRequest
+            {
+                StateMachineArn = arn
+            };
+
+            var startExecutionResponse = await _client.StartExecutionAsync(startExecutionRequest);
+            
+            return new DomainResponse(new { Status = $"O serviço {arn} iniciou." });
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
     }
 }
