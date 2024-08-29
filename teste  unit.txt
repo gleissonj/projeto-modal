@@ -1,77 +1,49 @@
-using Amazon.StepFunctions;
-using Amazon.StepFunctions.Model;
+using System;
+using System.Threading.Tasks;
+using Amazon.Glue;
+using Amazon.Glue.Model;
 using Moq;
 using Xunit;
-using System.Threading.Tasks;
 
-public class StepFunctionServiceTests
+public class GlueJobServiceTests
 {
+    private readonly Mock<IAmazonGlue> _glueClientMock;
+    private readonly GlueJobService _glueJobService;
+
+    public GlueJobServiceTests()
+    {
+        _glueClientMock = new Mock<IAmazonGlue>();
+        _glueJobService = new GlueJobService(_glueClientMock.Object);
+    }
+
     [Fact]
-    public async Task ExecutarStepFunction_ShouldReturnSuccessMessage_WhenExecutionIsStarted()
+    public async Task ExecutarJob_ReturnsDomainResponse_WithSuccessStatus()
     {
         // Arrange
-        var arn = "arn:aws:states:us-west-2:123456789012:stateMachine:myStateMachine";
-        var mockClient = new Mock<AmazonStepFunctionsClient>(MockBehavior.Strict);
-        var mockResponse = new StartExecutionResponse();
-
-        mockClient.Setup(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), default))
-                  .ReturnsAsync(mockResponse);
-
-        var service = new StepFunctionService(mockClient.Object);
+        var jobName = "TestJob";
+        var startJobRunResponse = new StartJobRunResponse();
+        _glueClientMock.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
+                       .ReturnsAsync(startJobRunResponse);
 
         // Act
-        var result = await service.ExecutarStepFunction(arn);
+        var result = await _glueJobService.ExecutarJob(jobName);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal($"O serviço {arn} iniciou.", result.Status);
-        mockClient.Verify(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), default), Times.Once);
+        Assert.Equal("O Servico iniciou", result.Status);
+        _glueClientMock.Verify(x => x.StartJobRunAsync(It.Is<StartJobRunRequest>(r => r.JobName == jobName), default), Times.Once);
     }
 
     [Fact]
-    public async Task ExecutarStepFunction_ShouldThrowException_WhenExecutionFails()
+    public async Task ExecutarJob_InvalidJobName_ThrowsException()
     {
         // Arrange
-        var arn = "arn:aws:states:us-west-2:123456789012:stateMachine:myStateMachine";
-        var mockClient = new Mock<AmazonStepFunctionsClient>(MockBehavior.Strict);
-
-        mockClient.Setup(client => client.StartExecutionAsync(It.IsAny<StartExecutionRequest>(), default))
-                  .ThrowsAsync(new Exception("Execution failed"));
-
-        var service = new StepFunctionService(mockClient.Object);
+        var jobName = "InvalidJob";
+        _glueClientMock.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
+                       .ThrowsAsync(new Exception("Job not found"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() => service.ExecutarStepFunction(arn));
-        Assert.Equal("Execution failed", exception.Message);
-    }
-}
-
-// You may need to modify the constructor of StepFunctionService to accept an IAmazonStepFunctions parameter
-public class StepFunctionService
-{
-    private readonly IAmazonStepFunctions _client;
-
-    public StepFunctionService(IAmazonStepFunctions client)
-    {
-        _client = client;
-    }
-
-    public async Task<DomainResponse> ExecutarStepFunction(string arn)
-    {
-        try
-        {
-            var startExecutionRequest = new StartExecutionRequest
-            {
-                StateMachineArn = arn
-            };
-
-            var startExecutionResponse = await _client.StartExecutionAsync(startExecutionRequest);
-            
-            return new DomainResponse(new { Status = $"O serviço {arn} iniciou." });
-        }
-        catch (Exception ex)
-        {
-            throw new Exception(ex.Message);
-        }
+        var exception = await Assert.ThrowsAsync<Exception>(() => _glueJobService.ExecutarJob(jobName));
+        Assert.Equal("o nome do job esta incorreto", exception.Message);
     }
 }
