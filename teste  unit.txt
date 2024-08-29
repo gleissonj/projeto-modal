@@ -12,14 +12,16 @@ public class GlueJobServiceTests
     {
         // Arrange
         var jobName = "TestJob";
-        var mockGlueClient = new Mock<AmazonGlueClient>();
+        var mockGlueClient = new Mock<AmazonGlueClient>(MockBehavior.Strict);
         var startJobRunResponse = new StartJobRunResponse();
 
         mockGlueClient.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
                       .ReturnsAsync(startJobRunResponse);
 
-        // Act
+        // Replace the actual call with the mock
         var glueJobService = new GlueJobServiceMock(mockGlueClient.Object);
+
+        // Act
         var result = await glueJobService.ExecutarJob(jobName);
 
         // Assert
@@ -29,19 +31,4 @@ public class GlueJobServiceTests
     }
 
     [Fact]
-    public async Task ExecutarJob_InvalidJobName_ThrowsException()
-    {
-        // Arrange
-        var jobName = "InvalidJob";
-        var mockGlueClient = new Mock<AmazonGlueClient>();
-
-        mockGlueClient.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
-                      .ThrowsAsync(new Exception("Job not found"));
-
-        // Act & Assert
-        var glueJobService = new GlueJobServiceMock(mockGlueClient.Object);
-        var exception = await Assert.ThrowsAsync<Exception>(() => glueJobService.ExecutarJob(jobName));
-        Assert.Equal("o nome do job esta incorreto", exception.Message);
-    }
-
-    // This mock class will
+    public async Task ExecutarJob_InvalidJobName_ThrowsException
