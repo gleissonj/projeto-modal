@@ -7,31 +7,25 @@ using Xunit;
 
 public class GlueJobServiceTests
 {
-    private readonly Mock<IAmazonGlue> _glueClientMock;
-    private readonly GlueJobService _glueJobService;
-
-    public GlueJobServiceTests()
-    {
-        _glueClientMock = new Mock<IAmazonGlue>();
-        _glueJobService = new GlueJobService(_glueClientMock.Object);
-    }
-
     [Fact]
     public async Task ExecutarJob_ReturnsDomainResponse_WithSuccessStatus()
     {
         // Arrange
         var jobName = "TestJob";
+        var mockGlueClient = new Mock<AmazonGlueClient>();
         var startJobRunResponse = new StartJobRunResponse();
-        _glueClientMock.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
-                       .ReturnsAsync(startJobRunResponse);
+
+        mockGlueClient.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
+                      .ReturnsAsync(startJobRunResponse);
 
         // Act
-        var result = await _glueJobService.ExecutarJob(jobName);
+        var glueJobService = new GlueJobServiceMock(mockGlueClient.Object);
+        var result = await glueJobService.ExecutarJob(jobName);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("O Servico iniciou", result.Status);
-        _glueClientMock.Verify(x => x.StartJobRunAsync(It.Is<StartJobRunRequest>(r => r.JobName == jobName), default), Times.Once);
+        mockGlueClient.Verify(x => x.StartJobRunAsync(It.Is<StartJobRunRequest>(r => r.JobName == jobName), default), Times.Once);
     }
 
     [Fact]
@@ -39,11 +33,15 @@ public class GlueJobServiceTests
     {
         // Arrange
         var jobName = "InvalidJob";
-        _glueClientMock.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
-                       .ThrowsAsync(new Exception("Job not found"));
+        var mockGlueClient = new Mock<AmazonGlueClient>();
+
+        mockGlueClient.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
+                      .ThrowsAsync(new Exception("Job not found"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() => _glueJobService.ExecutarJob(jobName));
+        var glueJobService = new GlueJobServiceMock(mockGlueClient.Object);
+        var exception = await Assert.ThrowsAsync<Exception>(() => glueJobService.ExecutarJob(jobName));
         Assert.Equal("o nome do job esta incorreto", exception.Message);
     }
-}
+
+    // This mock class will
