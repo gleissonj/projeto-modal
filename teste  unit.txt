@@ -1,34 +1,55 @@
-using System;
-using System.Threading.Tasks;
-using Amazon.Glue;
-using Amazon.Glue.Model;
 using Moq;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-public class GlueJobServiceTests
+public class ProspectServiceTests
 {
-    [Fact]
-    public async Task ExecutarJob_ReturnsDomainResponse_WithSuccessStatus()
+    private readonly Mock<IBucketService> _bucketMock;
+    private readonly Mock<IMapper> _mapperMock;
+    private readonly ProspectService _prospectService;
+
+    public ProspectServiceTests()
     {
-        // Arrange
-        var jobName = "TestJob";
-        var mockGlueClient = new Mock<AmazonGlueClient>(MockBehavior.Strict);
-        var startJobRunResponse = new StartJobRunResponse();
-
-        mockGlueClient.Setup(x => x.StartJobRunAsync(It.IsAny<StartJobRunRequest>(), default))
-                      .ReturnsAsync(startJobRunResponse);
-
-        // Replace the actual call with the mock
-        var glueJobService = new GlueJobServiceMock(mockGlueClient.Object);
-
-        // Act
-        var result = await glueJobService.ExecutarJob(jobName);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("O Servico iniciou", result.Status);
-        mockGlueClient.Verify(x => x.StartJobRunAsync(It.Is<StartJobRunRequest>(r => r.JobName == jobName), default), Times.Once);
+        _bucketMock = new Mock<IBucketService>();
+        _mapperMock = new Mock<IMapper>();
+        _prospectService = new ProspectService(_bucketMock.Object, _mapperMock.Object);
     }
 
     [Fact]
-    public async Task ExecutarJob_InvalidJobName_ThrowsException
+    public async Task GetProspectBaseCompleta_ShouldReturnMappedProspectList()
+    {
+        // Arrange
+        string cnpj = "12345678000199";
+        string prefix = "some-prefix";
+        var prospectBaseCompletaList = new List<ProspectBaseCompleta>
+        {
+            new ProspectBaseCompleta { Cnpj = cnpj, Name = "Prospect 1" },
+            new ProspectBaseCompleta { Cnpj = cnpj, Name = "Prospect 2" }
+        };
+        var prospectViewModelList = new List<ProspectBaseCompletaViewModel>
+        {
+            new ProspectBaseCompletaViewModel { Name = "Prospect 1" },
+            new ProspectBaseCompletaViewModel { Name = "Prospect 2" }
+        };
+
+        _bucketMock.Setup(b => b.GetLastSubFolder(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns(prefix);
+
+        _bucketMock.Setup(b => b.GetGeneric<ProspectBaseCompleta>(It.IsAny<string>(), prefix))
+                   .ReturnsAsync(prospectBaseCompletaList);
+
+        _mapperMock.Setup(m => m.Map<ProspectBaseCompletaViewModel>(It.IsAny<ProspectBaseCompleta>()))
+                   .Returns((ProspectBaseCompleta source) => 
+                       prospectViewModelList.FirstOrDefault(vm => vm.Name == source.Name));
+
+        // Act
+        var result = await _prospectService.GetProspectBaseCompleta(cnpj);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(prospectViewModelList.Count, result.Count);
+        Assert.Equal(prospectViewModelList[0].Name, result[0].Name);
+    }
+}
