@@ -1,20 +1,21 @@
+import { of } from 'rxjs'; // Simula o retorno de um Observable
 import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { SeuComponente } from './seu-componente.component'; // Substitua pelo caminho real
+import { SeuComponente } from './seu-componente.component'; // Substitua pelo caminho correto
+import { MultipartUploadService } from './multipart-upload.service'; // Substitua pelo caminho correto
 
 describe('SeuComponente', () => {
   let component: SeuComponente;
-  let snackBarMock: any;
+  let multipartUploadServiceMock: any;
 
   beforeEach(() => {
-    snackBarMock = {
-      open: jasmine.createSpy('open') // Mock do MatSnackBar
+    multipartUploadServiceMock = {
+      startStepFunction: jest.fn().mockReturnValue(of(true)) // Mock do método retornando um Observable
     };
 
     TestBed.configureTestingModule({
       declarations: [SeuComponente],
       providers: [
-        { provide: MatSnackBar, useValue: snackBarMock }
+        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
       ]
     }).compileComponents();
 
@@ -22,25 +23,17 @@ describe('SeuComponente', () => {
     component = fixture.componentInstance;
   });
 
-  it('deve exibir a mensagem com o tipo correto', () => {
-    const message = 'Teste de mensagem';
-    const type = 'error';
+  it('deve chamar startStepFunction para cada item na lista', () => {
+    const listStepFunction = ['step1', 'step2', 'step3'];
 
-    component.showMessage(message, type);
+    component.startMultiplesStepFunction(listStepFunction);
 
-    // Verifica se o MatSnackBar.open foi chamado com os parâmetros corretos
-    expect(snackBarMock.open).toHaveBeenCalledWith(
-      message,
-      'Ok',
-      {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'bottom',
-        panelClass: ['error-snackbar'],
-      }
-    );
+    // Verificar se startStepFunction foi chamado o número correto de vezes
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledTimes(listStepFunction.length);
 
-    // Verifica se o loading foi setado para false
-    expect(component.loading).toBeFalse();
+    // Verificar se startStepFunction foi chamado com os parâmetros corretos
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step1');
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step2');
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step3');
   });
 });
