@@ -1,55 +1,36 @@
-using Moq;
-using Xunit;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { SeuComponente } from './seu-componente.component'; // Substitua pelo caminho real
+import { MultipartUploadService } from './multipart-upload.service'; // Substitua pelo caminho real
 
-public class ProspectServiceTests
-{
-    private readonly Mock<IBucketService> _bucketMock;
-    private readonly Mock<IMapper> _mapperMock;
-    private readonly ProspectService _prospectService;
+describe('SeuComponente', () => {
+  let component: SeuComponente;
+  let multipartUploadServiceMock: any;
 
-    public ProspectServiceTests()
-    {
-        _bucketMock = new Mock<IBucketService>();
-        _mapperMock = new Mock<IMapper>();
-        _prospectService = new ProspectService(_bucketMock.Object, _mapperMock.Object);
-    }
+  beforeEach(() => {
+    multipartUploadServiceMock = {
+      startStepFunction: jasmine.createSpy('startStepFunction').and.returnValue(of(true)) // Simula o retorno do Observable
+    };
 
-    [Fact]
-    public async Task GetProspectBaseCompleta_ShouldReturnMappedProspectList()
-    {
-        // Arrange
-        string cnpj = "12345678000199";
-        string prefix = "some-prefix";
-        var prospectBaseCompletaList = new List<ProspectBaseCompleta>
-        {
-            new ProspectBaseCompleta { Cnpj = cnpj, Name = "Prospect 1" },
-            new ProspectBaseCompleta { Cnpj = cnpj, Name = "Prospect 2" }
-        };
-        var prospectViewModelList = new List<ProspectBaseCompletaViewModel>
-        {
-            new ProspectBaseCompletaViewModel { Name = "Prospect 1" },
-            new ProspectBaseCompletaViewModel { Name = "Prospect 2" }
-        };
+    TestBed.configureTestingModule({
+      declarations: [SeuComponente],
+      providers: [
+        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+      ]
+    }).compileComponents();
 
-        _bucketMock.Setup(b => b.GetLastSubFolder(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns(prefix);
+    const fixture = TestBed.createComponent(SeuComponente);
+    component = fixture.componentInstance;
+  });
 
-        _bucketMock.Setup(b => b.GetGeneric<ProspectBaseCompleta>(It.IsAny<string>(), prefix))
-                   .ReturnsAsync(prospectBaseCompletaList);
+  it('deve chamar startStepFunction para cada item da lista', () => {
+    const listStepFunction = ['step1', 'step2', 'step3'];
 
-        _mapperMock.Setup(m => m.Map<ProspectBaseCompletaViewModel>(It.IsAny<ProspectBaseCompleta>()))
-                   .Returns((ProspectBaseCompleta source) => 
-                       prospectViewModelList.FirstOrDefault(vm => vm.Name == source.Name));
+    component.startMultiplesStepFunction(listStepFunction);
 
-        // Act
-        var result = await _prospectService.GetProspectBaseCompleta(cnpj);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(prospectViewModelList.Count, result.Count);
-        Assert.Equal(prospectViewModelList[0].Name, result[0].Name);
-    }
-}
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledTimes(listStepFunction.length);
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step1');
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step2');
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step3');
+  });
+});
