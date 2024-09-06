@@ -1,21 +1,20 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { SeuComponente } from './seu-componente.component'; // Substitua pelo caminho real
-import { MultipartUploadService } from './multipart-upload.service'; // Substitua pelo caminho real
 
 describe('SeuComponente', () => {
   let component: SeuComponente;
-  let multipartUploadServiceMock: any;
+  let snackBarMock: any;
 
   beforeEach(() => {
-    multipartUploadServiceMock = {
-      startStepFunction: jasmine.createSpy('startStepFunction').and.returnValue(of(true)) // Simula o retorno do Observable
+    snackBarMock = {
+      open: jasmine.createSpy('open') // Mock do MatSnackBar
     };
 
     TestBed.configureTestingModule({
       declarations: [SeuComponente],
       providers: [
-        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+        { provide: MatSnackBar, useValue: snackBarMock }
       ]
     }).compileComponents();
 
@@ -23,14 +22,25 @@ describe('SeuComponente', () => {
     component = fixture.componentInstance;
   });
 
-  it('deve chamar startStepFunction para cada item da lista', () => {
-    const listStepFunction = ['step1', 'step2', 'step3'];
+  it('deve exibir a mensagem com o tipo correto', () => {
+    const message = 'Teste de mensagem';
+    const type = 'error';
 
-    component.startMultiplesStepFunction(listStepFunction);
+    component.showMessage(message, type);
 
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledTimes(listStepFunction.length);
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step1');
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step2');
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step3');
+    // Verifica se o MatSnackBar.open foi chamado com os parâmetros corretos
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      message,
+      'Ok',
+      {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'bottom',
+        panelClass: ['error-snackbar'],
+      }
+    );
+
+    // Verifica se o loading foi setado para false
+    expect(component.loading).toBeFalse();
   });
 });
