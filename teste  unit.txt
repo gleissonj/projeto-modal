@@ -1,66 +1,49 @@
 import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar'; // Importa o MatSnackBar
 import { SeuComponente } from './seu-componente.component'; // Substitua pelo caminho correto
 
 describe('SeuComponente', () => {
   let component: SeuComponente;
-  let snackBarMock: any;
 
   beforeEach(() => {
-    snackBarMock = {
-      open: jest.fn() // Mocka o método 'open' do MatSnackBar
-    };
-
     TestBed.configureTestingModule({
       declarations: [SeuComponente],
-      providers: [
-        { provide: MatSnackBar, useValue: snackBarMock }
-      ]
     }).compileComponents();
 
     const fixture = TestBed.createComponent(SeuComponente);
     component = fixture.componentInstance;
   });
 
-  it('deve abrir o snackbar com a mensagem e o tipo correto', () => {
-    const message = 'Mensagem de teste';
-    const type = 'error';
+  it('deve retornar true quando todos os arquivos correspondem', () => {
+    // Define os dados simulados
+    component.valuesNameFile = ['arquivo1', 'arquivo2'];
+    component.selectedFiles = [
+      { name: 'arquivo1.pdf' },
+      { name: 'arquivo2.doc' },
+    ];
 
     // Chama o método a ser testado
-    component.showMessage(message, type);
+    const result = component.validaNameArquivo();
 
-    // Verifica se o snackBar.open foi chamado com os parâmetros corretos
-    expect(snackBarMock.open).toHaveBeenCalledWith(
-      message, 
-      'Ok', 
-      {
-        duration: 3000,
-        horizontalPoisition: 'end', // Verifica a posição horizontal
-        verticalPosition: 'bottom', // Verifica a posição vertical
-        panelClass: ['error-snackbar'] // Verifica a classe de estilo
-      }
-    );
-
-    // Verifica se o 'loading' foi setado para false
-    expect(component.loading).toBe(false);
+    // Verifica se o resultado é true
+    expect(result).toBe(true);
   });
 
-  it('deve abrir o snackbar com o tipo info', () => {
-    const message = 'Mensagem de informação';
-    const type = 'info';
+  it('deve retornar false quando um arquivo não é encontrado', () => {
+    // Define os dados simulados
+    component.valuesNameFile = ['arquivo1', 'arquivo3'];
+    component.selectedFiles = [
+      { name: 'arquivo1.pdf' },
+      { name: 'arquivo2.doc' },
+    ];
 
-    component.showMessage(message, type);
+    // Chama o método a ser testado
+    const result = component.validaNameArquivo();
 
-    // Verifica se o snackBar.open foi chamado com a classe de info
-    expect(snackBarMock.open).toHaveBeenCalledWith(
-      message,
-      'Ok',
-      {
-        duration: 3000,
-        horizontalPoisition: 'end',
-        verticalPosition: 'bottom',
-        panelClass: ['info-snackbar'] // Verifica a classe de estilo 'info'
-      }
-    );
+    // Verifica se o resultado é false
+    expect(result).toBe(false);
+
+    // Verifica se o valor não encontrado foi atribuído corretamente
+    expect(component.valueNotFind).toBe('arquivo3');
   });
 });
+``
