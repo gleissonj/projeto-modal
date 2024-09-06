@@ -1,21 +1,20 @@
-import { of } from 'rxjs'; // Simula o retorno de um Observable
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar'; // Importa o MatSnackBar
 import { SeuComponente } from './seu-componente.component'; // Substitua pelo caminho correto
-import { MultipartUploadService } from './multipart-upload.service'; // Substitua pelo caminho correto
 
 describe('SeuComponente', () => {
   let component: SeuComponente;
-  let multipartUploadServiceMock: any;
+  let snackBarMock: any;
 
   beforeEach(() => {
-    multipartUploadServiceMock = {
-      startStepFunction: jest.fn().mockReturnValue(of(true)) // Mock do método retornando um Observable
+    snackBarMock = {
+      open: jest.fn() // Mocka o método 'open' do MatSnackBar
     };
 
     TestBed.configureTestingModule({
       declarations: [SeuComponente],
       providers: [
-        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+        { provide: MatSnackBar, useValue: snackBarMock }
       ]
     }).compileComponents();
 
@@ -23,17 +22,45 @@ describe('SeuComponente', () => {
     component = fixture.componentInstance;
   });
 
-  it('deve chamar startStepFunction para cada item na lista', () => {
-    const listStepFunction = ['step1', 'step2', 'step3'];
+  it('deve abrir o snackbar com a mensagem e o tipo correto', () => {
+    const message = 'Mensagem de teste';
+    const type = 'error';
 
-    component.startMultiplesStepFunction(listStepFunction);
+    // Chama o método a ser testado
+    component.showMessage(message, type);
 
-    // Verificar se startStepFunction foi chamado o número correto de vezes
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledTimes(listStepFunction.length);
+    // Verifica se o snackBar.open foi chamado com os parâmetros corretos
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      message, 
+      'Ok', 
+      {
+        duration: 3000,
+        horizontalPoisition: 'end', // Verifica a posição horizontal
+        verticalPosition: 'bottom', // Verifica a posição vertical
+        panelClass: ['error-snackbar'] // Verifica a classe de estilo
+      }
+    );
 
-    // Verificar se startStepFunction foi chamado com os parâmetros corretos
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step1');
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step2');
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('step3');
+    // Verifica se o 'loading' foi setado para false
+    expect(component.loading).toBe(false);
+  });
+
+  it('deve abrir o snackbar com o tipo info', () => {
+    const message = 'Mensagem de informação';
+    const type = 'info';
+
+    component.showMessage(message, type);
+
+    // Verifica se o snackBar.open foi chamado com a classe de info
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      message,
+      'Ok',
+      {
+        duration: 3000,
+        horizontalPoisition: 'end',
+        verticalPosition: 'bottom',
+        panelClass: ['info-snackbar'] // Verifica a classe de estilo 'info'
+      }
+    );
   });
 });
