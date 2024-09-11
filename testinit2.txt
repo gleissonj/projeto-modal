@@ -1,83 +1,68 @@
-@isTest
-private class FS1_ProposalTrackingControllerTest {
+describe('convertFileToBase64', () => {
+  let component: YourComponent;
 
-    @isTest
-    static void testGetContato_Success() {
-        // Arrange
-        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
-        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
+  beforeEach(() => {
+    component = new YourComponent();
+  });
 
-        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
-        mockResponse.setStatusCode(200);
-        mockResponse.setResponseBody('[{"someField": "someValue"}]');
-        Test.setMock(Service.class, new ServiceMock(mockResponse));
-        
-        // Act
-        List<ContactResponse> result = FS1_ProposalTrackingController.GetContato();
-        
-        // Assert
-        System.assertNotEquals(null, result, 'Expected non-null result');
-        System.assertEquals(1, result.size(), 'Expected one contact in the result');
-    }
+  it('should resolve with Base64 string when file is read successfully', async () => {
+    const mockFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
+    const base64String = 'data:text/plain;base64,dGVzdCBjb250ZW50'; // Example Base64 for 'test content'
 
-    @isTest
-    static void testGetContato_NoContacts() {
-        // Arrange
-        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
-        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
+    // Mock FileReader behavior
+    const fileReaderMock = {
+      readAsDataURL: jest.fn(),
+      onload: null as unknown as () => void,
+      onerror: null as unknown as () => void,
+      result: base64String
+    };
 
-        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
-        mockResponse.setStatusCode(200);
-        mockResponse.setResponseBody('[]'); // Empty list response
-        Test.setMock(Service.class, new ServiceMock(mockResponse));
-        
-        // Act
-        List<ContactResponse> result = FS1_ProposalTrackingController.GetContato();
-        
-        // Assert
-        System.assertEquals(null, result, 'Expected null result');
-    }
+    // Spy on the FileReader constructor and return the mock object
+    const fileReaderSpy = jest.spyOn(window as any, 'FileReader').mockImplementation(() => fileReaderMock);
 
-    @isTest
-    static void testGetContato_ServiceFailure() {
-        // Arrange
-        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
-        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
+    // Invoke the method
+    const promise = component.convertFileToBase64(mockFile);
 
-        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
-        mockResponse.setStatusCode(500); // Simulate service failure
-        Test.setMock(Service.class, new ServiceMock(mockResponse));
-        
-        // Act
-        Test.startTest();
-        try {
-            FS1_ProposalTrackingController.GetContato();
-            System.assert(false, 'Expected AuraHandledException to be thrown');
-        } catch (AuraHandledException ex) {
-            System.assertEquals('exceptionText', ex.getMessage(), 'Expected specific exception message');
-        }
-        Test.stopTest();
-    }
+    // Simulate the successful read
+    fileReaderMock.onload!();
 
-    @isTest
-    static void testGetContato_JSONException() {
-        // Arrange
-        HU7_Group_Lead__c mockProspect = new HU7_Group_Lead__c(FS1_Cnpj14__c = '12.345.678/0001-95');
-        Test.setMock(RepositorGroupLead.class, new RepositorGroupLeadMock(mockProspect));
+    // Wait for the promise to resolve
+    await expect(promise).resolves.toBe(base64String);
 
-        FS1_OutboundResponse mockResponse = new FS1_OutboundResponse();
-        mockResponse.setStatusCode(200);
-        mockResponse.setResponseBody('Invalid JSON'); // Simulate invalid JSON response
-        Test.setMock(Service.class, new ServiceMock(mockResponse));
-        
-        // Act
-        Test.startTest();
-        try {
-            FS1_ProposalTrackingController.GetContato();
-            System.assert(false, 'Expected AuraHandledException to be thrown');
-        } catch (AuraHandledException ex) {
-            System.assertEquals('exceptionText', ex.getMessage(), 'Expected specific exception message');
-        }
-        Test.stopTest();
-    }
-}
+    // Ensure readAsDataURL was called with the correct file
+    expect(fileReaderMock.readAsDataURL).toHaveBeenCalledWith(mockFile);
+
+    // Restore the original FileReader implementation
+    fileReaderSpy.mockRestore();
+  });
+
+  it('should reject when file reading fails', async () => {
+    const mockFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
+    const error = new Error('File reading failed');
+
+    // Mock FileReader behavior
+    const fileReaderMock = {
+      readAsDataURL: jest.fn(),
+      onload: null as unknown as () => void,
+      onerror: null as unknown as () => void
+    };
+
+    // Spy on the FileReader constructor and return the mock object
+    const fileReaderSpy = jest.spyOn(window as any, 'FileReader').mockImplementation(() => fileReaderMock);
+
+    // Invoke the method
+    const promise = component.convertFileToBase64(mockFile);
+
+    // Simulate a read error
+    fileReaderMock.onerror!(error);
+
+    // Wait for the promise to reject
+    await expect(promise).rejects.toBe(error);
+
+    // Ensure readAsDataURL was called with the correct file
+    expect(fileReaderMock.readAsDataURL).toHaveBeenCalledWith(mockFile);
+
+    // Restore the original FileReader implementation
+    fileReaderSpy.mockRestore();
+  });
+});
