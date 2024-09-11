@@ -1,56 +1,65 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
-import { YourComponent } from './your.component'; // Substitua pelo nome real do seu componente
-import { MultipartUploadService } from './multipart-upload.service'; // Substitua pelo serviço correto
+import { of } from 'rxjs';
+import { MyComponent } from './my-component.component';
+import { MultipartUploadService } from './multipart-upload.service';
 
-describe('YourComponent', () => {
-  let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
-  let multipartUploadServiceMock: any;
+describe('MyComponent', () => {
+  let component: MyComponent;
+  let fixture: ComponentFixture<MyComponent>;
+  let mockMultipartUploadService: any;
 
   beforeEach(() => {
-    // Mock do serviço
-    multipartUploadServiceMock = {
-      updateCronEventBridge: jest.fn()
+    mockMultipartUploadService = {
+      getJson: jest.fn()
     };
 
-    // Configuração do TestBed
     TestBed.configureTestingModule({
-      declarations: [YourComponent],
+      declarations: [MyComponent],
       providers: [
-        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
       ]
     });
 
-    fixture = TestBed.createComponent(YourComponent);
+    fixture = TestBed.createComponent(MyComponent);
     component = fixture.componentInstance;
   });
 
-  it('deve exibir mensagem de erro se nameRule e cronName estiverem vazios', () => {
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
+  it('should download the JSON file', () => {
+    // Mock the JSON data
+    const mockData = { key: 'value' };
+    mockMultipartUploadService.getJson.mockReturnValue(of(mockData));
 
-    component.executadorAlteracaoCron({ value: '' }, { value: '' });
+    // Spy on document.createElement and element interactions
+    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
+      setAttribute: jest.fn(),
+      click: jest.fn(),
+      style: { display: '' },
+      remove: jest.fn()
+    } as any);
 
-    expect(showMessageSpy).toHaveBeenCalledWith('voce precisa preencher o valor do campo', 'error');
+    const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation();
+    const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation();
+
+    // Call the method
+    component.baixarJson();
+
+    // Expect that getJson was called
+    expect(mockMultipartUploadService.getJson).toHaveBeenCalled();
+
+    // Expect createElement to have been called with 'a'
+    expect(createElementSpy).toHaveBeenCalledWith('a');
+
+    // Verify attributes on the created element
+    const createdElement = createElementSpy.mock.results[0].value;
+    expect(createdElement.setAttribute).toHaveBeenCalledWith(
+      'href',
+      'data:text/json;charset=UTF-8,' + encodeURIComponent(JSON.stringify(mockData))
+    );
+    expect(createdElement.setAttribute).toHaveBeenCalledWith('download', 'exemplo.json');
+
+    // Ensure appendChild, click, and removeChild were called
+    expect(appendChildSpy).toHaveBeenCalledWith(createdElement);
+    expect(createdElement.click).toHaveBeenCalled();
+    expect(removeChildSpy).toHaveBeenCalledWith(createdElement);
   });
-
-  it('deve chamar o serviço updateCronEventBridge se nameRule e cronName não estiverem vazios', () => {
-    multipartUploadServiceMock.updateCronEventBridge.mockReturnValue(of({ data: { status: 'success' } }));
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
-
-    component.executadorAlteracaoCron({ value: 'validRule' }, { value: 'validCron' });
-
-    expect(multipartUploadServiceMock.updateCronEventBridge).toHaveBeenCalledWith('validRule', 'validCron');
-    setTimeout(() => {
-      expect(showMessageSpy).toHaveBeenCalledWith('success', 'error');
-    }, 7000); // Teste para o setTimeout
-  });
-
-  it('deve exibir mensagem de erro quando o serviço falha', () => {
-    const errorMessage = 'Erro ao atualizar o cron';
-    multipartUploadServiceMock.updateCronEventBridge.mockReturnValue(throwError({ error: { message: errorMessage } }));
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
-
-    component.executadorAlteracaoCron({ value: 'validRule' }, { value: 'validCron' });
-
-    expect(showMessage
+});
