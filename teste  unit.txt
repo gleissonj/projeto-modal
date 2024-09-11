@@ -1,36 +1,36 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyComponent } from './my-component.component'; // Adjust the import path
-import { AuthService } from './auth.service'; // Adjust the import path
+import { MsalService } from '@azure/msal-angular'; // Adjust the import path
 
 describe('MyComponent', () => {
   let component: MyComponent;
   let fixture: ComponentFixture<MyComponent>;
-  let authService: AuthService;
+  let msalService: MsalService;
 
   beforeEach(() => {
-    // Mock the AuthService
-    const authServiceMock = {
+    // Create a mock MsalService
+    const msalServiceMock = {
       logoutRedirect: jest.fn()
     };
 
     TestBed.configureTestingModule({
       declarations: [MyComponent],
       providers: [
-        { provide: AuthService, useValue: authServiceMock },
+        { provide: MsalService, useValue: msalServiceMock },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MyComponent);
     component = fixture.componentInstance;
-    authService = TestBed.inject(AuthService);
+    msalService = TestBed.inject(MsalService);
 
     fixture.detectChanges();
   });
 
   it('should call logoutRedirect with the correct parameters', () => {
     // Arrange
-    const logoutRedirectSpy = jest.spyOn(authService, 'logoutRedirect');
-    const expectedRedirectUri = 'http://localhost:4200';
+    const logoutRedirectSpy = jest.spyOn(msalService, 'logoutRedirect');
+    const expectedRedirectUri = 'http://localhost:4200'; // Fix the typo
 
     // Act
     component.logout();
