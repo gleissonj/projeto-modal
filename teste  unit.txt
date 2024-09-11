@@ -1,54 +1,56 @@
-import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { YourComponent } from './your-component';
-import { of } from 'rxjs'; // For mocking observables if needed
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
+import { YourComponent } from './your.component'; // Substitua pelo nome real do seu componente
+import { MultipartUploadService } from './multipart-upload.service'; // Substitua pelo serviço correto
 
 describe('YourComponent', () => {
   let component: YourComponent;
-  let snackBar: MatSnackBar;
+  let fixture: ComponentFixture<YourComponent>;
+  let multipartUploadServiceMock: any;
 
   beforeEach(() => {
-    const snackBarMock = {
-      open: jest.fn()
+    // Mock do serviço
+    multipartUploadServiceMock = {
+      startStepFunction: jest.fn()
     };
 
+    // Configuração do TestBed
     TestBed.configureTestingModule({
       declarations: [YourComponent],
-      providers: [{ provide: MatSnackBar, useValue: snackBarMock }],
-    }).compileComponents();
+      providers: [
+        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+      ]
+    });
 
-    const fixture = TestBed.createComponent(YourComponent);
+    fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
-    snackBar = TestBed.inject(MatSnackBar);
   });
 
-  it('should set loading to false and call snackBar.open with correct arguments for info type', () => {
-    const message = 'Info message';
-    const type = 'info';
-
-    component.showMessage(message, type);
-
-    expect(component.loading).toBe(false);
-    expect(snackBar.open).toHaveBeenCalledWith(message, 'Ok', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'bottom',
-      panelClass: ['info-snackbar'],
-    });
+  it('deve exibir mensagem de erro se nameArn estiver vazio', () => {
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
+    component.executadorStepFunction({ value: '' });
+    expect(showMessageSpy).toHaveBeenCalledWith('voce precisa preencher o valor do campo', 'error');
   });
 
-  it('should set loading to false and call snackBar.open with correct arguments for error type', () => {
-    const message = 'Error message';
-    const type = 'error';
+  it('deve chamar o serviço startStepFunction se nameArn não estiver vazio', () => {
+    multipartUploadServiceMock.startStepFunction.mockReturnValue(of({ data: { status: 'success' } }));
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    component.showMessage(message, type);
+    component.executadorStepFunction({ value: 'validArn' });
+    
+    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('validArn');
+    setTimeout(() => {
+      expect(showMessageSpy).toHaveBeenCalledWith('success', 'error');
+    }, 7000); // Testa o setTimeout
+  });
 
-    expect(component.loading).toBe(false);
-    expect(snackBar.open).toHaveBeenCalledWith(message, 'Ok', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'bottom',
-      panelClass: ['error-snackbar'],
-    });
+  it('deve exibir mensagem de erro quando o serviço falha', () => {
+    const errorMessage = 'Erro ao iniciar a função';
+    multipartUploadServiceMock.startStepFunction.mockReturnValue(throwError({ error: { message: errorMessage } }));
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
+
+    component.executadorStepFunction({ value: 'validArn' });
+    
+    expect(showMessageSpy).toHaveBeenCalledWith(errorMessage, 'error');
   });
 });
