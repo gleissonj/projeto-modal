@@ -1,65 +1,91 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
-import { MyComponent } from './my-component.component';
-import { MultipartUploadService } from './multipart-upload.service';
+import { TestBed } from '@angular/core/testing';
+import { MyComponent } from './my-component.component'; // Adjust the import path
 
 describe('MyComponent', () => {
   let component: MyComponent;
-  let fixture: ComponentFixture<MyComponent>;
-  let mockMultipartUploadService: any;
+  let fixture: any;
 
   beforeEach(() => {
-    mockMultipartUploadService = {
-      getJson: jest.fn()
-    };
-
     TestBed.configureTestingModule({
-      declarations: [MyComponent],
-      providers: [
-        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
-      ]
-    });
+      declarations: [MyComponent]
+    }).compileComponents();
 
     fixture = TestBed.createComponent(MyComponent);
     component = fixture.componentInstance;
+    component.selectedFiles = []; // Initialize selectedFiles array
   });
 
-  it('should download the JSON file', () => {
-    // Mock the JSON data
-    const mockData = { key: 'value' };
-    mockMultipartUploadService.getJson.mockReturnValue(of(mockData));
+  it('should handle file selection correctly', () => {
+    // Arrange: Create a mock file list
+    const mockFile1 = new File([''], 'test1.txt', { type: 'text/plain' });
+    const mockFile2 = new File([''], 'test2.txt', { type: 'text/plain' });
+    
+    const mockEvent = {
+      target: {
+        files: {
+          0: mockFile1,
+          1: mockFile2,
+          length: 2
+        }
+      }
+    };
 
-    // Spy on document.createElement and element interactions
-    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
-      setAttribute: jest.fn(),
-      click: jest.fn(),
-      style: { display: '' },
-      remove: jest.fn()
-    } as any);
+    // Act: Call the escolherArquivo method with the mock event
+    component.escolherArquivo(mockEvent);
 
-    const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockImplementation();
-    const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockImplementation();
+    // Assert: Verify that the selected files are added to the array
+    expect(component.selectedFiles.length).toBe(2);
+    expect(component.selectedFiles[0]).toBe(mockFile1);
+    expect(component.selectedFiles[1]).toBe(mockFile2);
 
-    // Call the method
-    component.baixarJson();
+    // Assert: Check if the file property is correctly set
+    expect(component.file).toBe(mockFile1);
 
-    // Expect that getJson was called
-    expect(mockMultipartUploadService.getJson).toHaveBeenCalled();
+    // Assert: Check if the hash is set correctly based on the first file name
+    expect(component.hash).toBe('test1.txt');
+  });
 
-    // Expect createElement to have been called with 'a'
-    expect(createElementSpy).toHaveBeenCalledWith('a');
+  it('should update hash only if the file name is different from the current hash', () => {
+    // Arrange: Initialize the hash with a different value
+    component.hash = 'oldHash.txt';
 
-    // Verify attributes on the created element
-    const createdElement = createElementSpy.mock.results[0].value;
-    expect(createdElement.setAttribute).toHaveBeenCalledWith(
-      'href',
-      'data:text/json;charset=UTF-8,' + encodeURIComponent(JSON.stringify(mockData))
-    );
-    expect(createdElement.setAttribute).toHaveBeenCalledWith('download', 'exemplo.json');
+    const mockFile = new File([''], 'newHash.txt', { type: 'text/plain' });
 
-    // Ensure appendChild, click, and removeChild were called
-    expect(appendChildSpy).toHaveBeenCalledWith(createdElement);
-    expect(createdElement.click).toHaveBeenCalled();
-    expect(removeChildSpy).toHaveBeenCalledWith(createdElement);
+    const mockEvent = {
+      target: {
+        files: {
+          0: mockFile,
+          length: 1
+        }
+      }
+    };
+
+    // Act: Call the escolherArquivo method with the mock event
+    component.escolherArquivo(mockEvent);
+
+    // Assert: Verify that the hash is updated
+    expect(component.hash).toBe('newHash.txt');
+  });
+
+  it('should not update hash if the file name is the same as the current hash', () => {
+    // Arrange: Initialize the hash with the same value as the file name
+    component.hash = 'sameHash.txt';
+
+    const mockFile = new File([''], 'sameHash.txt', { type: 'text/plain' });
+
+    const mockEvent = {
+      target: {
+        files: {
+          0: mockFile,
+          length: 1
+        }
+      }
+    };
+
+    // Act: Call the escolherArquivo method with the mock event
+    component.escolherArquivo(mockEvent);
+
+    // Assert: Verify that the hash is not updated
+    expect(component.hash).toBe('sameHash.txt');
   });
 });
