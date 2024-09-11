@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component.component'; // Adjust the import path
+import { MyComponent } from './my-component.component'; // Adjust the path
+import { environment } from 'src/environments/environment'; // Adjust the path
 
 describe('MyComponent', () => {
   let component: MyComponent;
@@ -15,85 +16,50 @@ describe('MyComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should add files to selectedFiles and update hash using spyOn', () => {
+  it('should call startMultiplesStepFunction with stepFunctionProspectBacen and stepFunctionProspectBase if selectedTeam is "base"', () => {
     // Arrange
-    const mockFile1 = new File(['file content'], 'file1.txt', { type: 'text/plain' });
-    const mockFile2 = new File(['file content'], 'file2.txt', { type: 'text/plain' });
-    const mockEvent = {
-      target: {
-        files: [mockFile1, mockFile2]
-      }
-    };
-
-    // Spy on the push method of the selectedFiles array
-    const pushSpy = jest.spyOn(component.selectedFiles, 'push');
-
-    component.selectedFiles = [];
-    component.hash = 'oldHash';
+    component.selectedTeam = 'base';
+    
+    // Spy on startMultiplesStepFunction to monitor its calls
+    const startMultiplesSpy = jest.spyOn(component, 'startMultiplesStepFunction');
 
     // Act
-    component.escolherArquivo(mockEvent);
+    component.startStepFunctionProspect();
 
     // Assert
-    expect(pushSpy).toHaveBeenCalledTimes(2); // push should be called twice
-    expect(pushSpy).toHaveBeenCalledWith(mockFile1); // first file pushed
-    expect(pushSpy).toHaveBeenCalledWith(mockFile2); // second file pushed
-
-    expect(component.file).toBe(mockFile1);
-    expect(component.hash).toBe('file1.txt');
+    const expectedStepFunctions = [
+      environment.stepFunctionProspectBacen, 
+      environment.stepFunctionProspectBase
+    ];
+    expect(startMultiplesSpy).toHaveBeenCalledWith(expectedStepFunctions);
   });
 
-  it('should update file and hash only if the first file name is different from the current hash', () => {
+  it('should call startMultiplesStepFunction with stepFunctionProspectRelacionamento if selectedTeam is "relacionamento"', () => {
     // Arrange
-    const mockFile1 = new File(['file content'], 'file1.txt', { type: 'text/plain' });
-    const mockEvent = {
-      target: {
-        files: [mockFile1]
-      }
-    };
+    component.selectedTeam = 'relacionamento';
 
-    // Spy on the properties and methods
-    const pushSpy = jest.spyOn(component.selectedFiles, 'push');
-    const setHashSpy = jest.spyOn(component, 'hash', 'set'); // spy on setting the hash value
-
-    component.selectedFiles = [];
-    component.hash = 'differentHash';
+    // Spy on startMultiplesStepFunction to monitor its calls
+    const startMultiplesSpy = jest.spyOn(component, 'startMultiplesStepFunction');
 
     // Act
-    component.escolherArquivo(mockEvent);
+    component.startStepFunctionProspect();
 
     // Assert
-    expect(pushSpy).toHaveBeenCalledWith(mockFile1); // File should be added
-    expect(setHashSpy).toHaveBeenCalledWith('file1.txt'); // Hash should be updated
-
-    expect(component.file).toBe(mockFile1);
-    expect(component.hash).toBe('file1.txt');
+    const expectedStepFunctions = [environment.stepFunctionProspectRelacionamento];
+    expect(startMultiplesSpy).toHaveBeenCalledWith(expectedStepFunctions);
   });
 
-  it('should not update hash if the first file name is the same as the current hash', () => {
+  it('should not call startMultiplesStepFunction if selectedTeam is neither "base" nor "relacionamento"', () => {
     // Arrange
-    const mockFile1 = new File(['file content'], 'file1.txt', { type: 'text/plain' });
-    const mockEvent = {
-      target: {
-        files: [mockFile1]
-      }
-    };
+    component.selectedTeam = 'unknown';
 
-    // Spy on the properties and methods
-    const pushSpy = jest.spyOn(component.selectedFiles, 'push');
-    const setHashSpy = jest.spyOn(component, 'hash', 'set'); // spy on setting the hash value
-
-    component.selectedFiles = [];
-    component.hash = 'file1.txt'; // The hash matches the first file's name
+    // Spy on startMultiplesStepFunction to monitor its calls
+    const startMultiplesSpy = jest.spyOn(component, 'startMultiplesStepFunction');
 
     // Act
-    component.escolherArquivo(mockEvent);
+    component.startStepFunctionProspect();
 
     // Assert
-    expect(pushSpy).toHaveBeenCalledWith(mockFile1); // File should still be added
-    expect(setHashSpy).not.toHaveBeenCalled(); // Hash should not be updated
-
-    expect(component.file).toBe(mockFile1);
-    expect(component.hash).toBe('file1.txt'); // Hash should remain unchanged
+    expect(startMultiplesSpy).not.toHaveBeenCalled();
   });
 });
