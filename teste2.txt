@@ -1,0 +1,45 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { YourComponent } from './your.component'; // Substitua pelo nome do seu componente
+
+describe('YourComponent', () => {
+  let component: YourComponent;
+  let fixture: ComponentFixture<YourComponent>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [YourComponent]
+    });
+
+    fixture = TestBed.createComponent(YourComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('deve retornar true se selectedFiles conter um arquivo com um nome que inclui algum valor de valuesNameFile', () => {
+    component.valuesNameFile = ['file1', 'file2'];
+    component.selectedFiles = [{ name: 'myfile1.txt' }, { name: 'anotherfile.txt' }];
+
+    const result = component.validaArquivo();
+
+    expect(result).toBe(true);
+  });
+
+  it('deve retornar false e definir valueNotFind se nenhum arquivo de selectedFiles incluir o valor de valuesNameFile', () => {
+    component.valuesNameFile = ['file1', 'file2'];
+    component.selectedFiles = [{ name: 'nofile.txt' }, { name: 'anotherfile.txt' }];
+
+    const result = component.validaArquivo();
+
+    expect(result).toBe(false);
+    expect(component.valueNotFind).toBe('file1');
+  });
+
+  it('deve retornar false imediatamente ao encontrar um valor de valuesNameFile não presente em selectedFiles', () => {
+    component.valuesNameFile = ['file1', 'file2'];
+    component.selectedFiles = [{ name: 'anotherfile.txt' }];
+
+    const result = component.validaArquivo();
+
+    expect(result).toBe(false);
+    expect(component.valueNotFind).toBe('file1');
+  });
+});

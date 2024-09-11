@@ -11,7 +11,7 @@ describe('YourComponent', () => {
   beforeEach(() => {
     // Mock do serviço
     multipartUploadServiceMock = {
-      startStepFunction: jest.fn()
+      updateCronEventBridge: jest.fn()
     };
 
     // Configuração do TestBed
@@ -26,31 +26,31 @@ describe('YourComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('deve exibir mensagem de erro se nameArn estiver vazio', () => {
+  it('deve exibir mensagem de erro se nameRule e cronName estiverem vazios', () => {
     const showMessageSpy = jest.spyOn(component, 'showMessage');
-    component.executadorStepFunction({ value: '' });
+
+    component.executadorAlteracaoCron({ value: '' }, { value: '' });
+
     expect(showMessageSpy).toHaveBeenCalledWith('voce precisa preencher o valor do campo', 'error');
   });
 
-  it('deve chamar o serviço startStepFunction se nameArn não estiver vazio', () => {
-    multipartUploadServiceMock.startStepFunction.mockReturnValue(of({ data: { status: 'success' } }));
+  it('deve chamar o serviço updateCronEventBridge se nameRule e cronName não estiverem vazios', () => {
+    multipartUploadServiceMock.updateCronEventBridge.mockReturnValue(of({ data: { status: 'success' } }));
     const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    component.executadorStepFunction({ value: 'validArn' });
-    
-    expect(multipartUploadServiceMock.startStepFunction).toHaveBeenCalledWith('validArn');
+    component.executadorAlteracaoCron({ value: 'validRule' }, { value: 'validCron' });
+
+    expect(multipartUploadServiceMock.updateCronEventBridge).toHaveBeenCalledWith('validRule', 'validCron');
     setTimeout(() => {
       expect(showMessageSpy).toHaveBeenCalledWith('success', 'error');
-    }, 7000); // Testa o setTimeout
+    }, 7000); // Teste para o setTimeout
   });
 
   it('deve exibir mensagem de erro quando o serviço falha', () => {
-    const errorMessage = 'Erro ao iniciar a função';
-    multipartUploadServiceMock.startStepFunction.mockReturnValue(throwError({ error: { message: errorMessage } }));
+    const errorMessage = 'Erro ao atualizar o cron';
+    multipartUploadServiceMock.updateCronEventBridge.mockReturnValue(throwError({ error: { message: errorMessage } }));
     const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    component.executadorStepFunction({ value: 'validArn' });
-    
-    expect(showMessageSpy).toHaveBeenCalledWith(errorMessage, 'error');
-  });
-});
+    component.executadorAlteracaoCron({ value: 'validRule' }, { value: 'validCron' });
+
+    expect(showMessage
