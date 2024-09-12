@@ -1,36 +1,66 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { YourComponent } from './your.component'; // Substitua pelo nome do seu componente
+import { of } from 'rxjs'; // For creating a mock observable
+import { YourComponent } from './your.component'; // Replace with actual component
+import { MultipartUploadService } from './multipart-upload.service'; // Replace with actual service
 
 describe('YourComponent', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
+  let mockMultipartUploadService: Partial<MultipartUploadService>;
+
+  beforeEach(async () => {
+    // Mock MultipartUploadService
+    mockMultipartUploadService = {
+      getJson: jest.fn().mockReturnValue(of({ key: 'value' })) // mock the JSON data returned
+    };
+
+    await TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      providers: [{ provide: MultipartUploadService, useValue: mockMultipartUploadService }]
+    }).compileComponents();
+  });
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [YourComponent]
-    });
-
     fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  it('deve exibir o modal quando ele estiver presente no DOM', () => {
-    const modalDiv = document.createElement('div');
-    modalDiv.id = 'myModal';
-    document.body.appendChild(modalDiv); // Adiciona o modal ao DOM
+  it('should download the JSON file', () => {
+    const createElementSpy = jest.spyOn(document, 'createElement');
+    const appendChildSpy = jest.spyOn(document.body, 'appendChild');
+    const removeChildSpy = jest.spyOn(document.body, 'removeChild');
+    const clickSpy = jest.fn();
 
-    component.openModel();
+    const mockElement = {
+      setAttribute: jest.fn(),
+      click: clickSpy,
+      style: { display: '' }
+    };
 
-    expect(modalDiv.style.display).toBe('block');
+    // Mock createElement to return our mockElement
+    createElementSpy.mockReturnValue(mockElement as unknown as HTMLElement);
 
-    document.body.removeChild(modalDiv); // Remove o modal do DOM após o teste
-  });
+    // Trigger the baixarJson function
+    component.baixarJson();
 
-  it('não deve lançar erro se o modal não estiver presente no DOM', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(); // Previne erros no console
+    // Check that the JSON data was set properly
+    expect(component.dataJson).toEqual({ key: 'value' });
 
-    expect(() => component.openModel()).not.toThrow();
+    // Check if the element was created and set correctly
+    expect(createElementSpy).toHaveBeenCalledWith('a');
+    expect(mockElement.setAttribute).toHaveBeenCalledWith('href', expect.stringContaining('data:text/json'));
+    expect(mockElement.setAttribute).toHaveBeenCalledWith('download', 'exemplo.json');
+    expect(mockElement.style.display).toBe('none');
 
-    consoleSpy.mockRestore(); // Restaura o comportamento original do console
+    // Check if the element was appended, clicked, and removed
+    expect(appendChildSpy).toHaveBeenCalledWith(mockElement);
+    expect(clickSpy).toHaveBeenCalled();
+    expect(removeChildSpy).toHaveBeenCalledWith(mockElement);
+
+    // Restore spies if necessary
+    createElementSpy.mockRestore();
+    appendChildSpy.mockRestore();
+    removeChildSpy.mockRestore();
   });
 });
