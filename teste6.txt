@@ -1,38 +1,51 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { YourComponent } from './your.component'; // Substitua pelo nome do seu componente
+import { BehaviorSubject } from 'rxjs'; // BehaviorSubject for mocking
+import { YourComponent } from './your.component'; // Replace with your actual component
+import { MultipartUploadService } from './multipart-upload.service'; // Replace with actual service
 
 describe('YourComponent', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
+  let mockMultipartUploadService: Partial<MultipartUploadService>;
+  let responseSubject: BehaviorSubject<{ success: boolean }>;
+
+  beforeEach(async () => {
+    // Initialize the BehaviorSubject with a default value
+    responseSubject = new BehaviorSubject<{ success: boolean }>({ success: true });
+
+    mockMultipartUploadService = {
+      responseWithSuccessOrError$: responseSubject // Use the BehaviorSubject
+    };
+
+    await TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      providers: [
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
+      ]
+    }).compileComponents();
+  });
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [YourComponent]
-    });
-
     fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  it('deve alterar typeBody e chamar CloseModal se a senha e typePage forem válidos', () => {
-    component.senha = 'dados123';
-    component.typePage = '1';
-    const closeModalSpy = jest.spyOn(component, 'CloseModal');
+  it('should show a success message when upload is successful', () => {
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    component.validaSenha();
+    // Trigger the subscription
+    component.subscribeToResponse();
 
-    expect(component.typeBody).toBe(1);
-    expect(closeModalSpy).toHaveBeenCalled();
-    expect(component.senha).toBeNull();
+    // Expect a success message to be shown
+    expect(showMessageSpy).toHaveBeenCalledWith('Upload successful', 'success');
   });
 
-  it('deve exibir um alerta de senha inválida se a senha ou typePage forem inválidos', () => {
-    component.senha = 'wrongPassword';
-    component.typePage = '1';
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+  it('should show an error message when upload fails', () => {
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    component.validaSenha();
+    // Trigger a new value with success = false
+    responseSubject.next({ success: false });
 
-    expect(alertSpy).toHaveBeenCalledWith('Senha inválida');
-  });
-});
+    // Expect an error message to be shown
+    expect(showMessageSpy).
