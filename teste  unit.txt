@@ -8,6 +8,7 @@ describe('YourComponent', () => {
   let fixture: ComponentFixture<YourComponent>;
   let mockMultipartUploadService: Partial<MultipartUploadService>;
   let showMessageSpy: jest.SpyInstance;
+  let convertFileToBase64Spy: jest.SpyInstance;
 
   beforeEach(async () => {
     // Mock the multipartUploadService
@@ -29,11 +30,15 @@ describe('YourComponent', () => {
 
     // Spy on showMessage method
     showMessageSpy = jest.spyOn(component, 'showMessage');
+
+    // Spy on convertFileToBase64 method
+    convertFileToBase64Spy = jest.spyOn(component, 'convertFileToBase64').mockResolvedValue('base64data');
+    
     fixture.detectChanges();
   });
 
   it('should show error if no file is selected', async () => {
-    component.file = undefined;
+    component.file = undefined; // Ensure the file is set to undefined
 
     await component.uploadArquivoAWS();
 
@@ -42,7 +47,7 @@ describe('YourComponent', () => {
 
   it('should show error if typeFunc is empty', async () => {
     component.file = new File([], 'example.txt');
-    component.typeFunc = '';
+    component.typeFunc = ''; // Set typeFunc to an empty string
 
     await component.uploadArquivoAWS();
 
@@ -52,7 +57,7 @@ describe('YourComponent', () => {
   it('should show error if typeSubFunc is empty', async () => {
     component.file = new File([], 'example.txt');
     component.typeFunc = 'SomeFunc';
-    component.typeSubFunc = '';
+    component.typeSubFunc = ''; // Set typeSubFunc to an empty string
 
     await component.uploadArquivoAWS();
 
@@ -65,14 +70,11 @@ describe('YourComponent', () => {
     component.typeFunc = 'SomeFunc';
     component.typeSubFunc = 'SomeSubFunc';
 
-    // Mock convertFileToBase64 to return a base64 string
-    jest.spyOn(component, 'convertFileToBase64').mockResolvedValue('base64data');
-    
     await component.uploadArquivoAWS();
 
     expect(component.loading).toBe(true);
     expect(component.subindoArquivo).toBe(true);
-    expect(component.convertFileToBase64).toHaveBeenCalledWith(mockFile);
+    expect(convertFileToBase64Spy).toHaveBeenCalledWith(mockFile);
     expect(mockMultipartUploadService.sendFilesToMultipartUpload).toHaveBeenCalled();
   });
 });
