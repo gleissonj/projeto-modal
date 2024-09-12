@@ -1,22 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of, Subject } from 'rxjs';
-import { filter, takeUntil } from 'rxjs/operators';
-import { MyComponent } from './my-component.component'; // Adjust the path as necessary
+import { Subject } from 'rxjs';
+import { MyComponent } from './my-component.component'; // Adjust path as necessary
 import { InteractionStatus } from '@azure/msal-browser';
 
 describe('MyComponent', () => {
   let component: MyComponent;
   let fixture: ComponentFixture<MyComponent>;
   let broadcastServiceMock: any;
-  let destroying$: Subject<void>;
 
   beforeEach(async () => {
     // Mock the broadcastService and its inProgress$ observable
     broadcastServiceMock = {
       inProgress$: new Subject<InteractionStatus>()
     };
-
-    destroying$ = new Subject<void>();
 
     await TestBed.configureTestingModule({
       declarations: [MyComponent],
@@ -27,14 +23,17 @@ describe('MyComponent', () => {
 
     fixture = TestBed.createComponent(MyComponent);
     component = fixture.componentInstance;
-    component._destroying$ = destroying$; // Assign the destroying subject to the component
-    fixture.detectChanges();
+
+    // fixture.detectChanges(); is not needed until component rendering
+
+    // Access and use the private _destroying$ directly in the test
+    (component as any)._destroying$ = new Subject<void>();
   });
 
   afterEach(() => {
-    // Complete the destroying$ subject to clean up
-    destroying$.next();
-    destroying$.complete();
+    // Complete the private _destroying$ subject to clean up
+    (component as any)._destroying$.next();
+    (component as any)._destroying$.complete();
   });
 
   it('should call setLoginDisplay when InteractionStatus is None', () => {
