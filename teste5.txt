@@ -1,37 +1,61 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { YourComponent } from './your.component'; // Substitua pelo nome do seu componente
+import { of, throwError } from 'rxjs'; // For creating mock observables
+import { YourComponent } from './your.component'; // Replace with your actual component
+import { MultipartUploadService } from './multipart-upload.service'; // Replace with actual service
 
 describe('YourComponent', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
+  let mockMultipartUploadService: Partial<MultipartUploadService>;
+
+  beforeEach(async () => {
+    mockMultipartUploadService = {
+      responseWithSuccessOrError$: of({ success: true }) // Mock observable with default success response
+    };
+
+    await TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      providers: [
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
+      ]
+    }).compileComponents();
+  });
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [YourComponent]
-    });
-
     fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  it('deve ocultar o modal quando ele estiver presente no DOM', () => {
-    const modalDiv = document.createElement('div');
-    modalDiv.id = 'myModal';
-    modalDiv.style.display = 'block'; // Define o estilo inicial como 'block'
-    document.body.appendChild(modalDiv); // Adiciona o modal ao DOM
+  it('should show a success message when upload is successful', () => {
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    component.closeModel();
+    // Trigger the subscription
+    component.subscribeToResponse();
 
-    expect(modalDiv.style.display).toBe('none');
-
-    document.body.removeChild(modalDiv); // Remove o modal do DOM após o teste
+    // Expect a success message to be shown
+    expect(showMessageSpy).toHaveBeenCalledWith('Upload successful', 'success');
   });
 
-  it('não deve lançar erro se o modal não estiver presente no DOM', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(); // Previne erros no console
+  it('should show an error message when upload fails', () => {
+    mockMultipartUploadService.responseWithSuccessOrError$ = of({ success: false });
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    expect(() => component.closeModel()).not.toThrow();
+    // Trigger the subscription again with the new mock value
+    component.subscribeToResponse();
 
-    consoleSpy.mockRestore(); // Restaura o comportamento original do console
+    // Expect an error message to be shown
+    expect(showMessageSpy).toHaveBeenCalledWith('Upload failed', 'error');
+  });
+
+  it('should show an error message when an error occurs', () => {
+    mockMultipartUploadService.responseWithSuccessOrError$ = throwError(() => new Error('Some error'));
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
+
+    // Trigger the subscription again with an error
+    component.subscribeToResponse();
+
+    // Expect an error message to be shown
+    expect(showMessageSpy).toHaveBeenCalledWith('An error occurred', 'error');
   });
 });
