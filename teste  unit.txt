@@ -1,91 +1,29 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component.component'; // Adjust path as necessary
-import { MultipartUploadService } from './multipart-upload.service'; // Adjust path as necessary
-import { of } from 'rxjs';
+import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing'; // Import HttpClientTestingModule
+import { MultipartUploadService } from './multipart-upload.service'; // Adjust path to your service
 
-describe('MyComponent', () => {
-  let component: MyComponent;
-  let fixture: ComponentFixture<MyComponent>;
-  let multipartUploadServiceMock: any;
+describe('MultipartUploadService', () => {
+  let service: MultipartUploadService;
+  let httpTestingController: HttpTestingController;
 
-  beforeEach(async () => {
-    multipartUploadServiceMock = {
-      sendFilesToMultipartUpload: jest.fn()
-    };
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule], // Import HttpClientTestingModule for HTTP calls
+      providers: [MultipartUploadService] // Provide the service here
+    });
 
-    await TestBed.configureTestingModule({
-      declarations: [MyComponent],
-      providers: [
-        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(MyComponent);
-    component = fixture.componentInstance;
-
-    // Mock the showMessage method
-    component.showMessage = jest.fn();
-
-    // Mock the convertFileToBase64 method
-    component.convertFileToBase64 = jest.fn().mockResolvedValue('base64string');
-
-    fixture.detectChanges();
+    service = TestBed.inject(MultipartUploadService); // Inject the service
+    httpTestingController = TestBed.inject(HttpTestingController); // Inject HttpTestingController for HTTP testing
   });
 
-  it('should show an error if no file is attached', async () => {
-    // Arrange
-    component.file = undefined;
-
-    // Act
-    await component.uploadArquivoAWS();
-
-    // Assert
-    expect(component.showMessage).toHaveBeenCalledWith('Você deve anexar um arquivo', 'error');
-    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).not.toHaveBeenCalled();
+  afterEach(() => {
+    httpTestingController.verify(); // Verify that there are no outstanding HTTP requests
   });
 
-  it('should show an error if typeFunc is empty', async () => {
-    // Arrange
-    component.file = new File([''], 'file.txt');
-    component.typeFunc = '';
-
-    // Act
-    await component.uploadArquivoAWS();
-
-    // Assert
-    expect(component.showMessage).toHaveBeenCalledWith('Você deve informar o nome da função', 'error');
-    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).not.toHaveBeenCalled();
+  // Example test case
+  it('should be created', () => {
+    expect(service).toBeTruthy(); // Assert that the service is created successfully
   });
 
-  it('should show an error if typeSubFunc is empty', async () => {
-    // Arrange
-    component.file = new File([''], 'file.txt');
-    component.typeFunc = 'someFunc';
-    component.typeSubFunc = '';
-
-    // Act
-    await component.uploadArquivoAWS();
-
-    // Assert
-    expect(component.showMessage).toHaveBeenCalledWith('Você deve informar o nome da subfunção', 'error');
-    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).not.toHaveBeenCalled();
-  });
-
-  it('should convert file to Base64 and call sendFilesToMultipartUpload', async () => {
-    // Arrange
-    component.file = new File([''], 'file.txt');
-    component.typeFunc = 'someFunc';
-    component.typeSubFunc = 'someSubFunc';
-
-    // Act
-    await component.uploadArquivoAWS();
-
-    // Assert
-    expect(component.convertFileToBase64).toHaveBeenCalledWith(component.file);
-    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).toHaveBeenCalledWith(
-      component.generateMapMultipartUpload.bind(component)
-    );
-    expect(component.loading).toBe(true);
-    expect(component.subindoArquivo).toBe(true);
-  });
+  // Add more tests as needed
 });
