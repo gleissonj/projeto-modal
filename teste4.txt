@@ -1,42 +1,47 @@
 import { TestBed } from '@angular/core/testing';
 import { YourComponent } from './your.component';
 import { MsalService } from '@azure/msal-angular';
-import { of } from 'rxjs';
 import { PublicClientApplication, AccountInfo } from '@azure/msal-browser';
+import { of } from 'rxjs';
+
+// Mock PublicClientApplication
+class MockPublicClientApplication {
+  getAllAccounts(): AccountInfo[] {
+    return [mockAccount];
+  }
+}
+
+// Mock account data
+const mockAccount: AccountInfo = {
+  homeAccountId: 'homeAccountId',
+  environment: 'login.microsoftonline.com',
+  tenantId: 'tenantId',
+  username: 'user@example.com',
+  name: 'User Name',
+  localAccountId: 'localAccountId',
+  idToken: 'idToken',
+  idTokenClaims: {
+    aud: 'aud',
+    iss: 'iss',
+    exp: 1234567890,
+    nbf: 1234567890,
+    iat: 1234567890,
+    sub: 'sub'
+  },
+  accessToken: 'accessToken',
+  account: {
+    // additional account properties if needed
+  }
+};
 
 describe('YourComponent', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
   let mockMsalService: Partial<MsalService>;
 
-  // Example mock account data
-  const mockAccount: AccountInfo = {
-    homeAccountId: 'homeAccountId',
-    environment: 'login.microsoftonline.com',
-    tenantId: 'tenantId',
-    username: 'user@example.com',
-    name: 'User Name',
-    localAccountId: 'localAccountId',
-    idToken: 'idToken',
-    idTokenClaims: {
-      aud: 'aud',
-      iss: 'iss',
-      exp: 1234567890,
-      nbf: 1234567890,
-      iat: 1234567890,
-      sub: 'sub'
-    },
-    accessToken: 'accessToken',
-    account: {
-      // additional account properties if needed
-    }
-  };
-
   beforeEach(async () => {
     mockMsalService = {
-      instance: {
-        getAllAccounts: jest.fn().mockReturnValue([mockAccount])
-      }
+      instance: new MockPublicClientApplication() as PublicClientApplication
     };
 
     await TestBed.configureTestingModule({
