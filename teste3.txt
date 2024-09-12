@@ -1,59 +1,56 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { YourComponent } from './your.component'; // Substitua pelo nome do seu componente
+import { MyComponent } from './my-component.component'; // Adjust the path as necessary
 
-describe('YourComponent', () => {
-  let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
+describe('MyComponent', () => {
+  let component: MyComponent;
+  let fixture: ComponentFixture<MyComponent>;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [YourComponent]
-    });
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [MyComponent]
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(YourComponent);
+    fixture = TestBed.createComponent(MyComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
-  it('deve chamar updateFileOne se nameFunc não for "OPP"', async () => {
-    component.nameFunc = 'OTHER';
-    const updateFileOneSpy = jest.spyOn(component, 'updateFileOne');
+  it('should return substring before period when period is present', () => {
+    // Arrange
+    const input = 'operation.txt';
 
-    await component.uploadArquivoAWS();
+    // Act
+    const result = component.getValueNameOperation(input);
 
-    expect(updateFileOneSpy).toHaveBeenCalled();
+    // Assert
+    expect(result).toBe('operation');
   });
 
-  it('deve exibir mensagem de erro se selectedFiles não tiver 5 arquivos e nameFunc for "OPP"', async () => {
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [{}, {}, {}]; // Menos de 5 arquivos
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
+  it('should return undefined when there is no period in the string', () => {
+    // Arrange
+    const input = 'operationTxt';
 
-    await component.uploadArquivoAWS();
+    // Act
+    const result = component.getValueNameOperation(input);
 
-    expect(showMessageSpy).toHaveBeenCalledWith('Você deve anexar 5 arquivos', 'error');
+    // Assert
+    expect(result).toBeUndefined();
   });
 
-  it('deve exibir mensagem de erro se validaNameArquivo retornar false', async () => {
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [{}, {}, {}, {}, {}]; // Exatamente 5 arquivos
-    const validaNameArquivoSpy = jest.spyOn(component, 'validaNameArquivo').mockReturnValue(false);
-    component.valueNotFind = 'nome_incorreto';
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
+  it('should return undefined for empty string', () => {
+    // Arrange
+    const input = '';
 
-    await component.uploadArquivoAWS();
+    // Act
+    const result = component.getValueNameOperation(input);
 
-    expect(validaNameArquivoSpy).toHaveBeenCalled();
-    expect(showMessageSpy).toHaveBeenCalledWith('O nome do arquivo enviado não corresponde ao nome esperado: nome_incorreto', 'error');
+    // Assert
+    expect(result).toBeUndefined();
   });
 
-  it('deve chamar updateFileMultiple se selectedFiles tiver 5 arquivos e validaNameArquivo retornar true', async () => {
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [{}, {}, {}, {}, {}]; // Exatamente 5 arquivos
-    jest.spyOn(component, 'validaNameArquivo').mockReturnValue(true);
-    const updateFileMultipleSpy = jest.spyOn(component, 'updateFileMultiple');
-
-    await component.uploadArquivoAWS();
-
-    expect(updateFileMultipleSpy).toHaveBeenCalled();
+  it('should handle null or undefined input gracefully', () => {
+    // Act & Assert
+    expect(component.getValueNameOperation(null)).toBeUndefined();
+    expect(component.getValueNameOperation(undefined)).toBeUndefined();
   });
 });

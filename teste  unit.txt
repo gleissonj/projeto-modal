@@ -1,43 +1,91 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component.component'; // Adjust the import path
-import { MsalService } from '@azure/msal-angular'; // Adjust the import path
+import { MyComponent } from './my-component.component'; // Adjust path as necessary
+import { MultipartUploadService } from './multipart-upload.service'; // Adjust path as necessary
+import { of } from 'rxjs';
 
 describe('MyComponent', () => {
   let component: MyComponent;
   let fixture: ComponentFixture<MyComponent>;
-  let msalService: MsalService;
+  let multipartUploadServiceMock: any;
 
-  beforeEach(() => {
-    // Create a mock MsalService
-    const msalServiceMock = {
-      logoutRedirect: jest.fn()
+  beforeEach(async () => {
+    multipartUploadServiceMock = {
+      sendFilesToMultipartUpload: jest.fn()
     };
 
-    TestBed.configureTestingModule({
+    await TestBed.configureTestingModule({
       declarations: [MyComponent],
       providers: [
-        { provide: MsalService, useValue: msalServiceMock },
-      ],
+        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(MyComponent);
     component = fixture.componentInstance;
-    msalService = TestBed.inject(MsalService);
+
+    // Mock the showMessage method
+    component.showMessage = jest.fn();
+
+    // Mock the convertFileToBase64 method
+    component.convertFileToBase64 = jest.fn().mockResolvedValue('base64string');
 
     fixture.detectChanges();
   });
 
-  it('should call logoutRedirect with the correct parameters', () => {
+  it('should show an error if no file is attached', async () => {
     // Arrange
-    const logoutRedirectSpy = jest.spyOn(msalService, 'logoutRedirect');
-    const expectedRedirectUri = 'http://localhost:4200'; // Fix the typo
+    component.file = undefined;
 
     // Act
-    component.logout();
+    await component.uploadArquivoAWS();
 
     // Assert
-    expect(logoutRedirectSpy).toHaveBeenCalledWith({
-      postLogoutRedirectUri: expectedRedirectUri
-    });
+    expect(component.showMessage).toHaveBeenCalledWith('Você deve anexar um arquivo', 'error');
+    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).not.toHaveBeenCalled();
+  });
+
+  it('should show an error if typeFunc is empty', async () => {
+    // Arrange
+    component.file = new File([''], 'file.txt');
+    component.typeFunc = '';
+
+    // Act
+    await component.uploadArquivoAWS();
+
+    // Assert
+    expect(component.showMessage).toHaveBeenCalledWith('Você deve informar o nome da função', 'error');
+    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).not.toHaveBeenCalled();
+  });
+
+  it('should show an error if typeSubFunc is empty', async () => {
+    // Arrange
+    component.file = new File([''], 'file.txt');
+    component.typeFunc = 'someFunc';
+    component.typeSubFunc = '';
+
+    // Act
+    await component.uploadArquivoAWS();
+
+    // Assert
+    expect(component.showMessage).toHaveBeenCalledWith('Você deve informar o nome da subfunção', 'error');
+    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).not.toHaveBeenCalled();
+  });
+
+  it('should convert file to Base64 and call sendFilesToMultipartUpload', async () => {
+    // Arrange
+    component.file = new File([''], 'file.txt');
+    component.typeFunc = 'someFunc';
+    component.typeSubFunc = 'someSubFunc';
+
+    // Act
+    await component.uploadArquivoAWS();
+
+    // Assert
+    expect(component.convertFileToBase64).toHaveBeenCalledWith(component.file);
+    expect(multipartUploadServiceMock.sendFilesToMultipartUpload).toHaveBeenCalledWith(
+      component.generateMapMultipartUpload.bind(component)
+    );
+    expect(component.loading).toBe(true);
+    expect(component.subindoArquivo).toBe(true);
   });
 });
