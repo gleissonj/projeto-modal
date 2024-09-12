@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { MyService } from './my-service.service'; // Adjust the path to your service
+import { HttpClient } from '@angular/common/http';
 
 describe('MyService', () => {
   let service: MyService;
@@ -17,22 +18,31 @@ describe('MyService', () => {
   });
 
   afterEach(() => {
-    httpTestingController.verify(); // Verifies that no unmatched requests remain
+    httpTestingController.verify(); // Ensure no pending HTTP requests
   });
 
-  it('should return the expected JSON data from getJson', (done) => {
-    const mockData = { key: 'value' }; // Example mock data
+  it('should call the validaArquivoXls method with the correct body and return response', (done) => {
+    // Mock body and response
+    const requestBody = {
+      NameFunc: 'TestFunc',
+      SubNomeFunc: 'TestSubFunc',
+      FilePath: '/path/to/file.xls'
+    };
+    
+    const mockResponse = { message: 'File validation success' };
 
-    service.getJson().subscribe((data) => {
-      expect(data).toEqual(mockData);
-      done(); // Call done to indicate the test is complete
+    // Call the method
+    service.validaArquivoXls(requestBody).subscribe((response) => {
+      expect(response).toEqual(mockResponse); // Assert response
+      done();
     });
 
-    // Expect one GET request to the specified URL
-    const req = httpTestingController.expectOne('./assets/exemplo.json');
-    expect(req.request.method).toBe('GET');
+    // Expect one POST request to the correct URL
+    const req = httpTestingController.expectOne(`${service.restApi}/validaArquivoxls`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(requestBody); // Assert body of the request
 
-    // Respond with the mock data
-    req.flush(mockData);
+    // Respond with the mock response
+    req.flush(mockResponse);
   });
 });
