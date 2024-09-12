@@ -1,22 +1,49 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs'; // For creating a mock observable
-import { YourComponent } from './your.component'; // Replace with actual component
-import { MultipartUploadService } from './multipart-upload.service'; // Replace with actual service
+import { TestBed } from '@angular/core/testing';
+import { YourComponent } from './your.component';
+import { MsalService } from '@azure/msal-angular';
+import { of } from 'rxjs';
+import { PublicClientApplication, AccountInfo } from '@azure/msal-browser';
 
 describe('YourComponent', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
-  let mockMultipartUploadService: Partial<MultipartUploadService>;
+  let mockMsalService: Partial<MsalService>;
+
+  // Example mock account data
+  const mockAccount: AccountInfo = {
+    homeAccountId: 'homeAccountId',
+    environment: 'login.microsoftonline.com',
+    tenantId: 'tenantId',
+    username: 'user@example.com',
+    name: 'User Name',
+    localAccountId: 'localAccountId',
+    idToken: 'idToken',
+    idTokenClaims: {
+      aud: 'aud',
+      iss: 'iss',
+      exp: 1234567890,
+      nbf: 1234567890,
+      iat: 1234567890,
+      sub: 'sub'
+    },
+    accessToken: 'accessToken',
+    account: {
+      // additional account properties if needed
+    }
+  };
 
   beforeEach(async () => {
-    // Mock MultipartUploadService
-    mockMultipartUploadService = {
-      getJson: jest.fn().mockReturnValue(of({ key: 'value' })) // mock the JSON data returned
+    mockMsalService = {
+      instance: {
+        getAllAccounts: jest.fn().mockReturnValue([mockAccount])
+      }
     };
 
     await TestBed.configureTestingModule({
       declarations: [YourComponent],
-      providers: [{ provide: MultipartUploadService, useValue: mockMultipartUploadService }]
+      providers: [
+        { provide: MsalService, useValue: mockMsalService }
+      ]
     }).compileComponents();
   });
 
@@ -26,41 +53,5 @@ describe('YourComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should download the JSON file', () => {
-    const createElementSpy = jest.spyOn(document, 'createElement');
-    const appendChildSpy = jest.spyOn(document.body, 'appendChild');
-    const removeChildSpy = jest.spyOn(document.body, 'removeChild');
-    const clickSpy = jest.fn();
-
-    const mockElement = {
-      setAttribute: jest.fn(),
-      click: clickSpy,
-      style: { display: '' }
-    };
-
-    // Mock createElement to return our mockElement
-    createElementSpy.mockReturnValue(mockElement as unknown as HTMLElement);
-
-    // Trigger the baixarJson function
-    component.baixarJson();
-
-    // Check that the JSON data was set properly
-    expect(component.dataJson).toEqual({ key: 'value' });
-
-    // Check if the element was created and set correctly
-    expect(createElementSpy).toHaveBeenCalledWith('a');
-    expect(mockElement.setAttribute).toHaveBeenCalledWith('href', expect.stringContaining('data:text/json'));
-    expect(mockElement.setAttribute).toHaveBeenCalledWith('download', 'exemplo.json');
-    expect(mockElement.style.display).toBe('none');
-
-    // Check if the element was appended, clicked, and removed
-    expect(appendChildSpy).toHaveBeenCalledWith(mockElement);
-    expect(clickSpy).toHaveBeenCalled();
-    expect(removeChildSpy).toHaveBeenCalledWith(mockElement);
-
-    // Restore spies if necessary
-    createElementSpy.mockRestore();
-    appendChildSpy.mockRestore();
-    removeChildSpy.mockRestore();
-  });
+  // Your tests here
 });
