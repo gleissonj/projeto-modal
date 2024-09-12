@@ -1,60 +1,76 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
-import { MyComponent } from './my-component.component'; // Adjust path as necessary
-import { InteractionStatus } from '@azure/msal-browser';
+import { TestBed } from '@angular/core/testing';
+import { MyComponent } from './my-component'; // Replace with your actual component
+import { MapValueMultipartUpload } from './map-value-multipart-upload.model'; // Replace with the correct model
 
 describe('MyComponent', () => {
   let component: MyComponent;
-  let fixture: ComponentFixture<MyComponent>;
-  let broadcastServiceMock: any;
 
-  beforeEach(async () => {
-    // Mock the broadcastService and its inProgress$ observable
-    broadcastServiceMock = {
-      inProgress$: new Subject<InteractionStatus>()
-    };
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [MyComponent],
+    });
 
-    await TestBed.configureTestingModule({
-      declarations: [MyComponent],
-      providers: [
-        { provide: 'BroadcastService', useValue: broadcastServiceMock },
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(MyComponent);
-    component = fixture.componentInstance;
-
-    // fixture.detectChanges(); is not needed until component rendering
-
-    // Access and use the private _destroying$ directly in the test
-    (component as any)._destroying$ = new Subject<void>();
+    component = TestBed.inject(MyComponent);
   });
 
-  afterEach(() => {
-    // Complete the private _destroying$ subject to clean up
-    (component as any)._destroying$.next();
-    (component as any)._destroying$.complete();
+  it('should call finishMultipartRequests for a single successful part', () => {
+    // Arrange: Mock the mapMultipartUpload with one successful request part
+    const mockFileParts: MapValueMultipartUpload[] = [
+      { successfullRequest: true } as MapValueMultipartUpload
+    ];
+
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+    mapMultipartUpload.set('mockHash', mockFileParts);
+
+    component.mapMultipartUpload = mapMultipartUpload;
+    const finishMultipartRequestsSpy = jest.spyOn(component, 'finishMultipartRequests');
+
+    // Act: Call handleNextRequests
+    component.handleNextRequests();
+
+    // Assert: finishMultipartRequests should have been called
+    expect(finishMultipartRequestsSpy).toHaveBeenCalledWith(mapMultipartUpload);
   });
 
-  it('should call setLoginDisplay when InteractionStatus is None', () => {
-    // Spy on the setLoginDisplay method
-    const setLoginDisplaySpy = jest.spyOn(component, 'setLoginDisplay');
+  it('should skip parts that have unsuccessful requests', () => {
+    // Arrange: Mock mapMultipartUpload with an unsuccessful request part
+    const mockFileParts: MapValueMultipartUpload[] = [
+      { successfullRequest: false } as MapValueMultipartUpload,
+      { successfullRequest: true } as MapValueMultipartUpload
+    ];
 
-    // Emit the InteractionStatus.None value
-    broadcastServiceMock.inProgress$.next(InteractionStatus.None);
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+    mapMultipartUpload.set('mockHash', mockFileParts);
 
-    // Assert that setLoginDisplay is called
-    expect(setLoginDisplaySpy).toHaveBeenCalled();
+    component.mapMultipartUpload = mapMultipartUpload;
+    const finishMultipartRequestsSpy = jest.spyOn(component, 'finishMultipartRequests');
+    const asyncResquestsPartsSpy = jest.spyOn(component, 'asyncResquestsParts');
+
+    // Act: Call handleNextRequests
+    component.handleNextRequests();
+
+    // Assert: It should skip the unsuccessful part and still proceed
+    expect(finishMultipartRequestsSpy).not.toHaveBeenCalled();
+    expect(asyncResquestsPartsSpy).toHaveBeenCalled();
   });
 
-  it('should not call setLoginDisplay when InteractionStatus is not None', () => {
-    // Spy on the setLoginDisplay method
-    const setLoginDisplaySpy = jest.spyOn(component, 'setLoginDisplay');
+  it('should call asyncResquestsParts for remaining parts', () => {
+    // Arrange: Mock mapMultipartUpload with multiple parts, some successful and some unsuccessful
+    const mockFileParts: MapValueMultipartUpload[] = [
+      { successfullRequest: true } as MapValueMultipartUpload,
+      { successfullRequest: false } as MapValueMultipartUpload
+    ];
 
-    // Emit a different InteractionStatus (e.g., InteractionStatus.Login)
-    broadcastServiceMock.inProgress$.next(InteractionStatus.Login);
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+    mapMultipartUpload.set('mockHash', mockFileParts);
 
-    // Assert that setLoginDisplay is not called
-    expect(setLoginDisplaySpy).not.toHaveBeenCalled();
+    component.mapMultipartUpload = mapMultipartUpload;
+    const asyncResquestsPartsSpy = jest.spyOn(component, 'asyncResquestsParts');
+
+    // Act: Call handleNextRequests
+    component.handleNextRequests();
+
+    // Assert: asyncResquestsParts should have been called to continue handling other parts
+    expect(asyncResquestsPartsSpy).toHaveBeenCalled();
   });
 });

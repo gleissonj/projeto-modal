@@ -1,49 +1,69 @@
 import { TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component'; // Replace with your component path
-import { MultipartUploadService } from './multipart-upload.service'; // Replace with your service path
-
-// Mock for multipartUploadService
-const mockMultipartUploadService = {
-  generatListOfMapValueMultipartUpload: jest.fn()
-};
+import { MyComponent } from './my-component'; // Replace with your actual component
+import { MapValueMultipartUpload } from './map-value-multipart-upload.model'; // Replace with the correct model
 
 describe('MyComponent', () => {
   let component: MyComponent;
-  let multipartUploadService: MultipartUploadService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        MyComponent,
-        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
-      ]
+      providers: [MyComponent],
     });
 
     component = TestBed.inject(MyComponent);
-    multipartUploadService = TestBed.inject(MultipartUploadService);
   });
 
-  it('should generate a correct map for multipart upload', () => {
-    // Setup the component state
-    component.file = new File(['content'], 'example.txt'); // Create a mock File object
-    component.hash = 'some-hash';
-    component.typeFunc = 'Cadastro Cliente';
-    component.typeSubFunc = 'SubFunction';
+  it('should return true if a file is too large', () => {
+    // Arrange: Set up the max file size limit
+    component.megabytesLimitPerFile = 5; // Example: 5 MB
 
-    // Prepare mock return value for the service method
-    const expectedMapValue = [{ /* your expected map value structure */ }];
-    mockMultipartUploadService.generatListOfMapValueMultipartUpload.mockReturnValue(expectedMapValue);
+    const largeFileMock = {
+      bodyMultipartRequest: {
+        fullFile: { size: 6 * 1024 * 1024 } // 6 MB
+      }
+    } as MapValueMultipartUpload;
 
-    // Calculate expected hash
-    const expectedHash = 'job-parameters/cadastrocliente/example.txt';
+    const smallFileMock = {
+      bodyMultipartRequest: {
+        fullFile: { size: 3 * 1024 * 1024 } // 3 MB
+      }
+    } as MapValueMultipartUpload;
 
-    // Call the method
-    const result = component['generateMapMultipartUpload'](); // Access private method if needed
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+    mapMultipartUpload.set('file1', [largeFileMock]);
+    mapMultipartUpload.set('file2', [smallFileMock]);
 
-    // Assertions
-    expect(result).toBeInstanceOf(Map); // Ensure the result is a Map
-    expect(result.size).toBe(1); // Check the size of the Map
-    expect(result.has(expectedHash)).toBe(true); // Check if the Map contains the expected hash
-    expect(result.get(expectedHash)).toEqual(expectedMapValue); // Check if the Map value is as expected
+    // Act: Call the method
+    const result = component.hasFileTooLarge(mapMultipartUpload);
+
+    // Assert: Expect the result to be true
+    expect(result).toBe(true);
+  });
+
+  it('should return false if no files are too large', () => {
+    // Arrange: Set up the max file size limit
+    component.megabytesLimitPerFile = 5; // Example: 5 MB
+
+    const smallFileMock1 = {
+      bodyMultipartRequest: {
+        fullFile: { size: 3 * 1024 * 1024 } // 3 MB
+      }
+    } as MapValueMultipartUpload;
+
+    const smallFileMock2 = {
+      bodyMultipartRequest: {
+        fullFile: { size: 4 * 1024 * 1024 } // 4 MB
+      }
+    } as MapValueMultipartUpload;
+
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+    mapMultipartUpload.set('file1', [smallFileMock1]);
+    mapMultipartUpload.set('file2', [smallFileMock2]);
+
+    // Act: Call the method
+    const result = component.hasFileTooLarge(mapMultipartUpload);
+
+    // Assert: Expect the result to be false
+    expect(result).toBe(false);
   });
 });

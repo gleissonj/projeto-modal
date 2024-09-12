@@ -1,48 +1,66 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { MyService } from './my-service.service'; // Adjust the path to your service
-import { HttpClient } from '@angular/common/http';
+import { MyComponent } from './my-component'; // Replace with your actual component
+import { MapValueMultipartUpload } from './map-value-multipart-upload.model'; // Replace with correct model
 
-describe('MyService', () => {
-  let service: MyService;
-  let httpTestingController: HttpTestingController;
+describe('MyComponent', () => {
+  let component: MyComponent;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [MyService],
+      providers: [MyComponent],
     });
 
-    service = TestBed.inject(MyService);
-    httpTestingController = TestBed.inject(HttpTestingController);
+    component = TestBed.inject(MyComponent);
   });
 
-  afterEach(() => {
-    httpTestingController.verify(); // Ensure no pending HTTP requests
+  it('should return true when all first parts of each multipart upload are successful', () => {
+    // Arrange: Mock the mapMultipartUpload with all first parts having successful requests
+    const mockFileParts1: MapValueMultipartUpload[] = [
+      { successfulRequest: true } as MapValueMultipartUpload
+    ];
+    const mockFileParts2: MapValueMultipartUpload[] = [
+      { successfulRequest: true } as MapValueMultipartUpload
+    ];
+
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+    mapMultipartUpload.set('mockHash1', mockFileParts1);
+    mapMultipartUpload.set('mockHash2', mockFileParts2);
+
+    // Act: Call checkIfFirstPartRequestPassedSuccessfully
+    const result = component.checkIfFirstPartRequestPassedSuccessfully(mapMultipartUpload);
+
+    // Assert: It should return true
+    expect(result).toBe(true);
   });
 
-  it('should call the validaArquivoXls method with the correct body and return response', (done) => {
-    // Mock body and response
-    const requestBody = {
-      NameFunc: 'TestFunc',
-      SubNomeFunc: 'TestSubFunc',
-      FilePath: '/path/to/file.xls'
-    };
-    
-    const mockResponse = { message: 'File validation success' };
+  it('should return false when one of the first parts of a multipart upload is unsuccessful', () => {
+    // Arrange: Mock the mapMultipartUpload with one unsuccessful request
+    const mockFileParts1: MapValueMultipartUpload[] = [
+      { successfulRequest: true } as MapValueMultipartUpload
+    ];
+    const mockFileParts2: MapValueMultipartUpload[] = [
+      { successfulRequest: false } as MapValueMultipartUpload
+    ];
 
-    // Call the method
-    service.validaArquivoXls(requestBody).subscribe((response) => {
-      expect(response).toEqual(mockResponse); // Assert response
-      done();
-    });
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+    mapMultipartUpload.set('mockHash1', mockFileParts1);
+    mapMultipartUpload.set('mockHash2', mockFileParts2);
 
-    // Expect one POST request to the correct URL
-    const req = httpTestingController.expectOne(`${service.restApi}/validaArquivoxls`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual(requestBody); // Assert body of the request
+    // Act: Call checkIfFirstPartRequestPassedSuccessfully
+    const result = component.checkIfFirstPartRequestPassedSuccessfully(mapMultipartUpload);
 
-    // Respond with the mock response
-    req.flush(mockResponse);
+    // Assert: It should return false
+    expect(result).toBe(false);
+  });
+
+  it('should return true when mapMultipartUpload is empty', () => {
+    // Arrange: Empty mapMultipartUpload
+    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
+
+    // Act: Call checkIfFirstPartRequestPassedSuccessfully
+    const result = component.checkIfFirstPartRequestPassedSuccessfully(mapMultipartUpload);
+
+    // Assert: It should return true (since there are no parts to fail)
+    expect(result).toBe(true);
   });
 });
