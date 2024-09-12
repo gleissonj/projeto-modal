@@ -1,65 +1,61 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, Subject } from 'rxjs';
+import { filter, takeUntil } from 'rxjs/operators';
 import { MyComponent } from './my-component.component'; // Adjust the path as necessary
+import { InteractionStatus } from '@azure/msal-browser';
 
 describe('MyComponent', () => {
   let component: MyComponent;
   let fixture: ComponentFixture<MyComponent>;
+  let broadcastServiceMock: any;
+  let destroying$: Subject<void>;
 
   beforeEach(async () => {
+    // Mock the broadcastService and its inProgress$ observable
+    broadcastServiceMock = {
+      inProgress$: new Subject<InteractionStatus>()
+    };
+
+    destroying$ = new Subject<void>();
+
     await TestBed.configureTestingModule({
-      declarations: [MyComponent]
+      declarations: [MyComponent],
+      providers: [
+        { provide: 'BroadcastService', useValue: broadcastServiceMock },
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(MyComponent);
     component = fixture.componentInstance;
+    component._destroying$ = destroying$; // Assign the destroying subject to the component
     fixture.detectChanges();
   });
 
-  it('should return false and set valueNotFind when no files match', () => {
-    // Arrange
-    component.valuesNameFile = ['file1', 'file2'];
-    component.selectedFiles = [
-      { name: 'nonMatchingFile1.txt' },
-      { name: 'nonMatchingFile2.txt' }
-    ] as any[]; // Simulate FileList with an array of file-like objects
-
-    // Act
-    const result = component.validaNameArquivo();
-
-    // Assert
-    expect(result).toBe(false);
-    expect(component.valueNotFind).toBe('file1'); // It stops at the first non-match
+  afterEach(() => {
+    // Complete the destroying$ subject to clean up
+    destroying$.next();
+    destroying$.complete();
   });
 
-  it('should return true when all files match the values', () => {
-    // Arrange
-    component.valuesNameFile = ['file1', 'file2'];
-    component.selectedFiles = [
-      { name: 'file1.txt' },
-      { name: 'file2.txt' }
-    ] as any[]; // Simulate FileList with an array of file-like objects
+  it('should call setLoginDisplay when InteractionStatus is None', () => {
+    // Spy on the setLoginDisplay method
+    const setLoginDisplaySpy = jest.spyOn(component, 'setLoginDisplay');
 
-    // Act
-    const result = component.validaNameArquivo();
+    // Emit the InteractionStatus.None value
+    broadcastServiceMock.inProgress$.next(InteractionStatus.None);
 
-    // Assert
-    expect(result).toBe(true);
-    expect(component.valueNotFind).toBeUndefined();
+    // Assert that setLoginDisplay is called
+    expect(setLoginDisplaySpy).toHaveBeenCalled();
   });
 
-  it('should return false and set valueNotFind when only some files match', () => {
-    // Arrange
-    component.valuesNameFile = ['file1', 'file2', 'file3'];
-    component.selectedFiles = [
-      { name: 'file1.txt' },
-      { name: 'file3.txt' }
-    ] as any[]; // Simulate FileList with an array of file-like objects
+  it('should not call setLoginDisplay when InteractionStatus is not None', () => {
+    // Spy on the setLoginDisplay method
+    const setLoginDisplaySpy = jest.spyOn(component, 'setLoginDisplay');
 
-    // Act
-    const result = component.validaNameArquivo();
+    // Emit a different InteractionStatus (e.g., InteractionStatus.Login)
+    broadcastServiceMock.inProgress$.next(InteractionStatus.Login);
 
-    // Assert
-    expect(result).toBe(false);
-    expect(component.valueNotFind).toBe('file2'); // The first missing value
+    // Assert that setLoginDisplay is not called
+    expect(setLoginDisplaySpy).not.toHaveBeenCalled();
   });
 });
