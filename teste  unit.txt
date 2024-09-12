@@ -1,29 +1,49 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing'; // Import HttpClientTestingModule
-import { MultipartUploadService } from './multipart-upload.service'; // Adjust path to your service
+import { MyComponent } from './my-component'; // Replace with your component path
+import { MultipartUploadService } from './multipart-upload.service'; // Replace with your service path
 
-describe('MultipartUploadService', () => {
-  let service: MultipartUploadService;
-  let httpTestingController: HttpTestingController;
+// Mock for multipartUploadService
+const mockMultipartUploadService = {
+  generatListOfMapValueMultipartUpload: jest.fn()
+};
+
+describe('MyComponent', () => {
+  let component: MyComponent;
+  let multipartUploadService: MultipartUploadService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule], // Import HttpClientTestingModule for HTTP calls
-      providers: [MultipartUploadService] // Provide the service here
+      providers: [
+        MyComponent,
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
+      ]
     });
 
-    service = TestBed.inject(MultipartUploadService); // Inject the service
-    httpTestingController = TestBed.inject(HttpTestingController); // Inject HttpTestingController for HTTP testing
+    component = TestBed.inject(MyComponent);
+    multipartUploadService = TestBed.inject(MultipartUploadService);
   });
 
-  afterEach(() => {
-    httpTestingController.verify(); // Verify that there are no outstanding HTTP requests
-  });
+  it('should generate a correct map for multipart upload', () => {
+    // Setup the component state
+    component.file = new File(['content'], 'example.txt'); // Create a mock File object
+    component.hash = 'some-hash';
+    component.typeFunc = 'Cadastro Cliente';
+    component.typeSubFunc = 'SubFunction';
 
-  // Example test case
-  it('should be created', () => {
-    expect(service).toBeTruthy(); // Assert that the service is created successfully
-  });
+    // Prepare mock return value for the service method
+    const expectedMapValue = [{ /* your expected map value structure */ }];
+    mockMultipartUploadService.generatListOfMapValueMultipartUpload.mockReturnValue(expectedMapValue);
 
-  // Add more tests as needed
+    // Calculate expected hash
+    const expectedHash = 'job-parameters/cadastrocliente/example.txt';
+
+    // Call the method
+    const result = component['generateMapMultipartUpload'](); // Access private method if needed
+
+    // Assertions
+    expect(result).toBeInstanceOf(Map); // Ensure the result is a Map
+    expect(result.size).toBe(1); // Check the size of the Map
+    expect(result.has(expectedHash)).toBe(true); // Check if the Map contains the expected hash
+    expect(result.get(expectedHash)).toEqual(expectedMapValue); // Check if the Map value is as expected
+  });
 });
