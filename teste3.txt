@@ -1,56 +1,38 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component.component'; // Adjust the path as necessary
+import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { MyService } from './my-service.service'; // Adjust the path to your service
 
-describe('MyComponent', () => {
-  let component: MyComponent;
-  let fixture: ComponentFixture<MyComponent>;
+describe('MyService', () => {
+  let service: MyService;
+  let httpTestingController: HttpTestingController;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [MyComponent]
-    }).compileComponents();
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [MyService],
+    });
 
-    fixture = TestBed.createComponent(MyComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    service = TestBed.inject(MyService);
+    httpTestingController = TestBed.inject(HttpTestingController);
   });
 
-  it('should return substring before period when period is present', () => {
-    // Arrange
-    const input = 'operation.txt';
-
-    // Act
-    const result = component.getValueNameOperation(input);
-
-    // Assert
-    expect(result).toBe('operation');
+  afterEach(() => {
+    httpTestingController.verify(); // Verifies that no unmatched requests remain
   });
 
-  it('should return undefined when there is no period in the string', () => {
-    // Arrange
-    const input = 'operationTxt';
+  it('should return the expected JSON data from getJson', (done) => {
+    const mockData = { key: 'value' }; // Example mock data
 
-    // Act
-    const result = component.getValueNameOperation(input);
+    service.getJson().subscribe((data) => {
+      expect(data).toEqual(mockData);
+      done(); // Call done to indicate the test is complete
+    });
 
-    // Assert
-    expect(result).toBeUndefined();
-  });
+    // Expect one GET request to the specified URL
+    const req = httpTestingController.expectOne('./assets/exemplo.json');
+    expect(req.request.method).toBe('GET');
 
-  it('should return undefined for empty string', () => {
-    // Arrange
-    const input = '';
-
-    // Act
-    const result = component.getValueNameOperation(input);
-
-    // Assert
-    expect(result).toBeUndefined();
-  });
-
-  it('should handle null or undefined input gracefully', () => {
-    // Act & Assert
-    expect(component.getValueNameOperation(null)).toBeUndefined();
-    expect(component.getValueNameOperation(undefined)).toBeUndefined();
+    // Respond with the mock data
+    req.flush(mockData);
   });
 });
