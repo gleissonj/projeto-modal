@@ -1,69 +1,78 @@
-import { TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component'; // Replace with your actual component
-import { MapValueMultipartUpload } from './map-value-multipart-upload.model'; // Replace with the correct model
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { YourComponent } from './your.component'; // Replace with actual component
+import { MultipartUploadService } from './multipart-upload.service'; // Replace with actual service
 
-describe('MyComponent', () => {
-  let component: MyComponent;
+describe('YourComponent', () => {
+  let component: YourComponent;
+  let fixture: ComponentFixture<YourComponent>;
+  let mockMultipartUploadService: Partial<MultipartUploadService>;
+  let showMessageSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    // Mock the multipartUploadService
+    mockMultipartUploadService = {
+      sendFilesToMultipartUpload: jest.fn(),
+    };
+
+    await TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      providers: [
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService },
+      ]
+    }).compileComponents();
+  });
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [MyComponent],
-    });
+    fixture = TestBed.createComponent(YourComponent);
+    component = fixture.componentInstance;
 
-    component = TestBed.inject(MyComponent);
+    // Spy on showMessage method
+    showMessageSpy = jest.spyOn(component, 'showMessage');
+    fixture.detectChanges();
   });
 
-  it('should return true if a file is too large', () => {
-    // Arrange: Set up the max file size limit
-    component.megabytesLimitPerFile = 5; // Example: 5 MB
+  it('should show error if no file is selected', async () => {
+    component.file = undefined;
 
-    const largeFileMock = {
-      bodyMultipartRequest: {
-        fullFile: { size: 6 * 1024 * 1024 } // 6 MB
-      }
-    } as MapValueMultipartUpload;
+    await component.uploadArquivoAWS();
 
-    const smallFileMock = {
-      bodyMultipartRequest: {
-        fullFile: { size: 3 * 1024 * 1024 } // 3 MB
-      }
-    } as MapValueMultipartUpload;
-
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-    mapMultipartUpload.set('file1', [largeFileMock]);
-    mapMultipartUpload.set('file2', [smallFileMock]);
-
-    // Act: Call the method
-    const result = component.hasFileTooLarge(mapMultipartUpload);
-
-    // Assert: Expect the result to be true
-    expect(result).toBe(true);
+    expect(showMessageSpy).toHaveBeenCalledWith('Você deve anexar um arquivo', 'error');
   });
 
-  it('should return false if no files are too large', () => {
-    // Arrange: Set up the max file size limit
-    component.megabytesLimitPerFile = 5; // Example: 5 MB
+  it('should show error if typeFunc is empty', async () => {
+    component.file = new File([], 'example.txt');
+    component.typeFunc = '';
 
-    const smallFileMock1 = {
-      bodyMultipartRequest: {
-        fullFile: { size: 3 * 1024 * 1024 } // 3 MB
-      }
-    } as MapValueMultipartUpload;
+    await component.uploadArquivoAWS();
 
-    const smallFileMock2 = {
-      bodyMultipartRequest: {
-        fullFile: { size: 4 * 1024 * 1024 } // 4 MB
-      }
-    } as MapValueMultipartUpload;
+    expect(showMessageSpy).toHaveBeenCalledWith('Você deve informar o nome da função', 'error');
+  });
 
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-    mapMultipartUpload.set('file1', [smallFileMock1]);
-    mapMultipartUpload.set('file2', [smallFileMock2]);
+  it('should show error if typeSubFunc is empty', async () => {
+    component.file = new File([], 'example.txt');
+    component.typeFunc = 'SomeFunc';
+    component.typeSubFunc = '';
 
-    // Act: Call the method
-    const result = component.hasFileTooLarge(mapMultipartUpload);
+    await component.uploadArquivoAWS();
 
-    // Assert: Expect the result to be false
-    expect(result).toBe(false);
+    expect(showMessageSpy).toHaveBeenCalledWith('Você deve informar o nome da subfunção', 'error');
+  });
+
+  it('should call convertFileToBase64 and sendFilesToMultipartUpload on valid input', async () => {
+    const mockFile = new File([], 'example.txt');
+    component.file = mockFile;
+    component.typeFunc = 'SomeFunc';
+    component.typeSubFunc = 'SomeSubFunc';
+
+    // Mock convertFileToBase64 to return a base64 string
+    jest.spyOn(component, 'convertFileToBase64').mockResolvedValue('base64data');
+    
+    await component.uploadArquivoAWS();
+
+    expect(component.loading).toBe(true);
+    expect(component.subindoArquivo).toBe(true);
+    expect(component.convertFileToBase64).toHaveBeenCalledWith(mockFile);
+    expect(mockMultipartUploadService.sendFilesToMultipartUpload).toHaveBeenCalled();
   });
 });
