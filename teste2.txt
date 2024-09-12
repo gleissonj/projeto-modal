@@ -1,76 +1,57 @@
-import { TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component'; // Replace with your actual component
-import { MapValueMultipartUpload } from './map-value-multipart-upload.model'; // Replace with the correct model
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { YourComponent } from './your.component';
+import { MultipartUploadService } from './multipart-upload.service';
+import { of } from 'rxjs';
 
-describe('MyComponent', () => {
-  let component: MyComponent;
+describe('YourComponent', () => {
+  let component: YourComponent;
+  let fixture: ComponentFixture<YourComponent>;
+  let mockMultipartUploadService: Partial<MultipartUploadService>;
+  let startStepFunctionSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    mockMultipartUploadService = {
+      startStepFunction: jest.fn()
+    };
+
+    await TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      providers: [
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
+      ]
+    }).compileComponents();
+  });
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [MyComponent],
+    fixture = TestBed.createComponent(YourComponent);
+    component = fixture.componentInstance;
+
+    // Spy on the startStepFunction method
+    startStepFunctionSpy = jest.spyOn(mockMultipartUploadService, 'startStepFunction').mockReturnValue(of('response'));
+    fixture.detectChanges();
+  });
+
+  it('should call startStepFunction for each step function in the list', () => {
+    const stepFunctions = ['step1', 'step2', 'step3'];
+
+    component.startMultiplesStepFunction(stepFunctions);
+
+    stepFunctions.forEach(stepFunction => {
+      expect(startStepFunctionSpy).toHaveBeenCalledWith(stepFunction);
     });
-
-    component = TestBed.inject(MyComponent);
   });
 
-  it('should call finishMultipartRequests for a single successful part', () => {
-    // Arrange: Mock the mapMultipartUpload with one successful request part
-    const mockFileParts: MapValueMultipartUpload[] = [
-      { successfullRequest: true } as MapValueMultipartUpload
-    ];
+  it('should handle the subscription callback correctly', () => {
+    // Spy on console.log to verify it's called
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-    mapMultipartUpload.set('mockHash', mockFileParts);
+    const stepFunctions = ['step1'];
+    component.startMultiplesStepFunction(stepFunctions);
 
-    component.mapMultipartUpload = mapMultipartUpload;
-    const finishMultipartRequestsSpy = jest.spyOn(component, 'finishMultipartRequests');
+    // Check if the console log is called with "bateu"
+    expect(consoleLogSpy).toHaveBeenCalledWith('bateu');
 
-    // Act: Call handleNextRequests
-    component.handleNextRequests();
-
-    // Assert: finishMultipartRequests should have been called
-    expect(finishMultipartRequestsSpy).toHaveBeenCalledWith(mapMultipartUpload);
-  });
-
-  it('should skip parts that have unsuccessful requests', () => {
-    // Arrange: Mock mapMultipartUpload with an unsuccessful request part
-    const mockFileParts: MapValueMultipartUpload[] = [
-      { successfullRequest: false } as MapValueMultipartUpload,
-      { successfullRequest: true } as MapValueMultipartUpload
-    ];
-
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-    mapMultipartUpload.set('mockHash', mockFileParts);
-
-    component.mapMultipartUpload = mapMultipartUpload;
-    const finishMultipartRequestsSpy = jest.spyOn(component, 'finishMultipartRequests');
-    const asyncResquestsPartsSpy = jest.spyOn(component, 'asyncResquestsParts');
-
-    // Act: Call handleNextRequests
-    component.handleNextRequests();
-
-    // Assert: It should skip the unsuccessful part and still proceed
-    expect(finishMultipartRequestsSpy).not.toHaveBeenCalled();
-    expect(asyncResquestsPartsSpy).toHaveBeenCalled();
-  });
-
-  it('should call asyncResquestsParts for remaining parts', () => {
-    // Arrange: Mock mapMultipartUpload with multiple parts, some successful and some unsuccessful
-    const mockFileParts: MapValueMultipartUpload[] = [
-      { successfullRequest: true } as MapValueMultipartUpload,
-      { successfullRequest: false } as MapValueMultipartUpload
-    ];
-
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-    mapMultipartUpload.set('mockHash', mockFileParts);
-
-    component.mapMultipartUpload = mapMultipartUpload;
-    const asyncResquestsPartsSpy = jest.spyOn(component, 'asyncResquestsParts');
-
-    // Act: Call handleNextRequests
-    component.handleNextRequests();
-
-    // Assert: asyncResquestsParts should have been called to continue handling other parts
-    expect(asyncResquestsPartsSpy).toHaveBeenCalled();
+    // Restore original console.log
+    consoleLogSpy.mockRestore();
   });
 });
