@@ -1,37 +1,84 @@
-import { Component } from '@angular/core';
-import { FileService } from './file.service';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { YourComponent } from './your-component.component'; // Replace with the actual path
+import { MultipartUploadService } from './multipart-upload.service'; // Replace with the actual path
+import { environment } from '../environments/environment'; // Replace with the actual path
 
-@Component({
-  selector: 'app-file-download',
-  template: `<button (click)="downloadCsv()">Download CSV</button>`
-})
-export class FileDownloadComponent {
-  constructor(private fileService: FileService) {}
+describe('YourComponent', () => {
+  let component: YourComponent;
+  let fixture: ComponentFixture<YourComponent>;
+  let mockMultipartUploadService: any;
 
-  downloadCsv() {
-    this.fileService.downloadCsvFile().subscribe(response => {
-      // Extract the filename from the Content-Disposition header
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = 'default.csv'; // Default name in case filename extraction fails
+  beforeEach(() => {
+    // Mock the MultipartUploadService
+    mockMultipartUploadService = {
+      downloadFileS3: jest.fn()
+    };
 
-      if (contentDisposition) {
-        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-        if (matches != null && matches[1]) {
-          filename = matches[1].replace(/['"]/g, ''); // Remove any surrounding quotes
-        }
-      }
+    TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      providers: [
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
+      ]
+    }).compileComponents();
 
-      // Create a URL for the Blob
-      const url = window.URL.createObjectURL(response.body);
+    fixture = TestBed.createComponent(YourComponent);
+    component = fixture.componentInstance;
 
-      // Create a link element to trigger the download
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.click();
+    // Mock the showMessage method
+    jest.spyOn(component, 'showMessage');
 
-      // Clean up and revoke the URL object
-      window.URL.revokeObjectURL(url);
-    });
-  }
-}
+    // Set up the environment variables (mocks)
+    environment.bucketMigration = { value: 'test-bucket' };
+    environment.fileEV1 = 'path/to/EV1';
+    environment.fileEV2 = 'path/to/EV2';
+  });
+
+  it('should call showMessage with an error if selectedValue is undefined', () => {
+    component.selectedValue = undefined;
+
+    component.downloadFileMigration();
+
+    expect(component.showMessage).toHaveBeenCalledWith('Você precisa informar o tipo da planilha', 'error');
+  });
+
+  it('should call downloadFileS3 with correct parameters and handle successful download for EV1', () => {
+    component.selectedValue = 'EV1';
+    const mockBlob = new Blob(['file data'], { type: 'text/csv' });
+
+    // Mock downloadFileS3 to return an observable containing the Blob
+    mockMultipartUploadService.downloadFileS3.mockReturnValue(of(mockBlob));
+
+    // Spy on the createElement and click methods
+    const createElementSpy = jest.spyOn(document, 'createElement');
+    const clickSpy = jest.fn();
+    createElementSpy.mockReturnValue({ click: clickSpy } as any);
+
+    component.downloadFileMigration();
+
+    expect(mockMultipartUploadService.downloadFileS3).toHaveBeenCalledWith('test-bucket', environment.fileEV1);
+    expect(createElementSpy).toHaveBeenCalledWith('a');
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it('should set the correct file name for EV1 and EV2', () => {
+    component.selectedValue = 'EV1';
+    const mockBlob = new Blob(['file data'], { type: 'text/csv' });
+
+    mockMultipartUploadService.downloadFileS3.mockReturnValue(of(mockBlob));
+
+    const createElementSpy = jest.spyOn(document, 'createElement');
+    const mockLink = { click: jest.fn(), download: '' };
+    createElementSpy.mockReturnValue(mockLink as any);
+
+    component.downloadFileMigration();
+
+    expect(mockLink.download).toBe('EV1.csv');
+
+    // Repeat for EV2
+    component.selectedValue = 'EV2';
+    component.downloadFileMigration();
+
+    expect(mockLink.download).toBe('EV2.csv');
+  });
+});
