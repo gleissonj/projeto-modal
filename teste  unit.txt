@@ -1,80 +1,37 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
-import { YourComponent } from './your.component'; // Replace with actual component
-import { MultipartUploadService } from './multipart-upload.service'; // Replace with actual service
+import { Component } from '@angular/core';
+import { FileService } from './file.service';
 
-describe('YourComponent', () => {
-  let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
-  let mockMultipartUploadService: Partial<MultipartUploadService>;
-  let showMessageSpy: jest.SpyInstance;
-  let convertFileToBase64Spy: jest.SpyInstance;
+@Component({
+  selector: 'app-file-download',
+  template: `<button (click)="downloadCsv()">Download CSV</button>`
+})
+export class FileDownloadComponent {
+  constructor(private fileService: FileService) {}
 
-  beforeEach(async () => {
-    // Mock the multipartUploadService
-    mockMultipartUploadService = {
-      sendFilesToMultipartUpload: jest.fn(),
-    };
+  downloadCsv() {
+    this.fileService.downloadCsvFile().subscribe(response => {
+      // Extract the filename from the Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'default.csv'; // Default name in case filename extraction fails
 
-    await TestBed.configureTestingModule({
-      declarations: [YourComponent],
-      providers: [
-        { provide: MultipartUploadService, useValue: mockMultipartUploadService },
-      ]
-    }).compileComponents();
-  });
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, ''); // Remove any surrounding quotes
+        }
+      }
 
-  beforeEach(() => {
-    fixture = TestBed.createComponent(YourComponent);
-    component = fixture.componentInstance;
+      // Create a URL for the Blob
+      const url = window.URL.createObjectURL(response.body);
 
-    // Spy on showMessage method
-    showMessageSpy = jest.spyOn(component, 'showMessage');
+      // Create a link element to trigger the download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
 
-    // Spy on convertFileToBase64 method
-    convertFileToBase64Spy = jest.spyOn(component, 'convertFileToBase64').mockResolvedValue('base64data');
-    
-    fixture.detectChanges();
-  });
-
-  it('should show error if no file is selected', async () => {
-    component.file = undefined; // Ensure the file is set to undefined
-
-    await component.uploadArquivoAWS();
-
-    expect(showMessageSpy).toHaveBeenCalledWith('Você deve anexar um arquivo', 'error');
-  });
-
-  it('should show error if typeFunc is empty', async () => {
-    component.file = new File([], 'example.txt');
-    component.typeFunc = ''; // Set typeFunc to an empty string
-
-    await component.uploadArquivoAWS();
-
-    expect(showMessageSpy).toHaveBeenCalledWith('Você deve informar o nome da função', 'error');
-  });
-
-  it('should show error if typeSubFunc is empty', async () => {
-    component.file = new File([], 'example.txt');
-    component.typeFunc = 'SomeFunc';
-    component.typeSubFunc = ''; // Set typeSubFunc to an empty string
-
-    await component.uploadArquivoAWS();
-
-    expect(showMessageSpy).toHaveBeenCalledWith('Você deve informar o nome da subfunção', 'error');
-  });
-
-  it('should call convertFileToBase64 and sendFilesToMultipartUpload on valid input', async () => {
-    const mockFile = new File([], 'example.txt');
-    component.file = mockFile;
-    component.typeFunc = 'SomeFunc';
-    component.typeSubFunc = 'SomeSubFunc';
-
-    await component.uploadArquivoAWS();
-
-    expect(component.loading).toBe(true);
-    expect(component.subindoArquivo).toBe(true);
-    expect(convertFileToBase64Spy).toHaveBeenCalledWith(mockFile);
-    expect(mockMultipartUploadService.sendFilesToMultipartUpload).toHaveBeenCalled();
-  });
-});
+      // Clean up and revoke the URL object
+      window.URL.revokeObjectURL(url);
+    });
+  }
+}
