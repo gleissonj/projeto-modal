@@ -1,63 +1,3 @@
-The error message you're encountering—"A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"—usually occurs in C# when the application is attempting to connect to a remote server, but the connection either times out or the server is not reachable.
-
-This can happen for several reasons:
-
-Server Unreachable: The server or service you are trying to connect to is down or unreachable.
-Incorrect IP Address or Port: The IP address or port you're connecting to may be incorrect.
-Firewall/Proxy Blocking: The connection is being blocked by a firewall, proxy, or network security settings.
-DNS Resolution Issues: The hostname may not be resolving to the correct IP address.
-Connection Timeout: The server is taking too long to respond, and the connection is timing out.
-SSL/TLS Issues: If using HTTPS, there may be SSL certificate or encryption-related issues.
-How to Troubleshoot and Fix the Issue in C#
-1. Check the Target Server and Port
-Make sure the target server is up and running and the IP address/hostname and port number you are using are correct. You can test this by pinging the server or using a tool like telnet or curl to test connectivity.
-
-Example to check if the server is responding on a specific port:
-
-
-
-2. Adjust Connection Timeout
-If the server is slow to respond, you can increase the timeout for the connection. In C#, you can adjust the HttpClient timeout like this:
-
-
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-public class Program
-{
-    public static async Task Main(string[] args)
-    {
-        var httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(30) // Increase the timeout as needed
-        };
-
-        try
-        {
-            HttpResponseMessage response = await httpClient.GetAsync("http://example.com");
-            response.EnsureSuccessStatusCode();
-            Console.WriteLine(await response.Content.ReadAsStringAsync());
-        }
-        catch (TaskCanceledException ex)
-        {
-            Console.WriteLine("Request timed out: " + ex.Message);
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.WriteLine("Error: " + ex.Message);
-        }
-    }
-}
-
-
-
-3. Check Firewall/Proxy Settings
-If your application is running behind a firewall or proxy, ensure the proxy settings are configured correctly and the firewall is not blocking the connection. You may need to add proxy credentials or explicitly set the proxy in your HttpClient.
-
-Example for setting proxy in HttpClient:
-
-
 using System;
 using System.Net;
 using System.Net.Http;
@@ -67,39 +7,38 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        var proxy = new WebProxy("http://proxyserver:port")
+        // Define the proxy server address (without credentials)
+        var proxy = new WebProxy("http://yourproxyserver:port")
         {
-            Credentials = new NetworkCredential("username", "password")
+            UseDefaultCredentials = true  // Use system default credentials (if any)
         };
 
-        var handler = new HttpClientHandler
+        // Configure HttpClientHandler to use the proxy
+        var httpClientHandler = new HttpClientHandler
         {
             Proxy = proxy,
-            UseProxy = true
+            UseProxy = true,
+            UseDefaultCredentials = true,  // Enable this to allow system credentials if needed
+            PreAuthenticate = true         // Pre-authenticate (even if no credentials are specified)
         };
 
-        var client = new HttpClient(handler);
+        // Create an HttpClient with the configured handler
+        var client = new HttpClient(httpClientHandler);
 
         try
         {
+            // Send a GET request through the proxy
             HttpResponseMessage response = await client.GetAsync("http://example.com");
             response.EnsureSuccessStatusCode();
-            Console.WriteLine(await response.Content.ReadAsStringAsync());
+
+            // Read and display the response
+            string content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(content);
         }
         catch (HttpRequestException ex)
         {
-            Console.WriteLine("Request failed: " + ex.Message);
+            // Catch and display the error (if the request fails)
+            Console.WriteLine($"Request error: {ex.Message}");
         }
     }
 }
-
-
-
-5. Verify SSL/TLS Configuration (if using HTTPS)
-If you're making an HTTPS request, ensure the server's SSL/TLS configuration is correct, and that your client accepts the server's certificate. You may need to bypass SSL certificate validation for testing (not recommended in production) like this:
-
-
-var handler = new HttpClientHandler
-{
-    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-};
