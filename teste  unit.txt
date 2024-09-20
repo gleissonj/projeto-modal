@@ -1,84 +1,11 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
-import { YourComponent } from './your-component.component'; // Replace with the actual path
-import { MultipartUploadService } from './multipart-upload.service'; // Replace with the actual path
-import { environment } from '../environments/environment'; // Replace with the actual path
+var handler = new HttpClientHandler()
+{
+    Proxy = new WebProxy("http://proxyserver:port")
+    {
+        Credentials = new NetworkCredential("username", "password")
+    },
+    UseProxy = true,
+};
 
-describe('YourComponent', () => {
-  let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
-  let mockMultipartUploadService: any;
-
-  beforeEach(() => {
-    // Mock the MultipartUploadService
-    mockMultipartUploadService = {
-      downloadFileS3: jest.fn()
-    };
-
-    TestBed.configureTestingModule({
-      declarations: [YourComponent],
-      providers: [
-        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(YourComponent);
-    component = fixture.componentInstance;
-
-    // Mock the showMessage method
-    jest.spyOn(component, 'showMessage');
-
-    // Set up the environment variables (mocks)
-    environment.bucketMigration = { value: 'test-bucket' };
-    environment.fileEV1 = 'path/to/EV1';
-    environment.fileEV2 = 'path/to/EV2';
-  });
-
-  it('should call showMessage with an error if selectedValue is undefined', () => {
-    component.selectedValue = undefined;
-
-    component.downloadFileMigration();
-
-    expect(component.showMessage).toHaveBeenCalledWith('Você precisa informar o tipo da planilha', 'error');
-  });
-
-  it('should call downloadFileS3 with correct parameters and handle successful download for EV1', () => {
-    component.selectedValue = 'EV1';
-    const mockBlob = new Blob(['file data'], { type: 'text/csv' });
-
-    // Mock downloadFileS3 to return an observable containing the Blob
-    mockMultipartUploadService.downloadFileS3.mockReturnValue(of(mockBlob));
-
-    // Spy on the createElement and click methods
-    const createElementSpy = jest.spyOn(document, 'createElement');
-    const clickSpy = jest.fn();
-    createElementSpy.mockReturnValue({ click: clickSpy } as any);
-
-    component.downloadFileMigration();
-
-    expect(mockMultipartUploadService.downloadFileS3).toHaveBeenCalledWith('test-bucket', environment.fileEV1);
-    expect(createElementSpy).toHaveBeenCalledWith('a');
-    expect(clickSpy).toHaveBeenCalled();
-  });
-
-  it('should set the correct file name for EV1 and EV2', () => {
-    component.selectedValue = 'EV1';
-    const mockBlob = new Blob(['file data'], { type: 'text/csv' });
-
-    mockMultipartUploadService.downloadFileS3.mockReturnValue(of(mockBlob));
-
-    const createElementSpy = jest.spyOn(document, 'createElement');
-    const mockLink = { click: jest.fn(), download: '' };
-    createElementSpy.mockReturnValue(mockLink as any);
-
-    component.downloadFileMigration();
-
-    expect(mockLink.download).toBe('EV1.csv');
-
-    // Repeat for EV2
-    component.selectedValue = 'EV2';
-    component.downloadFileMigration();
-
-    expect(mockLink.download).toBe('EV2.csv');
-  });
-});
+var client = new HttpClient(handler);
+var response = await client.GetAsync("http://example.com");
