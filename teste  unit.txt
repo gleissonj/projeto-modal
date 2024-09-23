@@ -1,15 +1,8 @@
-<dw:transform-message doc:name="Transform DateTime">
-    <dw:set-payload><![CDATA[%dw 2.0
+%dw 2.0
 output application/json
+var inputDate = "2024-09-19 16:39:59.477629"
 ---
 {
-    Id: "a0123456789abcde", // Replace with the actual Salesforce record ID
-    dat_rfrc: 
-    (
-        // Take the first 23 characters to truncate microseconds and add 'Z' for UTC
-        (substring("2024-09-19 16:39:59.477629", 0, 23) ++ "Z") 
-        as DateTime {format: "yyyy-MM-dd HH:mm:ss.SSS'Z'"} 
-        as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}
-    )
-}]]></dw:set-payload>
-</dw:transform-message>
+  Id: payload.Id,
+  dat_rfrc__c: (inputDate as DateTime {format: "yyyy-MM-dd HH:mm:ss.SSSSSS"} as String {format: "yyyy-MM-dd'T'HH:mm:ss'Z'"})
+}
