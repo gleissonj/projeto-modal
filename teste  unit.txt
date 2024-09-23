@@ -4,7 +4,9 @@ output application/java
 payload map ((item, index) -> {
     "FS1_DataValidacao__c": 
         (
-            (item.dat_rfrc replace /(\d{3})\d{3}$/ with "$1") 
+            (item.dat_rfrc as String) 
+            // Truncate microseconds to milliseconds (retain the first 3 digits after the seconds)
+            replace /(\.\d{3})\d+/ with "$1" 
             as DateTime {format: "yyyy-MM-dd HH:mm:ss.SSS"} 
             >> (("P0D" as Period) as TimeZone)
         ) 
