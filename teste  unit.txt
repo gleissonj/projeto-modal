@@ -1,23 +1,10 @@
-<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw">
-   <flow name="updateDateTimeFlow">
-      <!-- HTTP listener to trigger the flow -->
-      <http:listener config-ref="HTTP_Listener_config" path="/updateDateTime" doc:name="HTTP Listener"/>
-
-      <!-- DataWeave expression to format current date-time -->
-      <dw:transform-message doc:name="Transform DateTime">
-         <dw:set-payload><![CDATA[%dw 2.0
+<dw:transform-message doc:name="Transform Incoming DateTime">
+   <dw:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
     Id: "a0123456789abcde", // Salesforce record ID
-    My_DateTime_Field__c: now() as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}
+    My_DateTime_Field__c: 
+    |payload.dateValue as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}
 }]]></dw:set-payload>
-      </dw:transform-message>
-
-      <!-- Salesforce connector to update the record -->
-      <salesforce:update config-ref="Salesforce_Config" doc:name="Salesforce Update">
-         <salesforce:objects><![CDATA#[payload]]></salesforce:objects>
-         <salesforce:sObjectType>CustomObject__c</salesforce:sObjectType>
-      </salesforce:update>
-   </flow>
-</mule>
+</dw:transform-message>
