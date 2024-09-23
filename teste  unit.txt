@@ -1,14 +1,15 @@
 %dw 2.0
 output application/java
 ---
-payload map ((item, index) -> {
+payload map((item, index) -> {
     "FS1_DataValidacao__c": 
         (
             (item.dat_rfrc as String) 
-            // Truncate microseconds to milliseconds (retain the first 3 digits after the seconds)
-            replace /(\.\d{3})\d+/ with "$1" 
-            as DateTime {format: "yyyy-MM-dd HH:mm:ss.SSS"} 
-            >> (("P0D" as Period) as TimeZone)
-        ) 
-        as DateTime {format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}
+            // Truncate microseconds to milliseconds
+            replace /(\.\d{3})\d+/ with "$1"
+            // Parse as DateTime
+            as DateTime {format: "yyyy-MM-dd HH:mm:ss.SSS"}
+            // Format as Salesforce-compatible ISO 8601 string with UTC
+            as DateTime {format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}
+        )
 })
