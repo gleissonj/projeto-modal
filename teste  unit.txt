@@ -1,10 +1,21 @@
 %dw 2.0
 output application/java
 ---
-payload map((item, index) -> {
+payload map((item) -> {
     "FS1_DataValidacao__c": 
-        (
-            // Ensure item.dat_rfrc is a valid string and format it
-            (item.dat_rfrc as String)[0 to 26] ++ "Z" // Truncate to milliseconds and append 'Z'
-        ) as DateTime {format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}
+        // Ensure item.dar_rfrc is valid
+        if (item.dar_rfrc != null) 
+            (
+                // Truncate to milliseconds and format as ISO 8601
+                (item.dar_rfrc as String)[0 to 26] ++ "Z"
+            ) 
+        else 
+            null // Handle null cases as needed
 })
+
+
+
+[
+    {"FS1_DataValidacao__c": "2024-09-19T16:39:59.477Z"},
+    {"FS1_DataValidacao__c": null}
+]
