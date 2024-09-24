@@ -42,3 +42,15 @@ var inputDateTime = "2024-09-19T16:39:59.4777629Z"
    // Remove fractional seconds and ensure it's in the proper format for Salesforce
    correctedDateTime: |inputDateTime as DateTime {format: "yyyy-MM-dd'T'HH:mm:ssZ"} as String {format: "yyyy-MM-dd'T'HH:mm:ssZ"}
 }
+
+
+
+%dw 2.0
+output application/json
+var inputDateTime = "2022-11-29T19:12:21.000+0000"
+---
+{
+   original: inputDateTime,
+   // Convert the DateTime string with a timezone offset to the correct format (with 'Z' for UTC)
+   convertedDateTime: |inputDateTime as DateTime {format: "yyyy-MM-dd'T'HH:mm:ss.SSSZ"} as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSSZ"}
+}
