@@ -54,3 +54,32 @@ var inputDateTime = "2022-11-29T19:12:21.000+0000"
    // Convert the DateTime string with a timezone offset to the correct format (with 'Z' for UTC)
    convertedDateTime: |inputDateTime as DateTime {format: "yyyy-MM-dd'T'HH:mm:ss.SSSZ"} as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSSZ"}
 }
+
+
+olhar no tipo data como envia,
+testar com now ()
+
+
+%dw 2.0
+output application/json
+---
+{
+  dateField: (payload.date as Date).format("yyyy-MM-dd'T'HH:mm:ss'Z'")
+}
+
+
+%dw 2.0
+output application/java
+---
+{
+  dateTimeField: (payload.date as DateTime).format("yyyy-MM-dd'T'HH:mm:ss'Z'")
+}
+
+
+%dw 2.0
+output application/json
+---
+{
+    "DateTimeField__c": now() as String {format: "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"}
+}
+
