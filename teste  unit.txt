@@ -7,7 +7,7 @@
                 "cloudformation:DeleteStack",
                 "cloudformation:DescribeStacks"
             ],
-            "Resource": "arn:aws:cloudformation:sa-east-1:0298343434:stack/gluejobteste-dev-stack/*"
+            "Resource": "*"
         }
     ]
 }
