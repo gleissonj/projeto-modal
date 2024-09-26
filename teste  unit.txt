@@ -1,80 +1,13 @@
-using Amazon.CloudFormation;
-using Amazon.CloudFormation.Model;
-using System;
-using System.Threading.Tasks;
-
-namespace CloudFormationDeleteStack
 {
-    class Program
-    {
-        static async Task Main(string[] args)
+    "Version": "2012-10-17",
+    "Statement": [
         {
-            var stackName = "your-stack-name"; // Replace with your CloudFormation stack name
-
-            // Create the AmazonCloudFormation client
-            var cloudFormationClient = new AmazonCloudFormationClient();
-
-            try
-            {
-                // Call the DeleteStackAsync method
-                var deleteStackRequest = new DeleteStackRequest
-                {
-                    StackName = stackName // Name or ARN of the stack to delete
-                };
-
-                // Execute the delete request
-                await cloudFormationClient.DeleteStackAsync(deleteStackRequest);
-                Console.WriteLine($"Stack '{stackName}' deletion initiated.");
-
-                // Optionally, wait for the stack to be deleted
-                await WaitForStackDeletion(cloudFormationClient, stackName);
-                Console.WriteLine($"Stack '{stackName}' has been deleted.");
-            }
-            catch (AmazonCloudFormationException ex)
-            {
-                Console.WriteLine($"Error deleting stack: {ex.Message}");
-            }
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:DeleteStack",
+                "cloudformation:DescribeStacks"
+            ],
+            "Resource": "arn:aws:cloudformation:sa-east-1:0298343434:stack/gluejobteste-dev-stack/*"
         }
-
-        static async Task WaitForStackDeletion(IAmazonCloudFormation cloudFormationClient, string stackName)
-        {
-            var describeStacksRequest = new DescribeStacksRequest
-            {
-                StackName = stackName
-            };
-
-            bool isDeleted = false;
-            while (!isDeleted)
-            {
-                try
-                {
-                    // Try to describe the stack
-                    var response = await cloudFormationClient.DescribeStacksAsync(describeStacksRequest);
-                    var stackStatus = response.Stacks[0].StackStatus;
-
-                    if (stackStatus == StackStatus.DELETE_IN_PROGRESS)
-                    {
-                        Console.WriteLine("Stack deletion in progress...");
-                        await Task.Delay(5000); // Wait for 5 seconds before checking again
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Stack status: {stackStatus}");
-                    }
-                }
-                catch (AmazonCloudFormationException ex)
-                {
-                    // If the stack is not found, it means the deletion is complete
-                    if (ex.ErrorCode == "ValidationError" && ex.Message.Contains("does not exist"))
-                    {
-                        isDeleted = true;
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-        }
-    }
+    ]
 }
