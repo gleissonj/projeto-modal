@@ -1,51 +1,73 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BehaviorSubject } from 'rxjs'; // BehaviorSubject for mocking
-import { YourComponent } from './your.component'; // Replace with your actual component
-import { MultipartUploadService } from './multipart-upload.service'; // Replace with actual service
+// Importando o ambiente e a função que queremos testar
+import { environment } from '../environment'; // ajuste o caminho conforme necessário
+import YourComponent from './YourComponent'; // ajuste o caminho conforme necessário
 
-describe('YourComponent', () => {
-  let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
-  let mockMultipartUploadService: Partial<MultipartUploadService>;
-  let responseSubject: BehaviorSubject<{ success: boolean }>;
-
-  beforeEach(async () => {
-    // Initialize the BehaviorSubject with a default value
-    responseSubject = new BehaviorSubject<{ success: boolean }>({ success: true });
-
-    mockMultipartUploadService = {
-      responseWithSuccessOrError$: responseSubject // Use the BehaviorSubject
-    };
-
-    await TestBed.configureTestingModule({
-      declarations: [YourComponent],
-      providers: [
-        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
-      ]
-    }).compileComponents();
-  });
+describe('verificaPermissaoUpload', () => {
+  let component;
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(YourComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    component = new YourComponent();
+    component.gruposAcessos = []; // inicializa com uma lista vazia
+    component.showMessage = jest.fn(); // mock da função showMessage
   });
 
-  it('should show a success message when upload is successful', () => {
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
-
-    // Trigger the subscription
-    component.subscribeToResponse();
-
-    // Expect a success message to be shown
-    expect(showMessageSpy).toHaveBeenCalledWith('Upload successful', 'success');
+  it('deve exibir mensagem de permissão negada para "Prospect" sem permissão', () => {
+    component.gruposAcessos = []; // sem permissões de acesso
+    component.verificaPermissaoUpload('Prospect');
+    expect(component.showMessage).toHaveBeenCalledWith('Voce nao possui permissao');
   });
 
-  it('should show an error message when upload fails', () => {
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
+  it('deve exibir mensagem de permissão negada para "Opp" sem permissão', () => {
+    component.gruposAcessos = []; // sem permissões de acesso
+    component.verificaPermissaoUpload('Opp');
+    expect(component.showMessage).toHaveBeenCalledWith('Voce nao possui permissao');
+  });
 
-    // Trigger a new value with success = false
-    responseSubject.next({ success: false });
+  it('deve exibir mensagem de permissão negada para "oportunidadesibba360" sem permissão', () => {
+    component.gruposAcessos = []; // sem permissões de acesso
+    component.verificaPermissaoUpload('oportunidadesibba360');
+    expect(component.showMessage).toHaveBeenCalledWith('Voce nao possui permissao');
+  });
 
-    // Expect an error message to be shown
-    expect(showMessageSpy).
+  it('deve exibir mensagem de permissão negada para "npsglobaltransacional" sem permissão', () => {
+    component.gruposAcessos = []; // sem permissões de acesso
+    component.verificaPermissaoUpload('npsglobaltransacional');
+    expect(component.showMessage).toHaveBeenCalledWith('Voce nao possui permissao');
+  });
+
+  it('deve exibir mensagem de permissão negada para "handover" sem permissão', () => {
+    component.gruposAcessos = []; // sem permissões de acesso
+    component.verificaPermissaoUpload('handover');
+    expect(component.showMessage).toHaveBeenCalledWith('Voce nao possui permissao');
+  });
+
+  it('não deve exibir mensagem se o usuário tiver permissão para "Prospect"', () => {
+    component.gruposAcessos = [environment.permissionsProspect];
+    component.verificaPermissaoUpload('Prospect');
+    expect(component.showMessage).not.toHaveBeenCalled();
+  });
+
+  it('não deve exibir mensagem se o usuário tiver permissão para "Opp"', () => {
+    component.gruposAcessos = [environment.permissionsOpp];
+    component.verificaPermissaoUpload('Opp');
+    expect(component.showMessage).not.toHaveBeenCalled();
+  });
+
+  it('não deve exibir mensagem se o usuário tiver permissão para "oportunidadesibba360"', () => {
+    component.gruposAcessos = [environment.permissionsOportunidades];
+    component.verificaPermissaoUpload('oportunidadesibba360');
+    expect(component.showMessage).not.toHaveBeenCalled();
+  });
+
+  it('não deve exibir mensagem se o usuário tiver permissão para "npsglobaltransacional"', () => {
+    component.gruposAcessos = [environment.permissionsNps];
+    component.verificaPermissaoUpload('npsglobaltransacional');
+    expect(component.showMessage).not.toHaveBeenCalled();
+  });
+
+  it('não deve exibir mensagem se o usuário tiver permissão para "handover"', () => {
+    component.gruposAcessos = [environment.permissionsHandover];
+    component.verificaPermissaoUpload('handover');
+    expect(component.showMessage).not.toHaveBeenCalled();
+  });
+});
