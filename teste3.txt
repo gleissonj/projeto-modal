@@ -1,66 +1,27 @@
-import { TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component'; // Replace with your actual component
-import { MapValueMultipartUpload } from './map-value-multipart-upload.model'; // Replace with correct model
+describe('verificaPermissaoUpload', () => {
+    let instance: YourClass; // Substitua YourClass pelo nome da classe onde a função está implementada
 
-describe('MyComponent', () => {
-  let component: MyComponent;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [MyComponent],
+    beforeEach(() => {
+        instance = new YourClass();
     });
 
-    component = TestBed.inject(MyComponent);
-  });
+    it('deve retornar true se a permissão necessária estiver em gruposAcessos', () => {
+        instance.gruposAcessos = ['permission1', 'permission2', environment.permissionsProspect];
+        expect(instance.verificaPermissaoUpload('Prospect')).toBe(true);
+    });
 
-  it('should return true when all first parts of each multipart upload are successful', () => {
-    // Arrange: Mock the mapMultipartUpload with all first parts having successful requests
-    const mockFileParts1: MapValueMultipartUpload[] = [
-      { successfulRequest: true } as MapValueMultipartUpload
-    ];
-    const mockFileParts2: MapValueMultipartUpload[] = [
-      { successfulRequest: true } as MapValueMultipartUpload
-    ];
+    it('deve retornar false se a permissão necessária não estiver em gruposAcessos', () => {
+        instance.gruposAcessos = ['permission1', 'permission2'];
+        expect(instance.verificaPermissaoUpload('Prospect')).toBe(false);
+    });
 
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-    mapMultipartUpload.set('mockHash1', mockFileParts1);
-    mapMultipartUpload.set('mockHash2', mockFileParts2);
+    it('deve retornar false se gruposAcessos for undefined e a permissão necessária existir', () => {
+        instance.gruposAcessos = undefined;
+        expect(instance.verificaPermissaoUpload('Prospect')).toBe(false);
+    });
 
-    // Act: Call checkIfFirstPartRequestPassedSuccessfully
-    const result = component.checkIfFirstPartRequestPassedSuccessfully(mapMultipartUpload);
-
-    // Assert: It should return true
-    expect(result).toBe(true);
-  });
-
-  it('should return false when one of the first parts of a multipart upload is unsuccessful', () => {
-    // Arrange: Mock the mapMultipartUpload with one unsuccessful request
-    const mockFileParts1: MapValueMultipartUpload[] = [
-      { successfulRequest: true } as MapValueMultipartUpload
-    ];
-    const mockFileParts2: MapValueMultipartUpload[] = [
-      { successfulRequest: false } as MapValueMultipartUpload
-    ];
-
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-    mapMultipartUpload.set('mockHash1', mockFileParts1);
-    mapMultipartUpload.set('mockHash2', mockFileParts2);
-
-    // Act: Call checkIfFirstPartRequestPassedSuccessfully
-    const result = component.checkIfFirstPartRequestPassedSuccessfully(mapMultipartUpload);
-
-    // Assert: It should return false
-    expect(result).toBe(false);
-  });
-
-  it('should return true when mapMultipartUpload is empty', () => {
-    // Arrange: Empty mapMultipartUpload
-    const mapMultipartUpload = new Map<string, MapValueMultipartUpload[]>();
-
-    // Act: Call checkIfFirstPartRequestPassedSuccessfully
-    const result = component.checkIfFirstPartRequestPassedSuccessfully(mapMultipartUpload);
-
-    // Assert: It should return true (since there are no parts to fail)
-    expect(result).toBe(true);
-  });
+    it('deve retornar true se nameFunc não requer permissão especial', () => {
+        instance.gruposAcessos = ['permission1', 'permission2'];
+        expect(instance.verificaPermissaoUpload('nonExistingNameFunc')).toBe(true);
+    });
 });
