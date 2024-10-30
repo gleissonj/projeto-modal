@@ -1,4 +1,4 @@
-verificaPermissaoUpload(nameFunc: string) {
+verificaPermissaoUpload(nameFunc: string): boolean {
     const permissoesMap = {
         'Prospect': environment.permissionsProspect,
         'Opp': environment.permissionsOpp,
@@ -7,6 +7,7 @@ verificaPermissaoUpload(nameFunc: string) {
         'handover': environment.permissionsHandover
     };
 
-    const permissaoNecessaria = permissoesMap[nameFunc];
+    // Verifica se nameFunc está no mapa e se o usuário possui a permissão necessária
+    const permissaoNecessaria = permissoesMap[nameFunc as keyof typeof permissoesMap];
     return permissaoNecessaria ? this.gruposAcessos.includes(permissaoNecessaria) : true;
 }
