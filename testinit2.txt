@@ -13,3 +13,18 @@ if (possuiPermissao) {
 } else {
     console.log("Nenhuma permissão encontrada");
 }
+
+
+
+verificaPermissao() {
+    const permissoesNecessarias = [
+        'HJ6-HJ6-U1000_oportunidadesibba360_DEV',
+        'HJ6-HJ6-U1000_oportunidadesibba360_HML',
+        'HJ6-HJ6-U1000_oportunidadesibba360'
+    ];
+
+    // Verifica se gruposAcessos está definido, caso contrário define possuiPermissao como false
+    this.possuiPermissao = this.gruposAcessos 
+        ? permissoesNecessarias.some(permissao => this.gruposAcessos.includes(permissao)) 
+        : false;
+}
