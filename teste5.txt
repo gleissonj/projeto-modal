@@ -1,46 +1,12 @@
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
+verificaPermissaoUpload(nameFunc: string) {
+    const permissoesMap = {
+        'Prospect': environment.permissionsProspect,
+        'Opp': environment.permissionsOpp,
+        'oportunidadesibba360': environment.permissionsOportunidades,
+        'npsglobaltransacional': environment.permissionsNps,
+        'handover': environment.permissionsHandover
+    };
 
-public class Program
-{
-    public static async Task Main(string[] args)
-    {
-        // Define the proxy server URL
-        var proxy = new WebProxy("http://proxyserver:port")
-        {
-            // Provide the proxy credentials (username and password)
-            Credentials = new NetworkCredential("proxyUsername", "proxyPassword")
-        };
-
-        // Create HttpClientHandler and assign the proxy
-        var handler = new HttpClientHandler
-        {
-            Proxy = proxy,
-            UseProxy = true
-        };
-
-        // Create the HttpClient with the handler
-        using (var client = new HttpClient(handler))
-        {
-            try
-            {
-                // Send the request
-                var response = await client.GetAsync("http://example.com");
-
-                // Ensure the request was successful
-                response.EnsureSuccessStatusCode();
-
-                // Read and output the response content
-                string responseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(responseBody);
-            }
-            catch (HttpRequestException e)
-            {
-                // Handle exceptions
-                Console.WriteLine($"Request error: {e.Message}");
-            }
-        }
-    }
+    const permissaoNecessaria = permissoesMap[nameFunc];
+    return permissaoNecessaria ? this.gruposAcessos.includes(permissaoNecessaria) : true;
 }
