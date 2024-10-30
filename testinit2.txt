@@ -1,57 +1,15 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MyComponent } from './my-component.component'; // Adjust the import path
-import { environment } from 'src/environments/environment'; // Adjust the path
+const permissoesNecessarias = [
+    'HJ6-HJ6-U1000_oportunidadesibba360_DEV',
+    'HJ6-HJ6-U1000_oportunidadesibba360_HML',
+    'HJ6-HJ6-U1000_oportunidadesibba360'
+];
 
-describe('MyComponent', () => {
-  let component: MyComponent;
-  let fixture: ComponentFixture<MyComponent>;
+const possuiPermissao = permissoesNecessarias.some(permissao =>
+    this.gruposAcessos.includes(permissao)
+);
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [MyComponent],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(MyComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should call startMultiplesStepFunction with step functions for "base" team', () => {
-    // Arrange
-    const stepFunctionMock = [
-      environment.stepFunctionProspectBacen,
-      environment.stepFunctionProspectBase,
-    ];
-    component.selectedTeam = 'base';
-    
-    // Spy on startMultiplesStepFunction
-    const startMultiplesStepFunctionSpy = jest.spyOn(component, 'startMultiplesStepFunction');
-
-    // Act
-    component.startStepFunctionProspect();
-
-    // Assert
-    expect(startMultiplesStepFunctionSpy).toHaveBeenCalledWith(stepFunctionMock);
-  });
-
-  it('should call startMultiplesStepFunction with step function for "relacionamento" team', () => {
-    // Arrange
-    const typeStepFunctionsMock = [environment.stepFunctionProspectRelacionamento];
-    component.selectedTeam = 'relacionamento';
-
-    // Spy on startMultiplesStepFunction
-    const startMultiplesStepFunctionSpy = jest.spyOn(component, 'startMultiplesStepFunction');
-
-    // Act
-    component.startStepFunctionProspect();
-
-    // Assert
-    expect(startMultiplesStepFunctionSpy).toHaveBeenCalledWith(typeStepFunctionsMock);
-  });
-
-  it('should not call startMultiplesStepFunction for an unrecognized team', () => {
-    // Arrange
-    component.selectedTeam = 'unknownTeam';
-
-    // Spy on startMultiplesStepFunction
-    const startMultiplesStepFunctionSpy = jest.spyOn(component, 'startMultiples
+if (possuiPermissao) {
+    console.log("Permissão encontrada");
+} else {
+    console.log("Nenhuma permissão encontrada");
+}
