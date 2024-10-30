@@ -1,57 +1,40 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { YourComponent } from './your.component';
-import { MultipartUploadService } from './multipart-upload.service';
-import { of } from 'rxjs';
+describe('alteraVisualizacao', () => {
+    let instance: YourClass; // Substitua `YourClass` pelo nome da classe onde `alteraVisualizacao` está implementado
 
-describe('YourComponent', () => {
-  let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
-  let mockMultipartUploadService: Partial<MultipartUploadService>;
-  let startStepFunctionSpy: jest.SpyInstance;
-
-  beforeEach(async () => {
-    mockMultipartUploadService = {
-      startStepFunction: jest.fn()
-    };
-
-    await TestBed.configureTestingModule({
-      declarations: [YourComponent],
-      providers: [
-        { provide: MultipartUploadService, useValue: mockMultipartUploadService }
-      ]
-    }).compileComponents();
-  });
-
-  beforeEach(() => {
-    fixture = TestBed.createComponent(YourComponent);
-    component = fixture.componentInstance;
-
-    // Spy on the startStepFunction method
-    startStepFunctionSpy = jest.spyOn(mockMultipartUploadService, 'startStepFunction').mockReturnValue(of('response'));
-    fixture.detectChanges();
-  });
-
-  it('should call startStepFunction for each step function in the list', () => {
-    const stepFunctions = ['step1', 'step2', 'step3'];
-
-    component.startMultiplesStepFunction(stepFunctions);
-
-    stepFunctions.forEach(stepFunction => {
-      expect(startStepFunctionSpy).toHaveBeenCalledWith(stepFunction);
+    beforeEach(() => {
+        instance = new YourClass();
+        jest.spyOn(instance, 'verificaPermissaoUpload');
+        jest.spyOn(instance, 'showMessage');
     });
-  });
 
-  it('should handle the subscription callback correctly', () => {
-    // Spy on console.log to verify it's called
-    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    it('deve definir typeFunc como 0 e exibir mensagem de erro se o usuário não tiver permissão', () => {
+        // Mocka verificaPermissaoUpload para retornar false
+        (instance.verificaPermissaoUpload as jest.Mock).mockReturnValue(false);
 
-    const stepFunctions = ['step1'];
-    component.startMultiplesStepFunction(stepFunctions);
+        // Chama o método
+        instance.alteraVisualizacao(2, 'Prospect');
 
-    // Check if the console log is called with "bateu"
-    expect(consoleLogSpy).toHaveBeenCalledWith('bateu');
+        // Verifica se typeFunc foi definido como 0
+        expect(instance.typeFunc).toBe(0);
+        // Verifica se showMessage foi chamado com os parâmetros corretos
+        expect(instance.showMessage).toHaveBeenCalledWith(
+            'Voce nao possui a permissao para upload, favor entrar em contato com o ADM',
+            'errror'
+        );
+    });
 
-    // Restore original console.log
-    consoleLogSpy.mockRestore();
-  });
+    it('deve definir typeFunc, nameFunc e selectedTeam corretamente se o usuário tiver permissão', () => {
+        // Mocka verificaPermissaoUpload para retornar true
+        (instance.verificaPermissaoUpload as jest.Mock).mockReturnValue(true);
+
+        // Chama o método
+        instance.alteraVisualizacao(2, 'Prospect');
+
+        // Verifica se typeFunc, nameFunc e selectedTeam foram definidos corretamente
+        expect(instance.typeFunc).toBe(2);
+        expect(instance.nameFunc).toBe('Prospect');
+        expect(instance.selectedTeam).toBe('information');
+        // Verifica que showMessage não foi chamado
+        expect(instance.showMessage).not.toHaveBeenCalled();
+    });
 });
