@@ -1,41 +1,13 @@
-describe('MinhaClasse', () => {
-    let instancia;
-
-    beforeEach(() => {
-        // Cria uma nova instância antes de cada teste
-        instancia = new MinhaClasse([]);
-    });
-
-    test('deve definir possuiPermissao como false se gruposAcessos estiver vazio', () => {
-        instancia.gruposAcessos = [];
-        instancia.verificaPermissao();
-        expect(instancia.possuiPermissao).toBe(false);
-    });
-
-    test('deve definir possuiPermissao como false se gruposAcessos não contiver permissões necessárias', () => {
-        instancia.gruposAcessos = ['HJ6-HJ6-U1000_outro_DEV'];
-        instancia.verificaPermissao();
-        expect(instancia.possuiPermissao).toBe(false);
-    });
-
-    test('deve definir possuiPermissao como true se gruposAcessos contiver uma permissão necessária', () => {
-        instancia.gruposAcessos = ['HJ6-HJ6-U1000_oportunidadesibba360_DEV'];
-        instancia.verificaPermissao();
-        expect(instancia.possuiPermissao).toBe(true);
-    });
-
-    test('deve definir possuiPermissao como true se gruposAcessos contiver múltiplas permissões necessárias', () => {
-        instancia.gruposAcessos = [
-            'HJ6-HJ6-U1000_outro_DEV',
-            'HJ6-HJ6-U1000_oportunidadesibba360_HML'
-        ];
-        instancia.verificaPermissao();
-        expect(instancia.possuiPermissao).toBe(true);
-    });
-
-    test('deve definir possuiPermissao como false se gruposAcessos for undefined', () => {
-        instancia.gruposAcessos = undefined;
-        instancia.verificaPermissao();
-        expect(instancia.possuiPermissao).toBe(false);
-    });
-});
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:PutObjectAcl"
+      ],
+      "Resource": "arn:aws:s3:::bucket-destino/*"
+    }
+  ]
+}
