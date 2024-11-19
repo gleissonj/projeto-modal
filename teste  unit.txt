@@ -1,13 +1,19 @@
 {
   "Version": "2012-10-17",
+  "Id": "key-access-policy",
   "Statement": [
     {
+      "Sid": "AllowAccountAUse",
       "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::ACCOUNT_A_ID:role/task-upload-role"
+      },
       "Action": [
-        "s3:PutObject",
-        "s3:PutObjectAcl"
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
       ],
-      "Resource": "arn:aws:s3:::bucket-destino/*"
+      "Resource": "*"
     }
   ]
 }
