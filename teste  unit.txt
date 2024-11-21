@@ -17,3 +17,26 @@
     }
   ]
 }
+
+
+
+NOT(REGEX(MobilePhone, "\\d{1,3} \\d{2} \\d{5}-\\d{4}"))
+O número de telefone deve estar no formato: DDI DDD XXXXX-XXXX. Exemplo: 55 11 91234-5678.
+
+Como Funciona:
+\\d{1,3}: O DDI deve ter de 1 a 3 dígitos.
+\\d{2}: Exige um espaço seguido pelo DDD com exatamente 2 dígitos.
+\\d{5}-\\d{4}: Um espaço seguido de um número no formato XXXXX-XXXX (9 dígitos com hífen).
+
+Exemplos de Testes
+Aceitos:
+55 11 91234-5678
+1 21 98765-4321
+44 20 12345-6789
+Rejeitados:
+55 (11) 91234-5678 (Parênteses no DDD não são permitidos).
+55 11 1234-5678 (Número com 8 dígitos antes do hífen).
++55 11 91234-5678 (Inclui o +, que não é permitido).
+
+
+Regex no validation rules para campo mobile com ddi e ddd
