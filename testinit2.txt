@@ -52,3 +52,27 @@ AND(
     }
   ]
 }
+
+
+
+glue
+preciso fazer a estrutura do etl utilizando o glue para o processo de dados da funcionalidade do 4966
+para então conseguir realizar o etl no qual deve ser chamado a execução através do portal de multipart, onde após os arquivos serem realizados o upload ele deve chamar o stepfunction
+e então gerar o arquivo tratado em um bucket do s3 para que o mulesoft possa consumir posteriormente as informações e enviar para a salesforce 
+
+
+
+atualização dotnet
+
+preciso ralizar a atualização do dotnet do projeto do mujltipart, do qual hoje esta na versão 6.0 e devemos ir para a versão 8.0
+para então não ficar com a solução com uma tecnologia atrasada e ficar em conformidade com as normas do banco 
+e então ta com a aplicação atualizada para realização de novas funcionalidades na api que esta no fargate e utilizando a linguagem de programação dotnet 6.0
+
+
+croos account
+
+preciso realizar a funcionalidade de cross account na aws, para realizar o salvamento no buket do s3 em outra conta aaws que não seja a hj6
+para então disponibilizar para a squad parceira, o uso do portal de multipart para que possa também ser utilizada
+e então ser realizada o reuso, visto que o banco esta aconselhando mais aplicações que podem ser ealizadas o reuso 
+
+
