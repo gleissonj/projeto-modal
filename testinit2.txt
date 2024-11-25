@@ -92,3 +92,21 @@ Assim, é possível chegar para a reunião com uma maior preparação, entendend
 
 
 
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:REGION:ACCOUNT_B_ID:key/KMS_KEY_ID"
+    }
+  ]
+}
+
+
+
+
