@@ -1,27 +1,45 @@
-describe('verificaPermissaoUpload', () => {
-    let instance: YourClass; // Substitua YourClass pelo nome da classe onde a função está implementada
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { YourComponent } from './your-component.component';
 
-    beforeEach(() => {
-        instance = new YourClass();
+describe('YourComponent', () => {
+  let component: YourComponent;
+  let fixture: ComponentFixture<YourComponent>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      // Adicione outros módulos necessários, como FormsModule, HttpClientModule, etc.
     });
 
-    it('deve retornar true se a permissão necessária estiver em gruposAcessos', () => {
-        instance.gruposAcessos = ['permission1', 'permission2', environment.permissionsProspect];
-        expect(instance.verificaPermissaoUpload('Prospect')).toBe(true);
-    });
+    fixture = TestBed.createComponent(YourComponent);
+    component = fixture.componentInstance;
+  });
 
-    it('deve retornar false se a permissão necessária não estiver em gruposAcessos', () => {
-        instance.gruposAcessos = ['permission1', 'permission2'];
-        expect(instance.verificaPermissaoUpload('Prospect')).toBe(false);
-    });
+  it('deve redefinir typeFunc e exibir mensagem de erro se não tiver permissão', () => {
+    // Mock da função verificaPermissaoUpload
+    jest.spyOn(component, 'verificaPermissaoUpload').mockReturnValue(false);
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    it('deve retornar false se gruposAcessos for undefined e a permissão necessária existir', () => {
-        instance.gruposAcessos = undefined;
-        expect(instance.verificaPermissaoUpload('Prospect')).toBe(false);
-    });
+    component.alteraVisualizacao(1, 'funcNaoPermitida');
 
-    it('deve retornar true se nameFunc não requer permissão especial', () => {
-        instance.gruposAcessos = ['permission1', 'permission2'];
-        expect(instance.verificaPermissaoUpload('nonExistingNameFunc')).toBe(true);
-    });
+    // Verifica se typeFunc foi redefinido
+    expect(component.typeFunc).toBe(0);
+    // Verifica se showMessage foi chamado com os argumentos corretos
+    expect(showMessageSpy).toHaveBeenCalledWith(
+      'Você não possui a permissao para upload dessa funcionalidade, favor entrar em contato com o ADM',
+      'error'
+    );
+  });
+
+  it('deve atualizar typeFunc, nameFunc e selectedTeam se tiver permissão', () => {
+    // Mock da função verificaPermissaoUpload
+    jest.spyOn(component, 'verificaPermissaoUpload').mockReturnValue(true);
+
+    component.alteraVisualizacao(2, 'funcPermitida');
+
+    // Verifica se as propriedades foram atualizadas corretamente
+    expect(component.typeFunc).toBe(2);
+    expect(component.nameFunc).toBe('funcPermitida');
+    expect(component.selectedTeam).toBe('information');
+  });
 });
