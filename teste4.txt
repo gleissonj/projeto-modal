@@ -11,7 +11,6 @@ describe('YourComponent - getAddreessS3', () => {
   });
 
   it('deve gerar o endereço S3 correto para "OPP"', () => {
-    // Mock do arquivo
     const mockFile = new File(['content'], 'example.txt', { type: 'text/plain' });
     const mockHash = 'example.txt';
     (component.getValueNameOperation as jest.Mock).mockReturnValue('example');
@@ -20,10 +19,8 @@ describe('YourComponent - getAddreessS3', () => {
     component.nameFunc = 'OPP';
     component.hash = mockHash;
 
-    // Executa o método
     component.getAddreessS3();
 
-    // Verifica o endereço S3 gerado
     expect(component.addressS3).toMatch(
       /^multipartupload\/OPP\/ nameSubFolder \/example-\d+\.[a-zA-Z0-9]+$/
     );
@@ -31,7 +28,6 @@ describe('YourComponent - getAddreessS3', () => {
   });
 
   it('deve gerar o endereço S3 correto para "oportunidadesibba360"', () => {
-    // Mock do arquivo
     const mockFile = new File(['content'], 'example.csv', { type: 'text/csv' });
     const mockHash = 'example.csv';
     (component.getValueNameOperation as jest.Mock).mockReturnValue('example');
@@ -40,42 +36,38 @@ describe('YourComponent - getAddreessS3', () => {
     component.nameFunc = 'oportunidadesibba360';
     component.hash = mockHash;
 
-    // Executa o método
     component.getAddreessS3();
 
-    // Verifica o endereço S3 gerado
     expect(component.addressS3).toMatch(
       /^multipartupload\/oportunidadesibba360\/example-\d+\.[a-zA-Z0-9]+$/
     );
     expect(component.getValueNameOperation).toHaveBeenCalledWith(mockFile.name);
   });
 
-  it('não deve atualizar addressS3 se nameFunc não for "OPP" ou "oportunidadesibba360"', () => {
-    // Mock do arquivo
+  it('deve gerar o endereço S3 correto para outros valores de "nameFunc"', () => {
     const mockFile = new File(['content'], 'example.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     const mockHash = 'example.docx';
 
     component.file = mockFile;
     component.nameFunc = 'OTHER_FUNCTION';
     component.hash = mockHash;
+    component.selectedTeam = 'team123';
 
-    // Executa o método
     component.getAddreessS3();
 
-    // Verifica que addressS3 permanece vazio
-    expect(component.addressS3).toBe('');
+    expect(component.addressS3).toMatch(
+      /^multipartupload\/OTHER_FUNCTION\/OTHER_FUNCTION-team123-\d+\.[a-zA-Z0-9]+$/
+    );
     expect(component.getValueNameOperation).not.toHaveBeenCalled();
   });
 
   it('deve lidar com file ou hash indefinidos sem falhar', () => {
-    component.file = undefined; // Nenhum arquivo definido
+    component.file = undefined;
     component.nameFunc = 'OPP';
     component.hash = undefined;
 
-    // Executa o método
     expect(() => component.getAddreessS3()).not.toThrow();
 
-    // Verifica que addressS3 permanece vazio
     expect(component.addressS3).toBe('');
   });
 });

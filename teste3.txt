@@ -1,83 +1,86 @@
 import { YourComponent } from './your-component.component';
 
-describe('YourComponent - escolherArquivo', () => {
+describe('YourComponent - getAddreessS3', () => {
   let component: YourComponent;
 
   beforeEach(() => {
     component = new YourComponent();
-    component.selectedFiles = []; // Inicializa o array antes de cada teste
+
+    // Mock da função auxiliar
+    component.getValueNameOperation = jest.fn();
   });
 
-  it('deve adicionar arquivos ao selectedFiles e atualizar file e hash', () => {
-    // Mock de evento com arquivos
-    const mockFile1 = new File(['content1'], 'file1.txt', { type: 'text/plain' });
-    const mockFile2 = new File(['content2'], 'file2.txt', { type: 'text/plain' });
-    const mockEvent = {
-      target: {
-        files: [mockFile1, mockFile2],
-      },
-    };
+  it('deve gerar o endereço S3 correto para "OPP"', () => {
+    // Configuração dos mocks e propriedades
+    const mockFile = new File(['content'], 'example.txt', { type: 'text/plain' });
+    const mockHash = 'example.txt';
+    (component.getValueNameOperation as jest.Mock).mockReturnValue('exampleFolder');
+
+    component.file = mockFile;
+    component.nameFunc = 'OPP';
+    component.hash = mockHash;
 
     // Executa o método
-    component.escolherArquivo(mockEvent);
+    component.getAddreessS3();
 
-    // Verifica se os arquivos foram adicionados corretamente ao selectedFiles
-    expect(component.selectedFiles.length).toBe(2);
-    expect(component.selectedFiles).toContain(mockFile1);
-    expect(component.selectedFiles).toContain(mockFile2);
-
-    // Verifica se a propriedade file foi atualizada para o primeiro arquivo
-    expect(component.file).toBe(mockFile1);
-
-    // Verifica se a hash foi atualizada para o nome do primeiro arquivo
-    expect(component.hash).toBe(mockFile1.name);
+    // Verifica o endereço S3 gerado
+    expect(component.addressS3).toMatch(
+      /^multipartupload\/OPP\/ nameSubFolder \/exampleFolder-\d+\.[a-zA-Z0-9]+$/
+    );
+    expect(component.getValueNameOperation).toHaveBeenCalledWith(mockFile.name);
   });
 
-  it('não deve atualizar hash se o nome do arquivo for igual ao hash atual', () => {
-    // Mock de evento com arquivo
-    const mockFile = new File(['content'], 'file.txt', { type: 'text/plain' });
-    const mockEvent = {
-      target: {
-        files: [mockFile],
-      },
-    };
+  it('deve gerar o endereço S3 correto para "oportunidadesibba360"', () => {
+    // Configuração dos mocks e propriedades
+    const mockFile = new File(['content'], 'example.csv', { type: 'text/csv' });
+    const mockHash = 'example.csv';
+    (component.getValueNameOperation as jest.Mock).mockReturnValue('exampleFolder');
 
-    // Configura um hash inicial
-    component.hash = 'file.txt';
+    component.file = mockFile;
+    component.nameFunc = 'oportunidadesibba360';
+    component.hash = mockHash;
 
     // Executa o método
-    component.escolherArquivo(mockEvent);
+    component.getAddreessS3();
 
-    // Verifica que o hash não mudou
-    expect(component.hash).toBe('file.txt');
+    // Verifica o endereço S3 gerado
+    expect(component.addressS3).toMatch(
+      /^multipartupload\/oportunidadesibba360\/exampleFolder-\d+\.[a-zA-Z0-9]+$/
+    );
+    expect(component.getValueNameOperation).toHaveBeenCalledWith(mockFile.name);
   });
 
-  it('deve lidar com eventos sem arquivos (sem falhas)', () => {
-    // Mock de evento sem arquivos
-    const mockEvent = {
-      target: {
-        files: [],
-      },
-    };
+  it('deve gerar o endereço S3 correto para outras "nameFunc"', () => {
+    // Configuração dos mocks e propriedades
+    const mockFile = new File(['content'], 'example.docx', {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+    const mockHash = 'example.docx';
+
+    component.file = mockFile;
+    component.nameFunc = 'OTHER_FUNCTION';
+    component.hash = mockHash;
+    component.selectedTeam = 'TeamA';
 
     // Executa o método
-    component.escolherArquivo(mockEvent);
+    component.getAddreessS3();
 
-    // Verifica que o selectedFiles permanece vazio
-    expect(component.selectedFiles.length).toBe(0);
-
-    // Verifica que file e hash não foram atualizados
-    expect(component.file).toBeUndefined();
-    expect(component.hash).toBeUndefined();
+    // Verifica o endereço S3 gerado
+    expect(component.addressS3).toMatch(
+      /^multipartupload\/OTHER_FUNCTION\/OTHER_FUNCTION-TeamA-\d+\.[a-zA-Z0-9]+$/
+    );
+    expect(component.getValueNameOperation).not.toHaveBeenCalled();
   });
 
-  it('deve lidar com eventos inválidos ou nulos', () => {
-    // Executa o método com evento nulo
-    expect(() => component.escolherArquivo(null)).not.toThrow();
+  it('deve lidar com file ou hash indefinidos sem falhar', () => {
+    component.file = undefined;
+    component.nameFunc = 'OPP';
+    component.hash = undefined;
 
-    // Verifica que selectedFiles, file e hash permanecem inalterados
-    expect(component.selectedFiles.length).toBe(0);
-    expect(component.file).toBeUndefined();
-    expect(component.hash).toBeUndefined();
+    // Executa o método
+    expect(() => component.getAddreessS3()).not.toThrow();
+
+    // Verifica que addressS3 permanece vazio
+    expect(component.addressS3).toBe('');
   });
 });
