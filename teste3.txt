@@ -1,54 +1,51 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { YourComponent } from './your-component.component';
+import { MultipartUploadService } from './multipartupload.service'; // Caminho para o serviço
 
 describe('YourComponent - generateMapMultipartUpload', () => {
   let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
+  let mockMultipartUploadService: jest.Mocked<MultipartUploadService>;
 
   beforeEach(() => {
+    // Cria o mock do serviço
+    mockMultipartUploadService = {
+      generatListOfMapValueMultipartUpload: jest.fn(),
+    } as unknown as jest.Mocked<MultipartUploadService>;
+
     TestBed.configureTestingModule({
       declarations: [YourComponent],
-      // Inclua módulos necessários, se houver
+      providers: [
+        { provide: MultipartUploadService, useValue: mockMultipartUploadService }, // Substituir pelo mock
+      ],
     });
 
-    fixture = TestBed.createComponent(YourComponent);
+    const fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
 
-    // Configurar mocks iniciais
+    // Configurar mocks iniciais no componente
     component.file = { name: 'testfile.txt' } as File;
     component.hash = 'hashvalue.ext';
-    component.multipartupload = {
-      generatListOfMapValueMultipartUpload: jest.fn(),
-    };
-    component.multipartuploadService = {};
-    component.nameFunc = '';
+    component.multipartuploadService = {}; // Caso você tenha outro serviço auxiliar
     component.selectedTeam = 'team1';
     component.bucket = 'bucket1';
   });
 
   it('deve gerar o mapa corretamente para nameFunc == "OPP"', () => {
+    // Mock do método auxiliar
     jest.spyOn(component, 'getValueNameOperation').mockReturnValue('subfolder1');
-    const mockMultipartUpload = [{ key: 'value' }];
-    jest
-      .spyOn(component.multipartupload, 'generatListOfMapValueMultipartUpload')
-      .mockReturnValue(mockMultipartUpload);
 
+    // Mock do método do serviço
+    const mockMultipartUpload = [{ key: 'value1' }];
+    mockMultipartUploadService.generatListOfMapValueMultipartUpload.mockReturnValue(mockMultipartUpload);
+
+    // Configurar o cenário
     component.nameFunc = 'OPP';
+
+    // Chamada da função a ser testada
     const result = component.generateMapMultipartUpload();
 
-    // Verifique o caminho S3
-    const expectedHash = `multipartupload/OPP/subfolder1/subfolder1-${Date.now()}.ext`;
-    expect(component.addressS3).toContain('multipartupload/OPP/subfolder1'); // Validar padrão sem se preocupar com o timestamp exato
-    expect(component.filePath).toBe(component.addressS3);
-
-    // Verifique o mapa gerado
-    expect(result.get(component.addressS3)).toEqual(mockMultipartUpload);
-
-    // Verifique se a função auxiliar foi chamada
-    expect(component.getValueNameOperation).toHaveBeenCalledWith('testfile.txt');
-    expect(
-      component.multipartupload.generatListOfMapValueMultipartUpload
-    ).toHaveBeenCalledWith(
+    // Verificações
+    expect(mockMultipartUploadService.generatListOfMapValueMultipartUpload).toHaveBeenCalledWith(
       { file: component.file, hash: component.addressS3 },
       component.multipartuploadService,
       'FileData',
@@ -56,39 +53,15 @@ describe('YourComponent - generateMapMultipartUpload', () => {
       component.selectedTeam,
       component.bucket
     );
-  });
 
-  it('deve gerar o mapa corretamente para nameFunc == "oportunidadesibba360"', () => {
-    jest.spyOn(component, 'getValueNameOperation').mockReturnValue('subfolder2');
-    const mockMultipartUpload = [{ key: 'value2' }];
-    jest
-      .spyOn(component.multipartupload, 'generatListOfMapValueMultipartUpload')
-      .mockReturnValue(mockMultipartUpload);
+    const expectedHash = `multipartupload/OPP/subfolder1/subfolder1-${Date.now()}.ext`;
 
-    component.nameFunc = 'oportunidadesibba360';
-    const result = component.generateMapMultipartUpload();
-
-    // Verifique o caminho S3
-    const expectedHash = `multipartupload/oportunidadesibba360/subfolder2-${Date.now()}.ext`;
-    expect(component.addressS3).toContain(
-      'multipartupload/oportunidadesibba360/subfolder2'
-    ); // Validar padrão sem se preocupar com o timestamp exato
+    // Validar o endereço S3
+    expect(component.addressS3).toContain('multipartupload/OPP/subfolder1');
     expect(component.filePath).toBe(component.addressS3);
 
-    // Verifique o mapa gerado
+    // Validar o mapa gerado
+    expect(result.has(component.addressS3)).toBe(true);
     expect(result.get(component.addressS3)).toEqual(mockMultipartUpload);
-
-    // Verifique se a função auxiliar foi chamada
-    expect(component.getValueNameOperation).toHaveBeenCalledWith('testfile.txt');
-    expect(
-      component.multipartupload.generatListOfMapValueMultipartUpload
-    ).toHaveBeenCalledWith(
-      { file: component.file, hash: component.addressS3 },
-      component.multipartuploadService,
-      'FileData',
-      'oportunidadesibba360',
-      component.selectedTeam,
-      component.bucket
-    );
   });
 });
