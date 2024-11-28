@@ -1,45 +1,94 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { YourComponent } from './your-component.component';
 
-describe('YourComponent', () => {
+describe('YourComponent - generateMapMultipartUpload', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [YourComponent],
-      // Adicione outros módulos necessários, como FormsModule, HttpClientModule, etc.
+      // Inclua módulos necessários, se houver
     });
 
     fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
+
+    // Configurar mocks iniciais
+    component.file = { name: 'testfile.txt' } as File;
+    component.hash = 'hashvalue.ext';
+    component.multipartupload = {
+      generatListOfMapValueMultipartUpload: jest.fn(),
+    };
+    component.multipartuploadService = {};
+    component.nameFunc = '';
+    component.selectedTeam = 'team1';
+    component.bucket = 'bucket1';
   });
 
-  it('deve redefinir typeFunc e exibir mensagem de erro se não tiver permissão', () => {
-    // Mock da função verificaPermissaoUpload
-    jest.spyOn(component, 'verificaPermissaoUpload').mockReturnValue(false);
-    const showMessageSpy = jest.spyOn(component, 'showMessage');
+  it('deve gerar o mapa corretamente para nameFunc == "OPP"', () => {
+    jest.spyOn(component, 'getValueNameOperation').mockReturnValue('subfolder1');
+    const mockMultipartUpload = [{ key: 'value' }];
+    jest
+      .spyOn(component.multipartupload, 'generatListOfMapValueMultipartUpload')
+      .mockReturnValue(mockMultipartUpload);
 
-    component.alteraVisualizacao(1, 'funcNaoPermitida');
+    component.nameFunc = 'OPP';
+    const result = component.generateMapMultipartUpload();
 
-    // Verifica se typeFunc foi redefinido
-    expect(component.typeFunc).toBe(0);
-    // Verifica se showMessage foi chamado com os argumentos corretos
-    expect(showMessageSpy).toHaveBeenCalledWith(
-      'Você não possui a permissao para upload dessa funcionalidade, favor entrar em contato com o ADM',
-      'error'
+    // Verifique o caminho S3
+    const expectedHash = `multipartupload/OPP/subfolder1/subfolder1-${Date.now()}.ext`;
+    expect(component.addressS3).toContain('multipartupload/OPP/subfolder1'); // Validar padrão sem se preocupar com o timestamp exato
+    expect(component.filePath).toBe(component.addressS3);
+
+    // Verifique o mapa gerado
+    expect(result.get(component.addressS3)).toEqual(mockMultipartUpload);
+
+    // Verifique se a função auxiliar foi chamada
+    expect(component.getValueNameOperation).toHaveBeenCalledWith('testfile.txt');
+    expect(
+      component.multipartupload.generatListOfMapValueMultipartUpload
+    ).toHaveBeenCalledWith(
+      { file: component.file, hash: component.addressS3 },
+      component.multipartuploadService,
+      'FileData',
+      'OPP',
+      component.selectedTeam,
+      component.bucket
     );
   });
 
-  it('deve atualizar typeFunc, nameFunc e selectedTeam se tiver permissão', () => {
-    // Mock da função verificaPermissaoUpload
-    jest.spyOn(component, 'verificaPermissaoUpload').mockReturnValue(true);
+  it('deve gerar o mapa corretamente para nameFunc == "oportunidadesibba360"', () => {
+    jest.spyOn(component, 'getValueNameOperation').mockReturnValue('subfolder2');
+    const mockMultipartUpload = [{ key: 'value2' }];
+    jest
+      .spyOn(component.multipartupload, 'generatListOfMapValueMultipartUpload')
+      .mockReturnValue(mockMultipartUpload);
 
-    component.alteraVisualizacao(2, 'funcPermitida');
+    component.nameFunc = 'oportunidadesibba360';
+    const result = component.generateMapMultipartUpload();
 
-    // Verifica se as propriedades foram atualizadas corretamente
-    expect(component.typeFunc).toBe(2);
-    expect(component.nameFunc).toBe('funcPermitida');
-    expect(component.selectedTeam).toBe('information');
+    // Verifique o caminho S3
+    const expectedHash = `multipartupload/oportunidadesibba360/subfolder2-${Date.now()}.ext`;
+    expect(component.addressS3).toContain(
+      'multipartupload/oportunidadesibba360/subfolder2'
+    ); // Validar padrão sem se preocupar com o timestamp exato
+    expect(component.filePath).toBe(component.addressS3);
+
+    // Verifique o mapa gerado
+    expect(result.get(component.addressS3)).toEqual(mockMultipartUpload);
+
+    // Verifique se a função auxiliar foi chamada
+    expect(component.getValueNameOperation).toHaveBeenCalledWith('testfile.txt');
+    expect(
+      component.multipartupload.generatListOfMapValueMultipartUpload
+    ).toHaveBeenCalledWith(
+      { file: component.file, hash: component.addressS3 },
+      component.multipartuploadService,
+      'FileData',
+      'oportunidadesibba360',
+      component.selectedTeam,
+      component.bucket
+    );
   });
 });
