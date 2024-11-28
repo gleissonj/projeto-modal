@@ -1,18 +1,79 @@
-type NameFunc = 'Prospect' | 'Opp' | 'oportunidadesibba360' | 'npsglobaltransacional' | 'handover';
+import { YourComponent } from './your-component.component';
 
-const permissoesMap: Record<NameFunc, string> = {
-    'Prospect': environment.permissionsProspect,
-    'Opp': environment.permissionsOpp,
-    'oportunidadesibba360': environment.permissionsOportunidades,
-    'npsglobaltransacional': environment.permissionsNps,
-    'handover': environment.permissionsHandover
-};
+describe('YourComponent - uploadArquivoAWS', () => {
+  let component: YourComponent;
 
-verificaPermissaoUpload(nameFunc: string): boolean {
-    // Verifique se nameFunc é uma das chaves definidas no tipo NameFunc
-    if (nameFunc in permissoesMap) {
-        const permissaoNecessaria = permissoesMap[nameFunc as NameFunc];
-        return this.gruposAcessos.includes(permissaoNecessaria);
-    }
-    return true; // Retorne true se nameFunc não corresponder a uma chave válida
-}
+  beforeEach(() => {
+    component = new YourComponent();
+
+    // Mock das funções auxiliares
+    component.updateFileOne = jest.fn();
+    component.updateFileMultiple = jest.fn();
+    component.showMessage = jest.fn();
+    component.validaNameArquivo = jest.fn();
+  });
+
+  it('deve chamar updateFileOne se nameFunc não for "OPP"', async () => {
+    component.nameFunc = 'NOT_OPP';
+
+    await component.uploadArquivoAWS();
+
+    expect(component.updateFileOne).toHaveBeenCalled();
+    expect(component.updateFileMultiple).not.toHaveBeenCalled();
+    expect(component.showMessage).not.toHaveBeenCalled();
+  });
+
+  it('deve mostrar mensagem de erro se selectedFiles não tiver exatamente 5 arquivos', async () => {
+    component.nameFunc = 'OPP';
+    component.selectedFiles = [new File(['content'], 'file1.txt')]; // Menos de 5 arquivos
+
+    await component.uploadArquivoAWS();
+
+    expect(component.showMessage).toHaveBeenCalledWith(
+      'Você deve anexar 5 arquivos',
+      'error'
+    );
+    expect(component.updateFileOne).not.toHaveBeenCalled();
+    expect(component.updateFileMultiple).not.toHaveBeenCalled();
+  });
+
+  it('deve mostrar mensagem de erro se validaNameArquivo retornar false', async () => {
+    component.nameFunc = 'OPP';
+    component.selectedFiles = [
+      new File(['content'], 'file1.txt'),
+      new File(['content'], 'file2.txt'),
+      new File(['content'], 'file3.txt'),
+      new File(['content'], 'file4.txt'),
+      new File(['content'], 'file5.txt'),
+    ]; // Exatamente 5 arquivos
+    (component.validaNameArquivo as jest.Mock).mockReturnValue(false);
+
+    await component.uploadArquivoAWS();
+
+    expect(component.showMessage).toHaveBeenCalledWith(
+      'O nome do arquivo enviado não corresponde ao nome esperado',
+      component.valueNotFind,
+      'error'
+    );
+    expect(component.updateFileOne).not.toHaveBeenCalled();
+    expect(component.updateFileMultiple).not.toHaveBeenCalled();
+  });
+
+  it('deve chamar updateFileMultiple se validaNameArquivo retornar true', async () => {
+    component.nameFunc = 'OPP';
+    component.selectedFiles = [
+      new File(['content'], 'file1.txt'),
+      new File(['content'], 'file2.txt'),
+      new File(['content'], 'file3.txt'),
+      new File(['content'], 'file4.txt'),
+      new File(['content'], 'file5.txt'),
+    ]; // Exatamente 5 arquivos
+    (component.validaNameArquivo as jest.Mock).mockReturnValue(true);
+
+    await component.uploadArquivoAWS();
+
+    expect(component.updateFileMultiple).toHaveBeenCalled();
+    expect(component.showMessage).not.toHaveBeenCalled();
+    expect(component.updateFileOne).not.toHaveBeenCalled();
+  });
+});

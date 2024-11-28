@@ -1,67 +1,83 @@
-import { TestBed } from '@angular/core/testing';
 import { YourComponent } from './your-component.component';
-import { MultipartUploadService } from './multipartupload.service'; // Caminho para o serviço
 
-describe('YourComponent - generateMapMultipartUpload', () => {
+describe('YourComponent - escolherArquivo', () => {
   let component: YourComponent;
-  let mockMultipartUploadService: jest.Mocked<MultipartUploadService>;
 
   beforeEach(() => {
-    // Cria o mock do serviço
-    mockMultipartUploadService = {
-      generatListOfMapValueMultipartUpload: jest.fn(),
-    } as unknown as jest.Mocked<MultipartUploadService>;
-
-    TestBed.configureTestingModule({
-      declarations: [YourComponent],
-      providers: [
-        { provide: MultipartUploadService, useValue: mockMultipartUploadService }, // Substituir pelo mock
-      ],
-    });
-
-    const fixture = TestBed.createComponent(YourComponent);
-    component = fixture.componentInstance;
-
-    // Configurar mocks iniciais no componente
-    component.file = { name: 'testfile.txt' } as File;
-    component.hash = 'hashvalue.ext';
-    component.multipartuploadService = {}; // Caso você tenha outro serviço auxiliar
-    component.selectedTeam = 'team1';
-    component.bucket = 'bucket1';
+    component = new YourComponent();
+    component.selectedFiles = []; // Inicializa o array antes de cada teste
   });
 
-  it('deve gerar o mapa corretamente para nameFunc == "OPP"', () => {
-    // Mock do método auxiliar
-    jest.spyOn(component, 'getValueNameOperation').mockReturnValue('subfolder1');
+  it('deve adicionar arquivos ao selectedFiles e atualizar file e hash', () => {
+    // Mock de evento com arquivos
+    const mockFile1 = new File(['content1'], 'file1.txt', { type: 'text/plain' });
+    const mockFile2 = new File(['content2'], 'file2.txt', { type: 'text/plain' });
+    const mockEvent = {
+      target: {
+        files: [mockFile1, mockFile2],
+      },
+    };
 
-    // Mock do método do serviço
-    const mockMultipartUpload = [{ key: 'value1' }];
-    mockMultipartUploadService.generatListOfMapValueMultipartUpload.mockReturnValue(mockMultipartUpload);
+    // Executa o método
+    component.escolherArquivo(mockEvent);
 
-    // Configurar o cenário
-    component.nameFunc = 'OPP';
+    // Verifica se os arquivos foram adicionados corretamente ao selectedFiles
+    expect(component.selectedFiles.length).toBe(2);
+    expect(component.selectedFiles).toContain(mockFile1);
+    expect(component.selectedFiles).toContain(mockFile2);
 
-    // Chamada da função a ser testada
-    const result = component.generateMapMultipartUpload();
+    // Verifica se a propriedade file foi atualizada para o primeiro arquivo
+    expect(component.file).toBe(mockFile1);
 
-    // Verificações
-    expect(mockMultipartUploadService.generatListOfMapValueMultipartUpload).toHaveBeenCalledWith(
-      { file: component.file, hash: component.addressS3 },
-      component.multipartuploadService,
-      'FileData',
-      'OPP',
-      component.selectedTeam,
-      component.bucket
-    );
+    // Verifica se a hash foi atualizada para o nome do primeiro arquivo
+    expect(component.hash).toBe(mockFile1.name);
+  });
 
-    const expectedHash = `multipartupload/OPP/subfolder1/subfolder1-${Date.now()}.ext`;
+  it('não deve atualizar hash se o nome do arquivo for igual ao hash atual', () => {
+    // Mock de evento com arquivo
+    const mockFile = new File(['content'], 'file.txt', { type: 'text/plain' });
+    const mockEvent = {
+      target: {
+        files: [mockFile],
+      },
+    };
 
-    // Validar o endereço S3
-    expect(component.addressS3).toContain('multipartupload/OPP/subfolder1');
-    expect(component.filePath).toBe(component.addressS3);
+    // Configura um hash inicial
+    component.hash = 'file.txt';
 
-    // Validar o mapa gerado
-    expect(result.has(component.addressS3)).toBe(true);
-    expect(result.get(component.addressS3)).toEqual(mockMultipartUpload);
+    // Executa o método
+    component.escolherArquivo(mockEvent);
+
+    // Verifica que o hash não mudou
+    expect(component.hash).toBe('file.txt');
+  });
+
+  it('deve lidar com eventos sem arquivos (sem falhas)', () => {
+    // Mock de evento sem arquivos
+    const mockEvent = {
+      target: {
+        files: [],
+      },
+    };
+
+    // Executa o método
+    component.escolherArquivo(mockEvent);
+
+    // Verifica que o selectedFiles permanece vazio
+    expect(component.selectedFiles.length).toBe(0);
+
+    // Verifica que file e hash não foram atualizados
+    expect(component.file).toBeUndefined();
+    expect(component.hash).toBeUndefined();
+  });
+
+  it('deve lidar com eventos inválidos ou nulos', () => {
+    // Executa o método com evento nulo
+    expect(() => component.escolherArquivo(null)).not.toThrow();
+
+    // Verifica que selectedFiles, file e hash permanecem inalterados
+    expect(component.selectedFiles.length).toBe(0);
+    expect(component.file).toBeUndefined();
+    expect(component.hash).toBeUndefined();
   });
 });

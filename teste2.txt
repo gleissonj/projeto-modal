@@ -1,40 +1,51 @@
-describe('alteraVisualizacao', () => {
-    let instance: YourClass; // Substitua `YourClass` pelo nome da classe onde `alteraVisualizacao` está implementado
+import { YourComponent } from './your-component.component';
 
-    beforeEach(() => {
-        instance = new YourClass();
-        jest.spyOn(instance, 'verificaPermissaoUpload');
-        jest.spyOn(instance, 'showMessage');
-    });
+describe('YourComponent - getValueNameOperation', () => {
+  let component: YourComponent;
 
-    it('deve definir typeFunc como 0 e exibir mensagem de erro se o usuário não tiver permissão', () => {
-        // Mocka verificaPermissaoUpload para retornar false
-        (instance.verificaPermissaoUpload as jest.Mock).mockReturnValue(false);
+  beforeEach(() => {
+    component = new YourComponent();
+  });
 
-        // Chama o método
-        instance.alteraVisualizacao(2, 'Prospect');
+  it('deve retornar a substring antes do primeiro ponto', () => {
+    const name = 'arquivo.teste.txt';
+    const result = component.getValueNameOperation(name);
+    expect(result).toBe('arquivo');
+  });
 
-        // Verifica se typeFunc foi definido como 0
-        expect(instance.typeFunc).toBe(0);
-        // Verifica se showMessage foi chamado com os parâmetros corretos
-        expect(instance.showMessage).toHaveBeenCalledWith(
-            'Voce nao possui a permissao para upload, favor entrar em contato com o ADM',
-            'errror'
-        );
-    });
+  it('deve retornar a string inteira se não houver ponto', () => {
+    const name = 'arquivoSemPonto';
+    const result = component.getValueNameOperation(name);
+    expect(result).toBe('arquivoSemPonto');
+  });
 
-    it('deve definir typeFunc, nameFunc e selectedTeam corretamente se o usuário tiver permissão', () => {
-        // Mocka verificaPermissaoUpload para retornar true
-        (instance.verificaPermissaoUpload as jest.Mock).mockReturnValue(true);
+  it('deve retornar uma string vazia se o nome for uma string vazia', () => {
+    const name = '';
+    const result = component.getValueNameOperation(name);
+    expect(result).toBe('');
+  });
 
-        // Chama o método
-        instance.alteraVisualizacao(2, 'Prospect');
+  it('deve retornar undefined se o nome for null', () => {
+    const name = null;
+    const result = component.getValueNameOperation(name);
+    expect(result).toBeUndefined();
+  });
 
-        // Verifica se typeFunc, nameFunc e selectedTeam foram definidos corretamente
-        expect(instance.typeFunc).toBe(2);
-        expect(instance.nameFunc).toBe('Prospect');
-        expect(instance.selectedTeam).toBe('information');
-        // Verifica que showMessage não foi chamado
-        expect(instance.showMessage).not.toHaveBeenCalled();
-    });
+  it('deve retornar undefined se o nome for undefined', () => {
+    const name = undefined;
+    const result = component.getValueNameOperation(name);
+    expect(result).toBeUndefined();
+  });
+
+  it('deve lidar com nomes contendo apenas um ponto no início', () => {
+    const name = '.hiddenfile';
+    const result = component.getValueNameOperation(name);
+    expect(result).toBe('');
+  });
+
+  it('deve lidar com nomes contendo apenas um ponto no final', () => {
+    const name = 'arquivo.';
+    const result = component.getValueNameOperation(name);
+    expect(result).toBe('arquivo');
+  });
 });
