@@ -1,79 +1,81 @@
 import { YourComponent } from './your-component.component';
 
-describe('YourComponent - uploadArquivoAWS', () => {
+describe('YourComponent - getAddreessS3', () => {
   let component: YourComponent;
 
   beforeEach(() => {
     component = new YourComponent();
 
-    // Mock das funções auxiliares
-    component.updateFileOne = jest.fn();
-    component.updateFileMultiple = jest.fn();
-    component.showMessage = jest.fn();
-    component.validaNameArquivo = jest.fn();
+    // Mock da função auxiliar
+    component.getValueNameOperation = jest.fn();
   });
 
-  it('deve chamar updateFileOne se nameFunc não for "OPP"', async () => {
-    component.nameFunc = 'NOT_OPP';
-
-    await component.uploadArquivoAWS();
-
-    expect(component.updateFileOne).toHaveBeenCalled();
-    expect(component.updateFileMultiple).not.toHaveBeenCalled();
-    expect(component.showMessage).not.toHaveBeenCalled();
-  });
-
-  it('deve mostrar mensagem de erro se selectedFiles não tiver exatamente 5 arquivos', async () => {
+  it('deve gerar o endereço S3 correto para "OPP"', () => {
+    // Configuração dos mocks e propriedades
+    const mockFile = { name: 'example.txt' };
+    const mockHash = 'example.txt';
+    (component.getValueNameOperation as jest.Mock).mockReturnValue('example');
+    
+    component.file = mockFile;
     component.nameFunc = 'OPP';
-    component.selectedFiles = [new File(['content'], 'file1.txt')]; // Menos de 5 arquivos
+    component.hash = mockHash;
 
-    await component.uploadArquivoAWS();
+    // Executa o método
+    component.getAddreessS3();
 
-    expect(component.showMessage).toHaveBeenCalledWith(
-      'Você deve anexar 5 arquivos',
-      'error'
+    // Verifica o endereço S3 gerado
+    expect(component.addressS3).toMatch(
+      /^multipartupload\/OPP\/ nameSubFolder \/example-\d+\.[a-zA-Z0-9]+$/
     );
-    expect(component.updateFileOne).not.toHaveBeenCalled();
-    expect(component.updateFileMultiple).not.toHaveBeenCalled();
+    expect(component.getValueNameOperation).toHaveBeenCalledWith(mockFile.name);
   });
 
-  it('deve mostrar mensagem de erro se validaNameArquivo retornar false', async () => {
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [
-      new File(['content'], 'file1.txt'),
-      new File(['content'], 'file2.txt'),
-      new File(['content'], 'file3.txt'),
-      new File(['content'], 'file4.txt'),
-      new File(['content'], 'file5.txt'),
-    ]; // Exatamente 5 arquivos
-    (component.validaNameArquivo as jest.Mock).mockReturnValue(false);
+  it('deve gerar o endereço S3 correto para "oportunidadesibba360"', () => {
+    // Configuração dos mocks e propriedades
+    const mockFile = { name: 'example.csv' };
+    const mockHash = 'example.csv';
+    (component.getValueNameOperation as jest.Mock).mockReturnValue('example');
 
-    await component.uploadArquivoAWS();
+    component.file = mockFile;
+    component.nameFunc = 'oportunidadesibba360';
+    component.hash = mockHash;
 
-    expect(component.showMessage).toHaveBeenCalledWith(
-      'O nome do arquivo enviado não corresponde ao nome esperado',
-      component.valueNotFind,
-      'error'
+    // Executa o método
+    component.getAddreessS3();
+
+    // Verifica o endereço S3 gerado
+    expect(component.addressS3).toMatch(
+      /^multipartupload\/oportunidadesibba360\/example-\d+\.[a-zA-Z0-9]+$/
     );
-    expect(component.updateFileOne).not.toHaveBeenCalled();
-    expect(component.updateFileMultiple).not.toHaveBeenCalled();
+    expect(component.getValueNameOperation).toHaveBeenCalledWith(mockFile.name);
   });
 
-  it('deve chamar updateFileMultiple se validaNameArquivo retornar true', async () => {
+  it('não deve atualizar addressS3 se nameFunc não for "OPP" ou "oportunidadesibba360"', () => {
+    // Configuração dos mocks e propriedades
+    const mockFile = { name: 'example.docx' };
+    const mockHash = 'example.docx';
+
+    component.file = mockFile;
+    component.nameFunc = 'OTHER_FUNCTION';
+    component.hash = mockHash;
+
+    // Executa o método
+    component.getAddreessS3();
+
+    // Verifica que addressS3 permanece vazio
+    expect(component.addressS3).toBe('');
+    expect(component.getValueNameOperation).not.toHaveBeenCalled();
+  });
+
+  it('deve lidar com file ou hash indefinidos sem falhar', () => {
+    component.file = undefined;
     component.nameFunc = 'OPP';
-    component.selectedFiles = [
-      new File(['content'], 'file1.txt'),
-      new File(['content'], 'file2.txt'),
-      new File(['content'], 'file3.txt'),
-      new File(['content'], 'file4.txt'),
-      new File(['content'], 'file5.txt'),
-    ]; // Exatamente 5 arquivos
-    (component.validaNameArquivo as jest.Mock).mockReturnValue(true);
+    component.hash = undefined;
 
-    await component.uploadArquivoAWS();
+    // Executa o método
+    expect(() => component.getAddreessS3()).not.toThrow();
 
-    expect(component.updateFileMultiple).toHaveBeenCalled();
-    expect(component.showMessage).not.toHaveBeenCalled();
-    expect(component.updateFileOne).not.toHaveBeenCalled();
+    // Verifica que addressS3 permanece vazio
+    expect(component.addressS3).toBe('');
   });
 });
