@@ -1,44 +1,38 @@
-import { YourComponent } from './your-component.component';
+#%RAML 1.0
+title: File Upload with Array of Objects
+version: 1.0
+baseUri: http://api.example.com
 
-describe('YourComponent - getValueNameOperation', () => {
-  let component: YourComponent;
-
-  beforeEach(() => {
-    component = new YourComponent();
-  });
-
-  it('deve retornar o nome antes do primeiro ponto no arquivo', () => {
-    const fileName = 'example.txt';
-    const result = component.getValueNameOperation(fileName);
-    expect(result).toBe('example');
-  });
-
-  it('deve retornar o nome inteiro se não houver ponto', () => {
-    const fileName = 'example';
-    const result = component.getValueNameOperation(fileName);
-    expect(result).toBe('example');
-  });
-
-  it('deve retornar uma string vazia se o nome começar com um ponto', () => {
-    const fileName = '.hiddenfile';
-    const result = component.getValueNameOperation(fileName);
-    expect(result).toBe('');
-  });
-
-  it('deve retornar o nome antes do primeiro ponto, ignorando os subsequentes', () => {
-    const fileName = 'example.tar.gz';
-    const result = component.getValueNameOperation(fileName);
-    expect(result).toBe('example');
-  });
-
-  it('deve lidar com valores indefinidos ou nulos', () => {
-    expect(component.getValueNameOperation(undefined)).toBeUndefined();
-    expect(component.getValueNameOperation(null)).toBeNull();
-  });
-
-  it('deve lidar com strings vazias', () => {
-    const fileName = '';
-    const result = component.getValueNameOperation(fileName);
-    expect(result).toBe('');
-  });
-});
+/resource:
+  post:
+    description: Upload a file with an array of objects in form data
+    body:
+      multipart/form-data:
+        properties:
+          file:
+            description: The file to upload
+            type: file
+            required: true
+          items:
+            description: An array of objects
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  required: true
+                  example: 1
+                name:
+                  type: string
+                  required: true
+                  example: "Item Name"
+            required: true
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "message": "File and data successfully uploaded"
+              }
