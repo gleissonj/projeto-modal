@@ -122,3 +122,14 @@ output application/json
 var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string
 ---
 (base64String as Binary { encoding: "base64" }) as Array { encoding: "byte" }
+
+
+
+%dw 2.0
+output application/json
+var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string
+---
+{
+  decoded: (base64String as Binary { encoding: "base64" }) as String,
+  byteArray: (base64String as Binary { encoding: "base64" }) as Array { encoding: "byte" }
+}
