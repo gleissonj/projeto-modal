@@ -133,3 +133,11 @@ var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string
   decoded: (base64String as Binary { encoding: "base64" }) as String,
   byteArray: (base64String as Binary { encoding: "base64" }) as Array { encoding: "byte" }
 }
+
+
+
+%dw 2.0
+output application/java
+var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string (represents "Hello World")
+---
+base64String as Binary { encoding: "base64" }
