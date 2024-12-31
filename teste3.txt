@@ -117,3 +117,8 @@ as Binary { encoding: "base64" }: Converts the Base64 string into binary data.
 as String: Converts the binary data into a readable text string.
 
 
+%dw 2.0
+output application/json
+var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string
+---
+(base64String as Binary { encoding: "base64" }) as Array { encoding: "byte" }
