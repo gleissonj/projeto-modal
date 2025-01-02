@@ -1,143 +1,41 @@
 %dw 2.0
 import * from dw::core::Binaries
-output multipart/form-data
----
-{
-    parts:{
-        base64Content:{
-            headers:{
-                "Content-Type": "application/pdf"
-            },
-            content: fromBase64(payload.base64Content)
-        },
-    }
-}
-
-
-
-
-
-DECODE ENDPOINT
-
-%dw 2.0
-import * from dw::core::Binaries
 output application/octet-stream
+var base64String = "eyJuYW1lIjogInRlc3RlIn0="
 ---
-fromBase64(payload) // decodes file
+fromBase64(base64String as String) as Binary 
 
 
-OUTRO
 
 %dw 2.0
-import toBase64 from dw::core::Binaries
-var myFile = payload.parts.file.content
-output application/json
----
-{
-  success: true,
-  fileContent: toBase64(myFile as Binary) //encodes file
-}
-
-
-OUTRO
-%dw 2.0
-import * from dw::core::Binaries
-output text/plain
----
-toBase64(payload as Binary)
-
-
-OUTRO 
-
-%dw 2.0
-import * from dw::core::Binaries
-output application/octet-stream
----
-fromBase64(payload as String) as Binary
-
-
-
-OUTRO
-
 import fromBase64 from dw::core::Binaries
-output application/octet-stream
----
-fromBase64(payload.fileContent)
-
-
-OUTRO
-%dw 2.0
-import toBase64 from dw::core::Binaries
-var myFile = payload.parts.file.content
 output application/json
+var base64String = "SGVsbG8gV29ybGQh" // Replace this with your Base64 input
 ---
 {
-  success: true,
-  fileContent: toBase64(myFile as Binary) //encodes file
-}
-
-CONVERTER BASE 64 EM BYTE ARRAY
-
-To convert a Base64 string into a byte array in DataWeave, you can use the as Binary function. Here's how you can do it:
-
-%dw 2.0
-output application/json
-var base64String = "SGVsbG8gV29ybGQ=" // Base64 encoded string
----
-base64String as Binary { encoding: "base64" } as Array { encoding: "byte" }
-
-Explanation:
-as Binary { encoding: "base64" }: Converts the Base64 string into binary data.
-as Array { encoding: "byte" }: Converts the binary data into a byte array.
-
-
-Example Input:
-"SGVsbG8gV29ybGQ=" // This is "Hello World" in Base64
-
-
-Example Output:
-[72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]
-
-
-CONVERTE BASE 64 EM TEXTO
-
-To convert a Base64 string to plain text in DataWeave, you can use the as Binary function followed by casting the binary data to String. Here's the approach:
-
-DataWeave Code to Convert Base64 to Text
-
-%dw 2.0
-output application/json
-var base64String = "SGVsbG8gV29ybGQ=" // Base64 encoded string
----
-(base64String as Binary { encoding: "base64" }) as String
-
-Explanation:
-
-as Binary { encoding: "base64" }: Converts the Base64 string into binary data.
-as String: Converts the binary data into a readable text string.
-
-
-%dw 2.0
-output application/json
-var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string
----
-(base64String as Binary { encoding: "base64" }) as Array { encoding: "byte" }
-
-
-
-%dw 2.0
-output application/json
-var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string
----
-{
-  decoded: (base64String as Binary { encoding: "base64" }) as String,
-  byteArray: (base64String as Binary { encoding: "base64" }) as Array { encoding: "byte" }
+  byteArray: fromBase64(base64String)
 }
 
 
-
 %dw 2.0
+import * from dw::core::Binaries
 output application/java
-var base64String = "SGVsbG8gV29ybGQ=" // Example Base64 string (represents "Hello World")
+var base64String = "eyJuYW1lIjogInRlc3RlIn0="
 ---
-base64String as Binary { encoding: "base64" }
+fromBase64(base64String as String) as Binary {class: "byte[]"}
+
+
+%dw 2.0
+import * from dw::core::Binaries
+output application/octet-stream
+var base64String = "eyJuYW1lIjogInRlc3RlIn0="
+---
+fromBase64(base64String as String) as Binary {class: "byte[]"}
+
+
+%dw 2.0
+import fromBase64 from dw::core::Binaries
+output application/java
+var base64String = "SGVsbG8gV29ybGQh" // Example Base64 string
+---
+fromBase64(base64String) as Binary { class: "byte[]" }
