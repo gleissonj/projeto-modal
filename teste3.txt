@@ -1,77 +1,55 @@
-%dw 2.0
-import * from dw::core::Binaries
-output application/octet-stream
-var base64String = "eyJuYW1lIjogInRlc3RlIn0="
----
-fromBase64(base64String as String) as Binary 
-
-
-
-%dw 2.0
-import fromBase64 from dw::core::Binaries
-output application/json
-var base64String = "SGVsbG8gV29ybGQh" // Replace this with your Base64 input
----
-{
-  byteArray: fromBase64(base64String)
+validaNameArquivo(namesFile: string[]): boolean {
+  for (const name of namesFile) {
+    if (!this.selectedFiles.some(file => file.name.includes(name))) {
+      this.valueNotFind = name;
+      return false;
+    }
+  }
+  return true;
 }
 
+async uploadArquivoAWS() {
+  if (this.nameFunc !== "OPP" && this.nameFunc !== "territorios") {
+    return this.updateFileOne();
+  }
 
-%dw 2.0
-import * from dw::core::Binaries
-output application/java
-var base64String = "eyJuYW1lIjogInRlc3RlIn0="
----
-fromBase64(base64String as String) as Binary {class: "byte[]"}
+  const validationRules = {
+    OPP: {
+      expectedFileCount: 5,
+      expectedFileNames: ["analitico", "consolidado", "teste1", "teste2", "teste3"],
+    },
+    hierarquia_comercial: {
+      expectedFileCount: 5,
+      expectedFileNames: ["teste5", "teste6", "teste7", "teste8", "teste9", "teste10"],
+    },
+    reestruturacao: {
+      expectedFileCount: 2,
+      expectedFileNames: ["teste11", "teste12"],
+    },
+  };
 
+  const rules = validationRules[this.nameFunc];
 
-%dw 2.0
-import * from dw::core::Binaries
-output application/octet-stream
-var base64String = "eyJuYW1lIjogInRlc3RlIn0="
----
-fromBase64(base64String as String) as Binary {class: "byte[]"}
+  if (rules) {
+    // Valida a quantidade de arquivos
+    if (this.selectedFiles.length !== rules.expectedFileCount) {
+      return this.showMessage(
+        `Você deve anexar ${rules.expectedFileCount} arquivo(s)`,
+        "error"
+      );
+    }
 
+    // Valida os nomes dos arquivos
+    const isValidName = this.validaNameArquivo(rules.expectedFileNames);
 
-%dw 2.0
-import fromBase64 from dw::core::Binaries
-output application/java
-var base64String = "SGVsbG8gV29ybGQh" // Example Base64 string
----
-fromBase64(base64String) as Binary { class: "byte[]" }
+    if (!isValidName) {
+      return this.showMessage(
+        `O nome do arquivo enviado não corresponde ao nome esperado: ${this.valueNotFind}`,
+        "error"
+      );
+    }
 
-
-
-1- Testar assim
-
-
-%dw 2.0
-output application/java
- - -
-payload.parts
-
-2 - fazer um fluxo novo passando somente arquivo, colocar log e testar chamada
-
-
-3 - converter base 64
-
-%dw 2.0
-import toBase64 from dw::core::Binaries
-var myFile = payload.parts.file.content
-output application/json
----
-{
-  success: true,
-  fileContent: toBase64(myFile as Binary) //encodes file
+    // Atualiza múltiplos arquivos
+    return this.updateFileMultiple();
+  }
 }
-
-
-
-
-%dw 2.0
-import * from dw::core::Binaries
-output application/java
-var conteudoBase64 = "5453"
-var cleanedBase64 = conteudoBase64 replace /[^A-Za-z0-9+\/=]/ with ""
----
-fromBase64(cleanedBase64 as String) as Binary {class: "byte[]"}
