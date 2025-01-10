@@ -1,85 +1,10 @@
-import { MyComponent } from './my-component'; // Ajuste o caminho do componente
-
-describe('uploadArquivoAWS', () => {
-  let component: MyComponent;
-
-  beforeEach(() => {
-    component = new MyComponent();
-
-    // Mockando métodos dependentes
-    component.showMessage = jest.fn();
-    component.updateFileOne = jest.fn();
-    component.updateFileMultiple = jest.fn();
-    component.validaNameArquivo = jest.fn();
-  });
-
-  it('deve chamar updateFileOne se nameFunc não for "OPP" ou "territorios"', async () => {
-    component.nameFunc = 'hierarquia_comercial';
-    await component.uploadArquivoAWS();
-    expect(component.updateFileOne).toHaveBeenCalled();
-    expect(component.showMessage).not.toHaveBeenCalled();
-  });
-
-  it('deve mostrar mensagem de erro se a quantidade de arquivos for diferente do esperado', async () => {
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [{ name: 'file1' }]; // Apenas 1 arquivo, mas 5 são esperados
-
-    await component.uploadArquivoAWS();
-
-    expect(component.showMessage).toHaveBeenCalledWith(
-      'Você deve anexar 5 arquivo(s)',
-      'error'
-    );
-    expect(component.updateFileMultiple).not.toHaveBeenCalled();
-  });
-
-  it('deve mostrar mensagem de erro se os nomes dos arquivos não forem válidos', async () => {
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [
-      { name: 'file1' },
-      { name: 'file2' },
-      { name: 'file3' },
-      { name: 'file4' },
-      { name: 'file5' },
-    ]; // 5 arquivos, mas os nomes não correspondem
-    component.validaNameArquivo = jest.fn().mockReturnValue(false);
-    component.valueNotFind = 'analitico';
-
-    await component.uploadArquivoAWS();
-
-    expect(component.showMessage).toHaveBeenCalledWith(
-      'O nome do arquivo enviado não corresponde ao nome esperado: analitico',
-      'error'
-    );
-    expect(component.updateFileMultiple).not.toHaveBeenCalled();
-  });
-
-  it('deve chamar updateFileMultiple se a validação de arquivos passar', async () => {
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [
-      { name: 'analitico' },
-      { name: 'consolidado' },
-      { name: 'teste1' },
-      { name: 'teste2' },
-      { name: 'teste3' },
-    ]; // 5 arquivos válidos
-    component.validaNameArquivo = jest.fn().mockReturnValue(true);
-
-    await component.uploadArquivoAWS();
-
-    expect(component.updateFileMultiple).toHaveBeenCalled();
-    expect(component.showMessage).not.toHaveBeenCalled();
-  });
-
-  it('deve mostrar mensagem de erro para "reestruturacao" com menos de 2 arquivos', async () => {
-    component.nameFunc = 'reestruturacao';
-    component.selectedFiles = [{ name: 'file1' }]; // Apenas 1 arquivo
-    await component.uploadArquivoAWS();
-
-    expect(component.showMessage).toHaveBeenCalledWith(
-      'Você deve anexar 2 arquivo(s)',
-      'error'
-    );
-    expect(component.updateFileMultiple).not.toHaveBeenCalled();
-  });
-});
+%dw 2.0
+output application/json
+var data = [
+  { "id": 1, "codigo": "002" },
+  { "id": 2, "codigo": "176" },
+  { "id": 3, "codigo": "999" }
+]
+var valoresParaVerificar = ["002", "02", "2", "45", "045", "46", "046", "162", "176"]
+---
+sizeOf(data filter (item) -> valoresParaVerificar contains item.codigo) > 0
