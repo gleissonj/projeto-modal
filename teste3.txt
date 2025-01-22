@@ -1,55 +1,12 @@
-validaNameArquivo(namesFile: string[]): boolean {
-  for (const name of namesFile) {
-    if (!this.selectedFiles.some(file => file.name.includes(name))) {
-      this.valueNotFind = name;
-      return false;
-    }
-  }
-  return true;
-}
+const getFormattedDate = () => {
+  const now = new Date();
 
-async uploadArquivoAWS() {
-  if (this.nameFunc !== "OPP" && this.nameFunc !== "territorios") {
-    return this.updateFileOne();
-  }
+  const year = now.getFullYear(); // Ano com 4 dígitos
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Mês (0-11, por isso adicionamos 1)
+  const day = String(now.getDate()).padStart(2, '0'); // Dia do mês
+  const hour = String(now.getHours()).padStart(2, '0'); // Hora (24h)
 
-  const validationRules = {
-    OPP: {
-      expectedFileCount: 5,
-      expectedFileNames: ["analitico", "consolidado", "teste1", "teste2", "teste3"],
-    },
-    hierarquia_comercial: {
-      expectedFileCount: 5,
-      expectedFileNames: ["teste5", "teste6", "teste7", "teste8", "teste9", "teste10"],
-    },
-    reestruturacao: {
-      expectedFileCount: 2,
-      expectedFileNames: ["teste11", "teste12"],
-    },
-  };
+  return `${year}${month}${day}${hour}`;
+};
 
-  const rules = validationRules[this.nameFunc];
-
-  if (rules) {
-    // Valida a quantidade de arquivos
-    if (this.selectedFiles.length !== rules.expectedFileCount) {
-      return this.showMessage(
-        `Você deve anexar ${rules.expectedFileCount} arquivo(s)`,
-        "error"
-      );
-    }
-
-    // Valida os nomes dos arquivos
-    const isValidName = this.validaNameArquivo(rules.expectedFileNames);
-
-    if (!isValidName) {
-      return this.showMessage(
-        `O nome do arquivo enviado não corresponde ao nome esperado: ${this.valueNotFind}`,
-        "error"
-      );
-    }
-
-    // Atualiza múltiplos arquivos
-    return this.updateFileMultiple();
-  }
-}
+console.log(getFormattedDate());
