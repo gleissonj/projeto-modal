@@ -10,3 +10,39 @@ const getFormattedDate = () => {
 };
 
 console.log(getFormattedDate());
+
+
+
+// dateUtils.test.js
+import { getFormattedDate } from './dateUtils';
+
+describe('getFormattedDate', () => {
+  it('should return the current date and time in YYYYMMDDHH format', () => {
+    // Simula uma data fixa (22 de janeiro de 2025, 22h)
+    const mockDate = new Date('2025-01-22T22:00:00Z');
+    jest.useFakeTimers(); // Ativa os timers falsos
+    jest.setSystemTime(mockDate); // Configura a data atual simulada
+
+    const result = getFormattedDate();
+
+    // Verifica se o resultado está no formato esperado
+    expect(result).toBe('2025012222');
+
+    // Restaura os temporizadores reais após o teste
+    jest.useRealTimers();
+  });
+
+  it('should format single-digit months, days, and hours with leading zeros', () => {
+    // Simula uma data fixa (5 de março de 2025, 9h)
+    const mockDate = new Date('2025-03-05T09:00:00Z');
+    jest.useFakeTimers();
+    jest.setSystemTime(mockDate);
+
+    const result = getFormattedDate();
+
+    // Verifica o resultado no formato esperado
+    expect(result).toBe('2025030509');
+
+    jest.useRealTimers();
+  });
+});
