@@ -1,48 +1,25 @@
-const getFormattedDate = () => {
-  const now = new Date();
+const file = document.querySelector('input[type="file"]').files[0]; // Obtém o arquivo do input
+const sha256 = "abc123"; // Exemplo de SHA-256
+const idArquivo = "12345";
+const idConteudo = "67890";
 
-  const year = now.getFullYear(); // Ano com 4 dígitos
-  const month = String(now.getMonth() + 1).padStart(2, '0'); // Mês (0-11, por isso adicionamos 1)
-  const day = String(now.getDate()).padStart(2, '0'); // Dia do mês
-  const hour = String(now.getHours()).padStart(2, '0'); // Hora (24h)
+const formData = new FormData();
+formData.append("arquivo", file);
+formData.append("sha256", sha256);
+formData.append("idArquivo", idArquivo);
+formData.append("idConteudo", idConteudo);
 
-  return `${year}${month}${day}${hour}`;
-};
-
-console.log(getFormattedDate());
-
-
-
-// dateUtils.test.js
-import { getFormattedDate } from './dateUtils';
-
-describe('getFormattedDate', () => {
-  it('should return the current date and time in YYYYMMDDHH format', () => {
-    // Simula uma data fixa (22 de janeiro de 2025, 22h)
-    const mockDate = new Date('2025-01-22T22:00:00Z');
-    jest.useFakeTimers(); // Ativa os timers falsos
-    jest.setSystemTime(mockDate); // Configura a data atual simulada
-
-    const result = getFormattedDate();
-
-    // Verifica se o resultado está no formato esperado
-    expect(result).toBe('2025012222');
-
-    // Restaura os temporizadores reais após o teste
-    jest.useRealTimers();
-  });
-
-  it('should format single-digit months, days, and hours with leading zeros', () => {
-    // Simula uma data fixa (5 de março de 2025, 9h)
-    const mockDate = new Date('2025-03-05T09:00:00Z');
-    jest.useFakeTimers();
-    jest.setSystemTime(mockDate);
-
-    const result = getFormattedDate();
-
-    // Verifica o resultado no formato esperado
-    expect(result).toBe('2025030509');
-
-    jest.useRealTimers();
-  });
-});
+fetch("https://example.com/upload", {
+    method: "POST",
+    headers: {
+        "client_id": "seu-client-id",
+        "client_secret": "seu-client-secret",
+        "authorization": "Bearer seu-token", 
+        // NÃO adicione 'Content-Type': 'multipart/form-data' manualmente, 
+        // pois o navegador define automaticamente com o boundary correto.
+    },
+    body: formData
+})
+.then(response => response.json())
+.then(data => console.log("Sucesso:", data))
+.catch(error => console.error("Erro:", error));
