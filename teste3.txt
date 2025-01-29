@@ -23,3 +23,26 @@ fetch("https://example.com/upload", {
 .then(response => response.json())
 .then(data => console.log("Sucesso:", data))
 .catch(error => console.error("Erro:", error));
+
+
+
+
+GERAR 256
+
+
+async function generateSHA256FromFile(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+// Exemplo de uso:
+// Suponha que você tenha um input <input type="file" id="fileInput">
+document.getElementById("fileInput").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const hash = await generateSHA256FromFile(file);
+        console.log("SHA-256 do arquivo:", hash);
+    }
+});
