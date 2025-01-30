@@ -15,30 +15,26 @@
                     <table class="slds-table slds-table_bordered slds-table_cell-buffer dynamic-table">
                         <thead>
                             <tr>
-                                <template for:each={columns} for:item="col">
-                                    <th key={col.label}>{col.label}</th>
-                                </template>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Telefone</th>
+                                <th>Seleção</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template for:each={data} for:item="row">
                                 <tr key={row.id}>
-                                    <template for:each={columns} for:item="col">
-                                        <td key={col.fieldName}>
-                                            <template if:true={col.isSelect}>
-                                                <lightning-combobox
-                                                    options={options}
-                                                    value={row[col.fieldName]}
-                                                    onchange={handleSelectChange}
-                                                    data-id={row.id}
-                                                    data-field={col.fieldName}
-                                                ></lightning-combobox>
-                                            </template>
-                                            <template if:false={col.isSelect}>
-                                                {row[col.fieldName]}
-                                            </template>
-                                        </td>
-                                    </template>
+                                    <td>{row.name}</td>
+                                    <td>{row.email}</td>
+                                    <td>{row.phone}</td>
+                                    <td>
+                                        <lightning-combobox
+                                            options={options}
+                                            value={row.selection}
+                                            onchange={handleSelectChange}
+                                            data-id={row.id}
+                                        ></lightning-combobox>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
