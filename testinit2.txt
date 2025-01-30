@@ -36,6 +36,7 @@ export default class DatatableModal extends LightningElement {
 
     closeDataTableModal() {
         this.isDataTableModalOpen = false;
+        this.isRowModalOpen = false; // Garante que o segundo modal também fecha
     }
 
     handleRowAction(event) {
