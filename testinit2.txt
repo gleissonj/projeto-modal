@@ -1,61 +1,39 @@
-import { LightningElement, track } from 'lwc';
+import { LightningElement } from 'lwc';
 
-export default class DatatableModal extends LightningElement {
-    @track isDataTableModalOpen = false;
-    @track isRowModalOpen = false;
-    @track selectedRow = {};
-    @track selectedRows = [];
-    @track isConfirmButtonDisabled = true;
-
+export default class CustomDataTableWithSelect extends LightningElement {
+    // Dados iniciais com selectedOption vazio
     data = [
-        { id: '1', name: 'João' },
-        { id: '2', name: 'Maria' },
-        { id: '3', name: 'Carlos' }
+        { id: '1', name: 'John Doe', selectedOption: '' },  // Nenhum valor selecionado
+        { id: '2', name: 'Jane Doe', selectedOption: '' }   // Nenhum valor selecionado
     ];
 
-    columns = [
-        { label: 'ID', fieldName: 'id' },
-        { label: 'Nome', fieldName: 'name' },
-        { 
-            type: 'button', 
-            typeAttributes: { 
-                label: 'Ver Detalhes', 
-                name: 'view_details', 
-                variant: 'brand-outline' 
-            } 
+    // Opções do combobox
+    options = [
+        { label: 'Opção 1', value: 'Opção 1' },
+        { label: 'Opção 2', value: 'Opção 2' },
+        { label: 'Opção 3', value: 'Opção 3' },
+        { label: 'Opção 4', value: 'Opção 4' }
+    ];
+
+    // Função chamada quando o valor do select é alterado
+    handleSelectChange(event) {
+        const rowId = event.target.dataset.id;
+        const selectedValue = event.target.value;
+
+        // Encontre a linha pelo id e atualize o valor selecionado
+        const index = this.data.findIndex(row => row.id === rowId);
+        if (index !== -1) {
+            this.data[index].selectedOption = selectedValue;
         }
-    ];
-
-    get dataTableModalClass() {
-        return this.isRowModalOpen ? 'modal-blur' : '';
     }
 
-    openDataTableModal() {
-        this.isDataTableModalOpen = true;
-    }
+    // Função chamada quando o botão "Confirmar" é clicado
+    handleConfirm() {
+        // Lógica para processar os dados ou confirmar a seleção
+        console.log('Seleções confirmadas:', JSON.stringify(this.data));
 
-    closeDataTableModal() {
-        this.isDataTableModalOpen = false;
-        this.isRowModalOpen = false; // Garante que o segundo modal também fecha
-    }
-
-    handleRowAction(event) {
-        const row = event.detail.row;
-        this.selectedRow = row;
-        this.isRowModalOpen = true;
-    }
-
-    closeRowModal() {
-        this.isRowModalOpen = false;
-    }
-
-    handleRowSelection(event) {
-        this.selectedRows = event.detail.selectedRows;
-        this.isConfirmButtonDisabled = this.selectedRows.length === 0;
-    }
-
-    handleConfirmSelection() {
-        alert(`Selecionados: ${this.selectedRows.length} registros`);
-        this.closeDataTableModal();
+        // Aqui você pode fazer algo como salvar as seleções ou fechar o modal
+        // Exemplo: Fechar o modal
+        // this.dispatchEvent(new CustomEvent('close'));
     }
 }
