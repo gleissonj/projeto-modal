@@ -26,6 +26,10 @@ export default class DatatableModal extends LightningElement {
         }
     ];
 
+    get dataTableModalClass() {
+        return this.isRowModalOpen ? 'modal-blur' : '';
+    }
+
     openDataTableModal() {
         this.isDataTableModalOpen = true;
     }

@@ -1,10 +1,9 @@
-%dw 2.0
-output application/json
-var data = [
-  { "id": 1, "codigo": "002" },
-  { "id": 2, "codigo": "176" },
-  { "id": 3, "codigo": "999" }
-]
-var valoresParaVerificar = ["002", "02", "2", "45", "045", "46", "046", "162", "176"]
----
-sizeOf(data filter (item) -> valoresParaVerificar contains item.codigo) > 0
+.modal-blur {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.button-size {
+    font-size: 0.875rem;
+    font-weight: 600;
+}

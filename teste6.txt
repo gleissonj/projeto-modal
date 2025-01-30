@@ -1,10 +1,3 @@
-<!--
-  @description       : 
-  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
-  @group             : 
-  @last modified on  : 01-30-2025
-  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
--->
 <template>
     <lightning-card title="Tela Principal">
         <lightning-button 
@@ -14,9 +7,9 @@
         </lightning-button>
     </lightning-card>
 
-    <!-- Modal contendo o DataTable -->
+    <!-- Modal do DataTable -->
     <template if:true={isDataTableModalOpen}>
-        <section role="dialog" class="slds-modal slds-fade-in-open">
+        <section role="dialog" class="slds-modal slds-fade-in-open {dataTableModalClass}">
             <div class="slds-modal__container">
                 <header class="slds-modal__header">
                     <h2 class="slds-text-heading_medium">Selecione os Registros</h2>
