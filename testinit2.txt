@@ -1,33 +1,3 @@
-import { LightningElement, track } from 'lwc';
-
-export default class ModalTable extends LightningElement {
-    @track isModalOpen = false;
-    @track data = [
-        { id: '1', name: 'Ana', email: 'ana@email.com', phone: '12345', selection: '' },
-        { id: '2', name: 'Carlos', email: 'carlos@email.com', phone: '67890', selection: '' }
-    ];
-    @track options = [
-        { label: 'Opção 1', value: 'opcao1' },
-        { label: 'Opção 2', value: 'opcao2' }
-    ];
-
-    openModal() {
-        this.isModalOpen = true;
-    }
-
-    closeModal() {
-        this.isModalOpen = false;
-    }
-
-    confirmSelection() {
-        console.log('Confirmação feita:', this.data);
-        this.closeModal();
-    }
-
-    handleSelectChange(event) {
-        const rowId = event.target.dataset.id;
-        const value = event.detail.value;
-
-        this.data = this.data.map(row => row.id === rowId ? { ...row, selection: value } : row);
-    }
+.slds-table td.slds-text-title {
+    font-size: 12px; /* Ajuste conforme necessário */
 }
