@@ -1,112 +1,56 @@
-const permissoesNecessarias = [
-    'HJ6-HJ6-U1000_oportunidadesibba360_DEV',
-    'HJ6-HJ6-U1000_oportunidadesibba360_HML',
-    'HJ6-HJ6-U1000_oportunidadesibba360'
-];
+import { LightningElement, track } from 'lwc';
 
-const possuiPermissao = permissoesNecessarias.some(permissao =>
-    this.gruposAcessos.includes(permissao)
-);
+export default class DatatableModal extends LightningElement {
+    @track isDataTableModalOpen = false;
+    @track isRowModalOpen = false;
+    @track selectedRow = {};
+    @track selectedRows = [];
+    @track isConfirmButtonDisabled = true;
 
-if (possuiPermissao) {
-    console.log("Permissão encontrada");
-} else {
-    console.log("Nenhuma permissão encontrada");
-}
-
-
-
-verificaPermissao() {
-    const permissoesNecessarias = [
-        'HJ6-HJ6-U1000_oportunidadesibba360_DEV',
-        'HJ6-HJ6-U1000_oportunidadesibba360_HML',
-        'HJ6-HJ6-U1000_oportunidadesibba360'
+    data = [
+        { id: '1', name: 'João' },
+        { id: '2', name: 'Maria' },
+        { id: '3', name: 'Carlos' }
     ];
 
-    // Verifica se gruposAcessos está definido, caso contrário define possuiPermissao como false
-    this.possuiPermissao = this.gruposAcessos 
-        ? permissoesNecessarias.some(permissao => this.gruposAcessos.includes(permissao)) 
-        : false;
-}
+    columns = [
+        { label: 'ID', fieldName: 'id' },
+        { label: 'Nome', fieldName: 'name' },
+        { 
+            type: 'button', 
+            typeAttributes: { 
+                label: 'Ver Detalhes', 
+                name: 'view_details', 
+                variant: 'brand-outline' 
+            } 
+        }
+    ];
 
-
-
-AND(
-    NOT(ISBLANK(MobilePhone)),
-    NOT(REGEX(MobilePhone, "\\d{1,3} \\d{2} \\d{5}-\\d{4}"))
-)
-
-
-
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "kms:Encrypt",
-        "kms:Decrypt",
-        "kms:GenerateDataKey"
-      ],
-      "Resource": "arn:aws:kms:REGION:ACCOUNT_B_ID:key/KMS_KEY_ID"
+    openDataTableModal() {
+        this.isDataTableModalOpen = true;
     }
-  ]
-}
 
-
-
-glue
-preciso fazer a estrutura do etl utilizando o glue para o processo de dados da funcionalidade do 4966
-para então conseguir realizar o etl no qual deve ser chamado a execução através do portal de multipart, onde após os arquivos serem realizados o upload ele deve chamar o stepfunction
-e então gerar o arquivo tratado em um bucket do s3 para que o mulesoft possa consumir posteriormente as informações e enviar para a salesforce 
-
-
-
-atualização dotnet
-
-preciso ralizar a atualização do dotnet do projeto do mujltipart, do qual hoje esta na versão 6.0 e devemos ir para a versão 8.0
-para então não ficar com a solução com uma tecnologia atrasada e ficar em conformidade com as normas do banco 
-e então ta com a aplicação atualizada para realização de novas funcionalidades na api que esta no fargate e utilizando a linguagem de programação dotnet 6.0
-
-
-croos account
-
-preciso realizar a funcionalidade de cross account na aws, para realizar o salvamento no buket do s3 em outra conta aaws que não seja a hj6
-para então disponibilizar para a squad parceira, o uso do portal de multipart para que possa também ser utilizada
-e então ser realizada o reuso, visto que o banco esta aconselhando mais aplicações que podem ser ealizadas o reuso 
-
-
-
-Apresente soluções para substituir os serviços excluídos,
-
-certifique-se de que você consegue medir a eficácia do trabalho que você capturou — 
-
-os clientes querem produtos ou serviços que os ajudem a fazer um trabalho melhor.
-
-oportunidade única de conhecer um pouco mais sobre o seu público.
-
-é possível chegar para a reunião com uma maior preparação
-
-Direcione os recursos para áreas mais estratégicas do banco.
-Assim, é possível chegar para a reunião com uma maior preparação, entendendo as dores e desejos que a pessoa tem em sua empresa e, com isso, demonstrar que você tem os recursos adequados para ajudá-la.
-
-
-
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "kms:Encrypt",
-        "kms:Decrypt",
-        "kms:GenerateDataKey"
-      ],
-      "Resource": "arn:aws:kms:REGION:ACCOUNT_B_ID:key/KMS_KEY_ID"
+    closeDataTableModal() {
+        this.isDataTableModalOpen = false;
     }
-  ]
+
+    handleRowAction(event) {
+        const row = event.detail.row;
+        this.selectedRow = row;
+        this.isRowModalOpen = true;
+    }
+
+    closeRowModal() {
+        this.isRowModalOpen = false;
+    }
+
+    handleRowSelection(event) {
+        this.selectedRows = event.detail.selectedRows;
+        this.isConfirmButtonDisabled = this.selectedRows.length === 0;
+    }
+
+    handleConfirmSelection() {
+        alert(`Selecionados: ${this.selectedRows.length} registros`);
+        this.closeDataTableModal();
+    }
 }
-
-
-
-

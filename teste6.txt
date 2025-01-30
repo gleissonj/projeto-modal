@@ -1,38 +1,77 @@
-#%RAML 1.0
-title: File Upload with Array of Objects
-version: 1.0
-baseUri: http://api.example.com
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 01-30-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
+<template>
+    <lightning-card title="Tela Principal">
+        <lightning-button 
+            label="Abrir Datatable" 
+            variant="brand" 
+            onclick={openDataTableModal}>
+        </lightning-button>
+    </lightning-card>
 
-/resource:
-  post:
-    description: Upload a file with an array of objects in form data
-    body:
-      multipart/form-data:
-        properties:
-          file:
-            description: The file to upload
-            type: file
-            required: true
-          items:
-            description: An array of objects
-            type: array
-            items:
-              type: object
-              properties:
-                id:
-                  type: integer
-                  required: true
-                  example: 1
-                name:
-                  type: string
-                  required: true
-                  example: "Item Name"
-            required: true
-    responses:
-      200:
-        body:
-          application/json:
-            example: |
-              {
-                "message": "File and data successfully uploaded"
-              }
+    <!-- Modal contendo o DataTable -->
+    <template if:true={isDataTableModalOpen}>
+        <section role="dialog" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Selecione os Registros</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        onclick={closeDataTableModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="Fechar" size="small"></lightning-icon>
+                    </button>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-datatable
+                        key-field="id"
+                        data={data}
+                        columns={columns}
+                        onrowaction={handleRowAction}
+                        onrowselection={handleRowSelection}>
+                    </lightning-datatable>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button 
+                        variant="brand" 
+                        label="Confirmar Seleção" 
+                        onclick={handleConfirmSelection} 
+                        disabled={isConfirmButtonDisabled}
+                        class="button-size">
+                    </lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Modal de Detalhes da Linha -->
+    <template if:true={isRowModalOpen}>
+        <section role="dialog" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Detalhes do Registro</h2>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        onclick={closeRowModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="Fechar" size="small"></lightning-icon>
+                    </button>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p><strong>ID:</strong> {selectedRow.id}</p>
+                    <p><strong>Nome:</strong> {selectedRow.name}</p>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Fechar" onclick={closeRowModal}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>
