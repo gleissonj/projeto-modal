@@ -7,7 +7,7 @@
         </lightning-button>
     </lightning-card>
 
-    <!-- Backdrop para o Datatable -->
+    <!-- Modal do DataTable -->
     <template if:true={isDataTableModalOpen}>
         <div class="slds-backdrop slds-backdrop_open modal-backdrop"></div>
         <section role="dialog" class="slds-modal slds-fade-in-open {dataTableModalClass}">
@@ -43,7 +43,7 @@
         </section>
     </template>
 
-    <!-- Modal de Detalhes da Linha (Z-index maior) -->
+    <!-- Modal de Detalhes (Z-index maior) -->
     <template if:true={isRowModalOpen}>
         <div class="slds-backdrop slds-backdrop_open modal-backdrop"></div>
         <section role="dialog" class="slds-modal slds-fade-in-open modal-top">
