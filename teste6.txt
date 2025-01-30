@@ -1,35 +1,56 @@
-<div class="slds-modal__content slds-p-around_medium">
-    <div class="slds-scrollable_x">
-        <table class="slds-table slds-table_bordered slds-table_cell-buffer">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Telefone</th>
-                    <th>Endereço</th>
-                    <th>Seleção</th>
-                </tr>
-            </thead>
-            <tbody>
-                <template for:each={data} for:item="row">
-                    <tr key={row.id}>
-                        <td>{row.name}</td>
-                        <td>{row.email}</td>
-                        <td>{row.phone}</td>
-                        <td>{row.address}</td>
-                        <td>
-                            <lightning-combobox
-                                name="selectOption"
-                                label="Selecione"
-                                value={row.selectedOption}
-                                options={options}
-                                onchange={handleSelectChange}
-                                data-id={row.id}
-                            ></lightning-combobox>
-                        </td>
-                    </tr>
-                </template>
-            </tbody>
-        </table>
-    </div>
-</div>
+<template>
+    <lightning-button label="Abrir Tabela" onclick={openModal}></lightning-button>
+
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container dynamic-modal">
+                <!-- Cabeçalho do Modal -->
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Tabela Dinâmica</h2>
+                    <lightning-button-icon icon-name="utility:close" alternative-text="Fechar" onclick={closeModal}></lightning-button-icon>
+                </header>
+
+                <!-- Conteúdo do Modal -->
+                <div class="slds-modal__content slds-p-around_medium">
+                    <table class="slds-table slds-table_bordered slds-table_cell-buffer dynamic-table">
+                        <thead>
+                            <tr>
+                                <template for:each={columns} for:item="col">
+                                    <th key={col.label}>{col.label}</th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={data} for:item="row">
+                                <tr key={row.id}>
+                                    <template for:each={columns} for:item="col">
+                                        <td key={col.fieldName}>
+                                            <template if:true={col.isSelect}>
+                                                <lightning-combobox
+                                                    options={options}
+                                                    value={row[col.fieldName]}
+                                                    onchange={handleSelectChange}
+                                                    data-id={row.id}
+                                                    data-field={col.fieldName}
+                                                ></lightning-combobox>
+                                            </template>
+                                            <template if:false={col.isSelect}>
+                                                {row[col.fieldName]}
+                                            </template>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Rodapé do Modal -->
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancelar" onclick={closeModal}></lightning-button>
+                    <lightning-button label="Confirmar" variant="brand" onclick={confirmSelection}></lightning-button>
+                </footer>
+            </div>
+        </section>
+    </template>
+</template>

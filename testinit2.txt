@@ -1,9 +1,54 @@
-.slds-modal__content {
-    max-height: 500px; /* Limita a altura do modal */
-    overflow-y: auto; /* Ativa o scroll vertical */
-}
+import { LightningElement, track } from 'lwc';
 
-.slds-scrollable_x {
-    overflow-x: auto; /* Ativa o scroll horizontal */
-    max-width: 100%; /* Evita que o modal estoure */
+export default class ModalTable extends LightningElement {
+    @track isModalOpen = false;
+    @track data = [
+        { id: '1', name: 'Ana', email: 'ana@email.com', phone: '12345', selection: '' },
+        { id: '2', name: 'Carlos', email: 'carlos@email.com', phone: '67890', selection: '' }
+    ];
+    @track columns = [
+        { label: 'Nome', fieldName: 'name' },
+        { label: 'Email', fieldName: 'email' },
+        { label: 'Telefone', fieldName: 'phone' },
+        { label: 'Seleção', fieldName: 'selection', isSelect: true }
+    ];
+    @track options = [
+        { label: 'Opção 1', value: 'opcao1' },
+        { label: 'Opção 2', value: 'opcao2' }
+    ];
+
+    openModal() {
+        this.isModalOpen = true;
+        this.adjustModalSize();
+    }
+
+    closeModal() {
+        this.isModalOpen = false;
+    }
+
+    confirmSelection() {
+        console.log('Confirmação feita:', this.data);
+        this.closeModal();
+    }
+
+    handleSelectChange(event) {
+        const rowId = event.target.dataset.id;
+        const fieldName = event.target.dataset.field;
+        const value = event.detail.value;
+
+        this.data = this.data.map(row => row.id === rowId ? { ...row, [fieldName]: value } : row);
+    }
+
+    adjustModalSize() {
+        setTimeout(() => {
+            const modal = this.template.querySelector('.dynamic-modal');
+            const table = this.template.querySelector('.dynamic-table');
+
+            if (modal && table) {
+                const columnCount = this.columns.length;
+                const modalWidth = Math.min(100, columnCount * 15); // Ajusta dinamicamente
+                modal.style.width = `${modalWidth}%`;
+            }
+        }, 0);
+    }
 }
