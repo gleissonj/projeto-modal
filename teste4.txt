@@ -1,73 +1,65 @@
-import { YourComponent } from './your-component.component';
+import { LightningElement, track  } from 'lwc';
 
-describe('YourComponent - getAddreessS3', () => {
-  let component: YourComponent;
+const COLUMNS = [
+    { label: 'Nome', fieldName: 'name', type: 'text' },
+    { label: 'CPF', fieldName: 'id', type: 'text' },
+    { label: 'Ação', type: 'button', typeAttributes: { 
+        label: 'Ver Detalhes', 
+        name: 'viewDetails', 
+        variant: 'brand' 
+    }}
+];
 
-  beforeEach(() => {
-    component = new YourComponent();
 
-    // Mock da função auxiliar
-    component.getValueNameOperation = jest.fn();
-  });
 
-  it('deve gerar o endereço S3 correto para "OPP"', () => {
-    const mockFile = new File(['content'], 'example.txt', { type: 'text/plain' });
-    const mockHash = 'example.txt';
-    (component.getValueNameOperation as jest.Mock).mockReturnValue('example');
+export default class SearchApontamento extends LightningElement {
+    @track isRowModalOpen = false;
+    @track isConfirmModalOpen = false;
+    @track selectedRow = {};
+    @track selectedRows = [];
 
-    component.file = mockFile;
-    component.nameFunc = 'OPP';
-    component.hash = mockHash;
+    data = [
+        { id: '1', name: 'João' },
+        { id: '2', name: 'Maria' },
+        { id: '3', name: 'Carlos' }
+    ];
 
-    component.getAddreessS3();
+    columns = COLUMNS;
 
-    expect(component.addressS3).toMatch(
-      /^multipartupload\/OPP\/ nameSubFolder \/example-\d+\.[a-zA-Z0-9]+$/
-    );
-    expect(component.getValueNameOperation).toHaveBeenCalledWith(mockFile.name);
-  });
+    get isConfirmButtonDisabled() {
+        return this.selectedRows.length === 0;
+    }
 
-  it('deve gerar o endereço S3 correto para "oportunidadesibba360"', () => {
-    const mockFile = new File(['content'], 'example.csv', { type: 'text/csv' });
-    const mockHash = 'example.csv';
-    (component.getValueNameOperation as jest.Mock).mockReturnValue('example');
+    handleRowSelection(event) {
+        this.selectedRows = event.detail.selectedRows;
+    }
 
-    component.file = mockFile;
-    component.nameFunc = 'oportunidadesibba360';
-    component.hash = mockHash;
+    handleRowAction(event) {
+        const actionName = event.detail.action.name;
+        const row = event.detail.row;
 
-    component.getAddreessS3();
+        if (actionName === 'viewDetails') {
+            this.selectedRow = row;
+            this.isRowModalOpen = true;
+        }
+    }
 
-    expect(component.addressS3).toMatch(
-      /^multipartupload\/oportunidadesibba360\/example-\d+\.[a-zA-Z0-9]+$/
-    );
-    expect(component.getValueNameOperation).toHaveBeenCalledWith(mockFile.name);
-  });
+    openConfirmModal() {
+        if (this.selectedRows.length > 0) {
+            this.isConfirmModalOpen = true;
+        }
+    }
 
-  it('deve gerar o endereço S3 correto para outros valores de "nameFunc"', () => {
-    const mockFile = new File(['content'], 'example.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const mockHash = 'example.docx';
+    closeRowModal() {
+        this.isRowModalOpen = false;
+    }
 
-    component.file = mockFile;
-    component.nameFunc = 'OTHER_FUNCTION';
-    component.hash = mockHash;
-    component.selectedTeam = 'team123';
+    closeConfirmModal() {
+        this.isConfirmModalOpen = false;
+    }
 
-    component.getAddreessS3();
-
-    expect(component.addressS3).toMatch(
-      /^multipartupload\/OTHER_FUNCTION\/OTHER_FUNCTION-team123-\d+\.[a-zA-Z0-9]+$/
-    );
-    expect(component.getValueNameOperation).not.toHaveBeenCalled();
-  });
-
-  it('deve lidar com file ou hash indefinidos sem falhar', () => {
-    component.file = undefined;
-    component.nameFunc = 'OPP';
-    component.hash = undefined;
-
-    expect(() => component.getAddreessS3()).not.toThrow();
-
-    expect(component.addressS3).toBe('');
-  });
-});
+    handleConfirmSelection() {
+        this.openConfirmModal();
+    }
+    
+}

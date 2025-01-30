@@ -1,13 +1,35 @@
-verificaPermissaoUpload(nameFunc: string): boolean {
-    const permissoesMap = {
-        'Prospect': environment.permissionsProspect,
-        'Opp': environment.permissionsOpp,
-        'oportunidadesibba360': environment.permissionsOportunidades,
-        'npsglobaltransacional': environment.permissionsNps,
-        'handover': environment.permissionsHandover
-    };
+:host {
+    display: block;
+    padding: 10px;
+}
 
-    // Verifica se nameFunc está no mapa e se o usuário possui a permissão necessária
-    const permissaoNecessaria = permissoesMap[nameFunc as keyof typeof permissoesMap];
-    return permissaoNecessaria ? this.gruposAcessos.includes(permissaoNecessaria) : true;
+/* Ocultar o checkbox "Selecionar todos" */
+.slds-checkbox.faux {
+    display: none;
+}
+
+/* .slds-modal__container {
+    max-width: 40rem;
+} */
+
+.slds-modal__container {
+    width: 40rem;
+}
+
+.datatable-container {
+    min-height: 200px; /* Garante um tamanho mínimo */
+    overflow: auto;
+}
+
+.footer {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #ddd;
+}
+
+.button-size {
+    font-size: 0.875rem; /* Padrão do Salesforce para botões */
+    font-weight: 600;
 }
