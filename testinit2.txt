@@ -1,3 +1,60 @@
-.slds-table td.slds-text-title {
-    font-size: 12px; /* Ajuste conforme necessário */
+import { LightningElement } from 'lwc';
+
+
+export default class SearchApontamento extends LightningElement {
+    dataWithOptions = [
+        {
+            id: '1',
+            name: 'John Doe',
+            telefones: ['1111-1111', '2222-2222'],
+            emails: ['john@email.com', 'doe@email.com'],
+            mobile: ['1111-1111', '2222-2222']
+        },
+        {
+            id: '2',
+            name: 'Jane Doe',
+            telefones: ['3333-3333', '4444-4444'],
+            emails: ['jane@email.com', 'jane.doe@email.com'],
+            mobile: ['1111-1111', '2222-2222']
+        }
+    ];
+
+    // Variável que armazenará a estrutura com opções para cada item
+    processedData = [];
+
+    connectedCallback() {
+        // Processa os dados de forma dinâmica
+        this.processData();
+    }
+
+    processData() {
+        // Itera sobre cada item da dataWithOptions e adiciona os campos necessários
+        this.processedData = this.dataWithOptions.map(item => ({
+            ...item,  // Mantém os dados originais
+            selectedTelefone: '',  // Inicializa os campos selecionados
+            selectedEmail: '',      // Inicializa os campos selecionados
+            selectedMobile: '',     // Adiciona campo para mobile
+            telefoneOptions: item.telefones.map(t => ({ label: t, value: t })),  // Cria as opções de telefone
+            emailOptions: item.emails.map(e => ({ label: e, value: e })),        // Cria as opções de email
+            mobileOptions: item.mobile.map(m => ({ label: m, value: m }))        // Cria as opções de mobile
+        }));
+    }
+
+    handleSelectChange(event) {
+        const rowId = event.target.dataset.id;
+        const selectedValue = event.target.value;
+
+        // Encontre a linha pelo id e atualize o valor selecionado
+        const index = this.processedData.findIndex(row => row.id === rowId);
+        if (index !== -1) {
+            const fieldName = event.target.name === 'selectedTelefone' ? 'selectedTelefone' :
+                event.target.name === 'selectedEmail' ? 'selectedEmail' : 'selectedMobile';
+            this.processedData[index][fieldName] = selectedValue;
+        }
+    }
+
+    handleConfirm() {
+        console.log('Seleções confirmadas:', JSON.stringify(this.processedData));
+        this.closeModal();  // Fechar o modal após confirmar
+    }
 }

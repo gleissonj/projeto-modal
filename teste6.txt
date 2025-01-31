@@ -1,52 +1,63 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 01-31-2025
+  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+-->
 <template>
-    <lightning-button label="Abrir Tabela" onclick={openModal}></lightning-button>
-
-    <template if:true={isModalOpen}>
-        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container dynamic-modal">
-                <!-- Cabeçalho do Modal -->
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">Tabela Dinâmica</h2>
-                    <lightning-button-icon icon-name="utility:close" alternative-text="Fechar" onclick={closeModal}></lightning-button-icon>
-                </header>
-
-                <!-- Conteúdo do Modal -->
-                <div class="slds-modal__content slds-p-around_medium">
-                    <table class="slds-table slds-table_bordered slds-table_cell-buffer dynamic-table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Email</th>
-                                <th>Telefone</th>
-                                <th>Seleção</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template for:each={data} for:item="row">
-                                <tr key={row.id}>
-                                    <td>{row.name}</td>
-                                    <td>{row.email}</td>
-                                    <td>{row.phone}</td>
-                                    <td>
-                                        <lightning-combobox
-                                            options={options}
-                                            value={row.selection}
-                                            onchange={handleSelectChange}
-                                            data-id={row.id}
-                                        ></lightning-combobox>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Rodapé do Modal -->
-                <footer class="slds-modal__footer">
-                    <lightning-button label="Cancelar" onclick={closeModal}></lightning-button>
-                    <lightning-button label="Confirmar" variant="brand" onclick={confirmSelection}></lightning-button>
-                </footer>
-            </div>
-        </section>
-    </template>
+    <lightning-card title="Tabela com Seleção">
+        <div class="slds-p-around_medium">
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                <thead>
+                    <tr class="slds-text-heading_small">
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Mobile</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={processedData} for:item="row">
+                        <tr key={row.id}>
+                            <td>{row.name}</td>
+                            <td>
+                                <lightning-combobox
+                                    name="selectedTelefone"
+                                    label="Selecione"
+                                    value={row.selectedTelefone}  
+                                    options={row.telefoneOptions}
+                                    onchange={handleSelectChange}
+                                    data-id={row.id}
+                                ></lightning-combobox>
+                            </td>
+                            <td>
+                                <lightning-combobox
+                                    name="selectedMobile"  
+                                    label="Selecione"
+                                    value={row.selectedMobile} 
+                                    options={row.mobileOptions}  
+                                    onchange={handleSelectChange}
+                                    data-id={row.id}
+                                ></lightning-combobox>
+                            </td>
+                            <td>
+                                <lightning-combobox
+                                    name="selectedEmail"
+                                    label="Selecione"
+                                    value={row.selectedEmail}  
+                                    options={row.emailOptions}
+                                    onchange={handleSelectChange}
+                                    data-id={row.id}
+                                ></lightning-combobox>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        <footer class="slds-card__footer">
+            <lightning-button variant="brand" label="Confirmar" onclick={handleConfirm}></lightning-button>
+        </footer>
+    </lightning-card>
 </template>
