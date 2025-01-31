@@ -1,82 +1,54 @@
-<!--
-  @description       : 
-  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
-  @group             : 
-  @last modified on  : 01-30-2025
-  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
--->
-<template>
-    <lightning-card title="Datatable com Botões" class="custom-card">
-        <div class="datatable-container">
-            <lightning-datatable
-                key-field="id"
-                data={data}
-                columns={columns}
-                onrowaction={handleRowAction}
-                 hide-checkbox-column="true"
-                onrowselection={handleRowSelection}>
-            </lightning-datatable>
-        </div>
+@AuraEnabled(cacheable=false)
+public static List<ContactResponse> GetContato() {
+    System.debug('Bateu na API');
 
-        <!-- Rodapé fixo sem espaço em branco -->
-    
-        <div class="footer">
-            <lightning-button 
-                variant="brand" 
-                label="Confirmar" 
-                class="button-size"
-                onclick={handleConfirmSelection} 
-               >
-            </lightning-button>
-        </div>
-    </lightning-card>
+    // Chamada da API externa
+    OutbondResponse response = service.getContact('212121');
+    List<ContactResponse> novosContatos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
 
-    <!-- Modal de Detalhes da Linha -->
-    <template if:true={isRowModalOpen}>
-        <section role="dialog" class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">Detalhes do Registro</h2>
-                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
-                        onclick={closeRowModal}>
-                        <lightning-icon icon-name="utility:close" alternative-text="Fechar" size="small"></lightning-icon>
-                    </button>
-                </header>
+    // Criar um Set com os CPFs para buscar no Salesforce
+    Set<String> cpfs = new Set<String>();
+    for (ContactResponse contato : novosContatos) {
+        cpfs.add(contato.CPF__c);
+    }
 
-                <div class="slds-modal__content slds-p-around_medium">
-                    <p><strong>Nome:</strong> {selectedRow.name}</p>
-                    <p><strong>CPF:</strong> {selectedRow.id}</p>
-                </div>
+    // Buscar contatos existentes no Salesforce
+    List<Contact> contatosExistentes = [SELECT Id, CPF__c, Phone, Email FROM Contact WHERE CPF__c IN :cpfs];
 
-                <footer class="slds-modal__footer">
-                    <lightning-button variant="neutral" label="Fechar" onclick={closeRowModal}></lightning-button>
-                </footer>
-            </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
+    // Criar um mapa CPF -> Contato existente
+    Map<String, Contact> contatosMap = new Map<String, Contact>();
+    for (Contact contato : contatosExistentes) {
+        contatosMap.put(contato.CPF__c, contato);
+    }
 
-    <!-- Modal de Confirmação -->
-    <template if:true={isConfirmModalOpen}>
-        <section role="dialog" class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <header class="slds-modal__header">
-                    <h2 class="slds-text-heading_medium">Confirmação</h2>
-                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
-                        onclick={closeConfirmModal}>
-                        <lightning-icon icon-name="utility:close" alternative-text="Fechar" size="small"></lightning-icon>
-                    </button>
-                </header>
+    // Lista para armazenar contatos diferentes
+    List<ContactResponse> contatosParaFront = new List<ContactResponse>();
 
-                <div class="slds-modal__content slds-p-around_medium">
-                    <p>Você confirmou a seleção de {selectedRows.length} registros.</p>
-                </div>
+    for (ContactResponse novoContato : novosContatos) {
+        // Verificar se já existe no Salesforce
+        if (contatosMap.containsKey(novoContato.CPF__c)) {
+            Contact contatoAtual = contatosMap.get(novoContato.CPF__c);
 
-                <footer class="slds-modal__footer">
-                    <lightning-button variant="neutral" label="Fechar" onclick={closeConfirmModal}></lightning-button>
-                </footer>
-            </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
-</template>
+            // Converter os telefones e e-mails para Set para facilitar comparação
+            Set<String> telefonesAtuais = new Set<String>{contatoAtual.Phone};
+            Set<String> emailsAtuais = new Set<String>{contatoAtual.Email};
+
+            Set<String> telefonesNovos = new Set<String>(novoContato.telefones);
+            Set<String> emailsNovos = new Set<String>(novoContato.emails);
+
+            // Verificar se há diferenças entre os dados existentes e os novos
+            Boolean telefoneDiferente = !telefonesNovos.equals(telefonesAtuais);
+            Boolean emailDiferente = !emailsNovos.equals(emailsAtuais);
+
+            // Se houver diferença, adicionar à lista de retorno
+            if (telefoneDiferente || emailDiferente) {
+                contatosParaFront.add(novoContato);
+            }
+        } else {
+            // Se o contato não existe, ele precisa ser criado -> enviar para o front
+            contatosParaFront.add(novoContato);
+        }
+    }
+
+    return contatosParaFront;
+}
