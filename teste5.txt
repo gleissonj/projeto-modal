@@ -1,35 +1,68 @@
-:host {
-    display: block;
-    padding: 10px;
-}
+@AuraEnabled(cacheable=false)
+public static List<ContactResponse> GetContato() {
+    System.debug('Bateu na API');
 
-/* Ocultar o checkbox "Selecionar todos" */
-.slds-checkbox.faux {
-    display: none;
-}
+    // Chamada da API externa
+    OutbondResponse response = service.getContact('212121');
+    List<ContactResponse> novosContatos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
 
-/* .slds-modal__container {
-    max-width: 40rem;
-} */
+    // Criar um Set com os CPFs para buscar no Salesforce
+    Set<String> cpfs = new Set<String>();
+    for (ContactResponse contato : novosContatos) {
+        cpfs.add(contato.CPF__c);
+    }
 
-.slds-modal__container {
-    width: 40rem;
-}
+    // Buscar contatos existentes no Salesforce
+    List<Contact> contatosExistentes = [SELECT Id, CPF__c, Phone, Email FROM Contact WHERE CPF__c IN :cpfs];
 
-.datatable-container {
-    min-height: 200px; /* Garante um tamanho mínimo */
-    overflow: auto;
-}
+    // Criar um mapa CPF -> Contato existente
+    Map<String, Contact> contatosMap = new Map<String, Contact>();
+    for (Contact contato : contatosExistentes) {
+        contatosMap.put(contato.CPF__c, contato);
+    }
 
-.footer {
-    display: flex;
-    justify-content: center;
-    padding: 10px;
-    background: white;
-    border-top: 1px solid #ddd;
-}
+    // Lista para armazenar contatos diferentes para o front
+    List<ContactResponse> contatosParaFront = new List<ContactResponse>();
+    
+    // Lista para inserir novos contatos diretamente
+    List<Contact> contatosParaInsert = new List<Contact>();
 
-.button-size {
-    font-size: 0.875rem; /* Padrão do Salesforce para botões */
-    font-weight: 600;
+    for (ContactResponse novoContato : novosContatos) {
+        if (contatosMap.containsKey(novoContato.CPF__c)) {
+            // O contato já existe no Salesforce
+            Contact contatoAtual = contatosMap.get(novoContato.CPF__c);
+
+            // Criar sets para comparação
+            Set<String> telefonesAtuais = new Set<String>{contatoAtual.Phone};
+            Set<String> emailsAtuais = new Set<String>{contatoAtual.Email};
+
+            Set<String> telefonesNovos = new Set<String>(novoContato.telefones);
+            Set<String> emailsNovos = new Set<String>(novoContato.emails);
+
+            // Verificar se há diferenças
+            Boolean telefoneDiferente = !telefonesNovos.equals(telefonesAtuais);
+            Boolean emailDiferente = !emailsNovos.equals(emailsAtuais);
+
+            // Se houver diferença, enviar para o front
+            if (telefoneDiferente || emailDiferente) {
+                contatosParaFront.add(novoContato);
+            }
+        } else {
+            // O contato não existe → Criamos um novo e adicionamos para inserir diretamente
+            Contact novoRegistro = new Contact(
+                CPF__c = novoContato.CPF__c,
+                Phone = novoContato.telefones.isEmpty() ? null : novoContato.telefones[0],
+                Email = novoContato.emails.isEmpty() ? null : novoContato.emails[0],
+                Name = novoContato.name
+            );
+            contatosParaInsert.add(novoRegistro);
+        }
+    }
+
+    // Inserir novos contatos no Salesforce
+    if (!contatosParaInsert.isEmpty()) {
+        insert contatosParaInsert;
+    }
+
+    return contatosParaFront;
 }
