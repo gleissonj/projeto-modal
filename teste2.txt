@@ -1,17 +1,47 @@
-.dynamic-modal {
-    max-width: 90%;
-    min-width: 40%;
-    transition: width 0.3s ease-in-out;
-}
+@AuraEnabled(cacheable=false)
+public static List<ContactResponse> GetContato() {
+    System.debug('Bateu na API');
 
-.dynamic-table {
-    table-layout: fixed;
-    width: 100%;
-}
+    // Chamada da API externa
+    OutbondResponse response = service.getContact('212121');
+    List<ContactResponse> novosContatos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
 
-.dynamic-table th,
-.dynamic-table td {
-    text-align: center;
-    white-space: nowrap;
-    padding: 10px;
+    // Criar um Set com os CPFs para buscar no Salesforce
+    Set<String> cpfs = new Set<String>();
+    for (ContactResponse contato : novosContatos) {
+        cpfs.add(contato.CPF__c);
+    }
+
+    // Buscar contatos existentes no Salesforce
+    List<Contact> contatosExistentes = [SELECT Id, CPF__c, Phone, Email FROM Contact WHERE CPF__c IN :cpfs];
+
+    // Criar um mapa CPF -> Contato existente
+    Map<String, Contact> contatosMap = new Map<String, Contact>();
+    for (Contact contato : contatosExistentes) {
+        contatosMap.put(contato.CPF__c, contato);
+    }
+
+    // Lista para armazenar contatos diferentes
+    List<ContactResponse> contatosParaFront = new List<ContactResponse>();
+
+    for (ContactResponse novoContato : novosContatos) {
+        // Verificar se já existe no Salesforce
+        if (contatosMap.containsKey(novoContato.CPF__c)) {
+            Contact contatoAtual = contatosMap.get(novoContato.CPF__c);
+            
+            // Comparar telefone e e-mail
+            Boolean telefoneIgual = (contatoAtual.Phone == novoContato.telefones[0]);
+            Boolean emailIgual = (contatoAtual.Email == novoContato.emails[0]);
+
+            // Se telefone e e-mail forem iguais, não adiciona à lista do front
+            if (!telefoneIgual || !emailIgual) {
+                contatosParaFront.add(novoContato);
+            }
+        } else {
+            // Se o contato não existe, ele precisa ser criado -> enviar para o front
+            contatosParaFront.add(novoContato);
+        }
+    }
+
+    return contatosParaFront;
 }
