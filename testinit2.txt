@@ -1,60 +1,93 @@
-import { LightningElement } from 'lwc';
+@AuraEnabled(cacheable=false)
+public static List<ContactResponse> GetContato() {
+    System.debug('Bateu na API');
 
+    // Chamada da API externa
+    OutbondResponse response = service.getContact('212121');
+    List<ContactResponse> novosContatos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
 
-export default class SearchApontamento extends LightningElement {
-    dataWithOptions = [
-        {
-            id: '1',
-            name: 'John Doe',
-            telefones: ['1111-1111', '2222-2222'],
-            emails: ['john@email.com', 'doe@email.com'],
-            mobile: ['1111-1111', '2222-2222']
-        },
-        {
-            id: '2',
-            name: 'Jane Doe',
-            telefones: ['3333-3333', '4444-4444'],
-            emails: ['jane@email.com', 'jane.doe@email.com'],
-            mobile: ['1111-1111', '2222-2222']
+    // Criar um Set com os CPFs para buscar no Salesforce
+    Set<String> cpfs = new Set<String>();
+    for (ContactResponse contato : novosContatos) {
+        cpfs.add(contato.CPF__c);
+    }
+
+    // Buscar contatos existentes no Salesforce
+    List<Contact> contatosExistentes = [SELECT Id, CPF__c, Phone, Email FROM Contact WHERE CPF__c IN :cpfs];
+
+    // Criar um mapa CPF -> Contato existente
+    Map<String, Contact> contatosMap = new Map<String, Contact>();
+    for (Contact contato : contatosExistentes) {
+        contatosMap.put(contato.CPF__c, contato);
+    }
+
+    // Lista para armazenar contatos diferentes para o front
+    List<ContactResponse> contatosParaFront = new List<ContactResponse>();
+    
+    // Lista para inserir novos contatos diretamente
+    List<Contact> contatosParaInsert = new List<Contact>();
+
+    for (ContactResponse novoContato : novosContatos) {
+        if (contatosMap.containsKey(novoContato.CPF__c)) {
+            // O contato já existe no Salesforce
+            Contact contatoAtual = contatosMap.get(novoContato.CPF__c);
+
+            // Criar sets para comparação
+            Set<String> telefonesAtuais = new Set<String>{contatoAtual.Phone};
+            Set<String> emailsAtuais = new Set<String>{contatoAtual.Email};
+
+            // Extrair e formatar os telefones da API corretamente
+            Set<String> telefonesNovos = new Set<String>();
+            for (FS1_TelephoneSocio tel : novoContato.telefones) {
+                if (tel.valor_dado_cadastral != null) {
+                    String telefoneFormatado = formatarTelefone(
+                        tel.valor_dado_cadastral.ddi,
+                        tel.valor_dado_cadastral.ddd,
+                        tel.valor_dado_cadastral.telefone
+                    );
+                    telefonesNovos.add(telefoneFormatado);
+                }
+            }
+
+            // Extrair os emails da API
+            Set<String> emailsNovos = new Set<String>();
+            for (String email : novoContato.emails) {
+                emailsNovos.add(email);
+            }
+
+            // Verificar se há diferenças
+            Boolean telefoneDiferente = !telefonesNovos.equals(telefonesAtuais);
+            Boolean emailDiferente = !emailsNovos.equals(emailsAtuais);
+
+            // Se houver diferença, enviar para o front
+            if (telefoneDiferente || emailDiferente) {
+                contatosParaFront.add(novoContato);
+            }
+        } else {
+            // O contato não existe → Criamos um novo e adicionamos para inserir diretamente
+            String telefoneFormatado = '';
+            if (!novoContato.telefones.isEmpty() && novoContato.telefones[0].valor_dado_cadastral != null) {
+                telefoneFormatado = formatarTelefone(
+                    novoContato.telefones[0].valor_dado_cadastral.ddi,
+                    novoContato.telefones[0].valor_dado_cadastral.ddd,
+                    novoContato.telefones[0].valor_dado_cadastral.telefone
+                );
+            }
+
+            Contact novoRegistro = new Contact(
+                CPF__c = novoContato.CPF__c,
+                Phone = telefoneFormatado,
+                Email = novoContato.emails.isEmpty() ? null : novoContato.emails[0],
+                Name = novoContato.name
+            );
+            contatosParaInsert.add(novoRegistro);
         }
-    ];
-
-    // Variável que armazenará a estrutura com opções para cada item
-    processedData = [];
-
-    connectedCallback() {
-        // Processa os dados de forma dinâmica
-        this.processData();
     }
 
-    processData() {
-        // Itera sobre cada item da dataWithOptions e adiciona os campos necessários
-        this.processedData = this.dataWithOptions.map(item => ({
-            ...item,  // Mantém os dados originais
-            selectedTelefone: '',  // Inicializa os campos selecionados
-            selectedEmail: '',      // Inicializa os campos selecionados
-            selectedMobile: '',     // Adiciona campo para mobile
-            telefoneOptions: item.telefones.map(t => ({ label: t, value: t })),  // Cria as opções de telefone
-            emailOptions: item.emails.map(e => ({ label: e, value: e })),        // Cria as opções de email
-            mobileOptions: item.mobile.map(m => ({ label: m, value: m }))        // Cria as opções de mobile
-        }));
+    // Inserir novos contatos no Salesforce
+    if (!contatosParaInsert.isEmpty()) {
+        insert contatosParaInsert;
     }
 
-    handleSelectChange(event) {
-        const rowId = event.target.dataset.id;
-        const selectedValue = event.target.value;
-
-        // Encontre a linha pelo id e atualize o valor selecionado
-        const index = this.processedData.findIndex(row => row.id === rowId);
-        if (index !== -1) {
-            const fieldName = event.target.name === 'selectedTelefone' ? 'selectedTelefone' :
-                event.target.name === 'selectedEmail' ? 'selectedEmail' : 'selectedMobile';
-            this.processedData[index][fieldName] = selectedValue;
-        }
-    }
-
-    handleConfirm() {
-        console.log('Seleções confirmadas:', JSON.stringify(this.processedData));
-        this.closeModal();  // Fechar o modal após confirmar
-    }
+    return contatosParaFront;
 }
