@@ -1,63 +1,83 @@
-<!--
-  @description       : 
-  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
-  @group             : 
-  @last modified on  : 01-31-2025
-  @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
--->
-<template>
-    <lightning-card title="Tabela com Seleção">
-        <div class="slds-p-around_medium">
-            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
-                <thead>
-                    <tr class="slds-text-heading_small">
-                        <th>Nome</th>
-                        <th>Telefone</th>
-                        <th>Mobile</th>
-                        <th>Email</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template for:each={processedData} for:item="row">
-                        <tr key={row.id}>
-                            <td>{row.name}</td>
-                            <td>
-                                <lightning-combobox
-                                    name="selectedTelefone"
-                                    label="Selecione"
-                                    value={row.selectedTelefone}  
-                                    options={row.telefoneOptions}
-                                    onchange={handleSelectChange}
-                                    data-id={row.id}
-                                ></lightning-combobox>
-                            </td>
-                            <td>
-                                <lightning-combobox
-                                    name="selectedMobile"  
-                                    label="Selecione"
-                                    value={row.selectedMobile} 
-                                    options={row.mobileOptions}  
-                                    onchange={handleSelectChange}
-                                    data-id={row.id}
-                                ></lightning-combobox>
-                            </td>
-                            <td>
-                                <lightning-combobox
-                                    name="selectedEmail"
-                                    label="Selecione"
-                                    value={row.selectedEmail}  
-                                    options={row.emailOptions}
-                                    onchange={handleSelectChange}
-                                    data-id={row.id}
-                                ></lightning-combobox>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
-        <footer class="slds-card__footer">
-            <lightning-button variant="brand" label="Confirmar" onclick={handleConfirm}></lightning-button>
-        </footer>
-    </lightning-card>
-</template>
+/**
+ * @description       : 
+ * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+ * @group             : 
+ * @last modified on  : 01-31-2025
+ * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
+**/
+public with sharing class AccController {
+    @AuraEnabled(cacheable=true)
+    public static List<Account> getAccList(){
+
+        System.debug('Bateu: ');
+
+        // Chamando API externa para buscar os contatos
+        OutbondResponse response = service.getContact('212121');
+    
+        List<ContactResponse> apontamentos = (List<ContactResponse>) JSON.deserialize(
+            GetResponse().toString(), 
+            List<ContactResponse>.class
+        );
+    
+        // Lista de CPFs vindos da API
+        Set<String> cpfs = new Set<String>();
+        for (ContactResponse contato : apontamentos) {
+            if (String.isNotBlank(contato.CPF__c)) {
+                cpfs.add(contato.CPF__c);
+            }
+        }
+    
+        // Buscar contatos já existentes no Salesforce com os CPFs retornados
+        List<Contact> contatosExistentes = [
+            SELECT Id, Name, CPF__c, Email, Phone 
+            FROM Contact 
+            WHERE CPF__c IN :cpfs
+        ];
+        
+        Map<String, Contact> mapaContatosExistentes = new Map<String, Contact>();
+        for (Contact contato : contatosExistentes) {
+            mapaContatosExistentes.put(contato.CPF__c, contato);
+        }
+    
+        // Listas para armazenar contatos novos e existentes
+        List<Contact> novosContatos = new List<Contact>();
+        List<Map<String, Object>> contatosParaEscolha = new List<Map<String, Object>>();
+    
+        for (ContactResponse contatoAPI : apontamentos) {
+            if (mapaContatosExistentes.containsKey(contatoAPI.CPF__c)) {
+                // Contato já existe, preparar os dados para o front decidir
+                Map<String, Object> registro = new Map<String, Object>{
+                    'contatoAPI' => contatoAPI,
+                    'contatoExistente' => mapaContatosExistentes.get(contatoAPI.CPF__c)
+                };
+                contatosParaEscolha.add(registro);
+            } else {
+                // Contato não existe, então criar um novo registro
+                Contact novoContato = new Contact(
+                    LastName = contatoAPI.Name,
+                    CPF__c = contatoAPI.CPF__c,
+                    Email = contatoAPI.Email,
+                    Phone = contatoAPI.Telefone
+                );
+                novosContatos.add(novoContato);
+            }
+        }
+    
+        // Inserir os novos contatos no Salesforce
+        if (!novosContatos.isEmpty()) {
+            insert novosContatos;
+        }
+    
+        // Retornar para o front os registros existentes para escolha
+        return contatosParaEscolha;
+    }
+        // System.debug('Adcionado o nome : ' + name);
+        // return [Select Id, name from Account limit 10];
+    //}
+
+    @AuraEnabled
+    public static List<Account> findAccList(String keyword){
+        String key='%'+keyword+'%';
+        return[Select Id, Name from Account where Name Like:key limit 10];
+    }
+}
