@@ -36,10 +36,12 @@ public static List<ContactResponse> GetContato() {
             Set<String> telefonesAtuais = new Set<String>{contatoAtual.Phone};
             Set<String> emailsAtuais = new Set<String>{contatoAtual.Email};
 
-            // Extrair os telefones da API
+            // Extrair os telefones da API corretamente
             Set<String> telefonesNovos = new Set<String>();
             for (FS1_TelephoneSocio tel : novoContato.telefones) {
-                telefonesNovos.add(tel.numero);
+                if (tel.valor_dado_cadastral != null) {
+                    telefonesNovos.add(tel.valor_dado_cadastral.numero);
+                }
             }
 
             // Extrair os emails da API
@@ -60,7 +62,9 @@ public static List<ContactResponse> GetContato() {
             // O contato não existe → Criamos um novo e adicionamos para inserir diretamente
             Contact novoRegistro = new Contact(
                 CPF__c = novoContato.CPF__c,
-                Phone = novoContato.telefones.isEmpty() ? null : novoContato.telefones[0].numero,
+                Phone = novoContato.telefones.isEmpty() || novoContato.telefones[0].valor_dado_cadastral == null 
+                    ? null 
+                    : novoContato.telefones[0].valor_dado_cadastral.numero,
                 Email = novoContato.emails.isEmpty() ? null : novoContato.emails[0],
                 Name = novoContato.name
             );
