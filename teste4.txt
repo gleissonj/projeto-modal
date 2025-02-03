@@ -1,65 +1,45 @@
-import { LightningElement, track  } from 'lwc';
-
-const COLUMNS = [
-    { label: 'Nome', fieldName: 'name', type: 'text' },
-    { label: 'CPF', fieldName: 'id', type: 'text' },
-    { label: 'Ação', type: 'button', typeAttributes: { 
-        label: 'Ver Detalhes', 
-        name: 'viewDetails', 
-        variant: 'brand' 
-    }}
-];
-
-
-
-export default class SearchApontamento extends LightningElement {
-    @track isRowModalOpen = false;
-    @track isConfirmModalOpen = false;
-    @track selectedRow = {};
-    @track selectedRows = [];
-
-    data = [
-        { id: '1', name: 'João' },
-        { id: '2', name: 'Maria' },
-        { id: '3', name: 'Carlos' }
-    ];
-
-    columns = COLUMNS;
-
-    get isConfirmButtonDisabled() {
-        return this.selectedRows.length === 0;
-    }
-
-    handleRowSelection(event) {
-        this.selectedRows = event.detail.selectedRows;
-    }
-
-    handleRowAction(event) {
-        const actionName = event.detail.action.name;
-        const row = event.detail.row;
-
-        if (actionName === 'viewDetails') {
-            this.selectedRow = row;
-            this.isRowModalOpen = true;
-        }
-    }
-
-    openConfirmModal() {
-        if (this.selectedRows.length > 0) {
-            this.isConfirmModalOpen = true;
-        }
-    }
-
-    closeRowModal() {
-        this.isRowModalOpen = false;
-    }
-
-    closeConfirmModal() {
-        this.isConfirmModalOpen = false;
-    }
-
-    handleConfirmSelection() {
-        this.openConfirmModal();
-    }
-    
-}
+<template>
+    <lightning-card title="Tabela com Seleção">
+        <div class="slds-p-around_medium">
+            <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                <thead>
+                    <tr class="slds-text-heading_small">
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={processedData} for:item="row">
+                        <tr key={row.id}>
+                            <td>{row.name}</td>
+                            <td>
+                                <lightning-combobox
+                                    name="selectedPhone"
+                                    label="Selecione"
+                                    value={row.selectedPhone}  
+                                    options={row.telefoneOptions}
+                                    onchange={handleSelectChange}
+                                    data-id={row.id}
+                                ></lightning-combobox>
+                            </td>
+                            <td>
+                                <lightning-combobox
+                                    name="selectedEmail"
+                                    label="Selecione"
+                                    value={row.selectedEmail}  
+                                    options={row.emailOptions}
+                                    onchange={handleSelectChange}
+                                    data-id={row.id}
+                                ></lightning-combobox>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        <footer class="slds-card__footer">
+            <lightning-button variant="brand" label="Confirmar" onclick={handleConfirm}></lightning-button>
+        </footer>
+    </lightning-card>
+</template>

@@ -1,68 +1,80 @@
-@AuraEnabled(cacheable=false)
-public static List<ContactResponse> GetContato() {
-    System.debug('Bateu na API');
+import { LightningElement, track, api } from 'lwc';
+import getApontamento from '@salesforce/apex/ApontamentoController.getApontamento';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
-    // Chamada da API externa
-    OutbondResponse response = service.getContact('212121');
-    List<ContactResponse> novosContatos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
+export default class SearchApontamento extends LightningElement {
+    dataWithOptions = [
+        {
+            name: 'John Doe',
+            cpf: '123.456.789-10',
+            phones: [
+                { value: '1111-11115', type: 'mobile' },
+                { value: '2222-2222', type: 'home' }
+            ],
+            emails: [
+                { value: 'john@email.com', type: 'personal' },
+                { value: 'doe@email.com', type: 'work' }
+            ]
+        },
+        {
+            name: 'Jane Doe',
+            cpf: '987.654.321-00',
+            phones: [
+                { value: '3333-3333', type: 'mobile' },
+                { value: '4444-4444', type: 'home' }
+            ],
+            emails: [
+                { value: 'jane@email.com', type: 'personal' },
+                { value: 'jane.doe@email.com', type: 'work' }
+            ]
+        }
+    ];
 
-    // Criar um Set com os CPFs para buscar no Salesforce
-    Set<String> cpfs = new Set<String>();
-    for (ContactResponse contato : novosContatos) {
-        cpfs.add(contato.CPF__c);
+    // Variável que armazenará a estrutura com opções para cada item
+    processedData = [];
+
+    connectedCallback() {
+        // Processa os dados de forma dinâmica
+        this.processData();
     }
 
-    // Buscar contatos existentes no Salesforce
-    List<Contact> contatosExistentes = [SELECT Id, CPF__c, Phone, Email FROM Contact WHERE CPF__c IN :cpfs];
-
-    // Criar um mapa CPF -> Contato existente
-    Map<String, Contact> contatosMap = new Map<String, Contact>();
-    for (Contact contato : contatosExistentes) {
-        contatosMap.put(contato.CPF__c, contato);
+    processData() {
+       // Itera sobre cada item da dataWithOptions e adiciona os campos necessários
+       this.processedData = this.dataWithOptions.map((item, index) => ({
+        ...item,  // Mantém os dados originais
+        id: `${item.name}-${index}`,  // ID único para cada linha
+        selectedPhone: '',  // Inicializa com vazio (sem telefone selecionado)
+        selectedEmail: '',  // Inicializa com vazio (sem email selecionado)
+        telefoneOptions: item.phones.map(p => ({ label: p.value, value: p.value })),
+        emailOptions: item.emails.map(e => ({ label: e.value, value: e.value }))
+    }));
     }
 
-    // Lista para armazenar contatos diferentes para o front
-    List<ContactResponse> contatosParaFront = new List<ContactResponse>();
+    handleSelectChange(event) {
+        const rowId = event.target.dataset.id;  // Obtém o id da linha
+    const selectedValue = event.target.value;  // Obtém o valor selecionado no combobox
     
-    // Lista para inserir novos contatos diretamente
-    List<Contact> contatosParaInsert = new List<Contact>();
-
-    for (ContactResponse novoContato : novosContatos) {
-        if (contatosMap.containsKey(novoContato.CPF__c)) {
-            // O contato já existe no Salesforce
-            Contact contatoAtual = contatosMap.get(novoContato.CPF__c);
-
-            // Criar sets para comparação
-            Set<String> telefonesAtuais = new Set<String>{contatoAtual.Phone};
-            Set<String> emailsAtuais = new Set<String>{contatoAtual.Email};
-
-            Set<String> telefonesNovos = new Set<String>(novoContato.telefones);
-            Set<String> emailsNovos = new Set<String>(novoContato.emails);
-
-            // Verificar se há diferenças
-            Boolean telefoneDiferente = !telefonesNovos.equals(telefonesAtuais);
-            Boolean emailDiferente = !emailsNovos.equals(emailsAtuais);
-
-            // Se houver diferença, enviar para o front
-            if (telefoneDiferente || emailDiferente) {
-                contatosParaFront.add(novoContato);
-            }
-        } else {
-            // O contato não existe → Criamos um novo e adicionamos para inserir diretamente
-            Contact novoRegistro = new Contact(
-                CPF__c = novoContato.CPF__c,
-                Phone = novoContato.telefones.isEmpty() ? null : novoContato.telefones[0],
-                Email = novoContato.emails.isEmpty() ? null : novoContato.emails[0],
-                Name = novoContato.name
-            );
-            contatosParaInsert.add(novoRegistro);
+    console.log('Evento disparado para linha:', rowId);
+    console.log('Valor selecionado:', selectedValue);
+    
+    // Encontre a linha pelo id e atualize o valor selecionado
+    const index = this.processedData.findIndex(row => row.id == rowId);
+    
+    if (index !== -1) {
+        // Verifica se o campo é o 'selectedPhone' ou 'selectedEmail'
+        const fieldName = event.target.name === 'selectedPhone' ? 'selectedPhone' :
+                          event.target.name === 'selectedEmail' ? 'selectedEmail' : '';
+        
+        if (fieldName) {
+            // Atualiza o valor do campo no processedData
+            this.processedData[index][fieldName] = selectedValue;
+            console.log('Estado atualizado do processedData:', JSON.stringify(this.processedData));
         }
     }
-
-    // Inserir novos contatos no Salesforce
-    if (!contatosParaInsert.isEmpty()) {
-        insert contatosParaInsert;
     }
 
-    return contatosParaFront;
+    handleConfirm() {
+        console.log('Seleções confirmadas:', JSON.stringify(this.processedData));
+        this.closeModal();  // Fechar o modal após confirmar
+    }
 }
