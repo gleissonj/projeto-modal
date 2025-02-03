@@ -1,81 +1,82 @@
-@AuraEnabled(cacheable=false)
-public static List<ContactResponse> GetContato() {
-    System.debug('Bateu na API');
+<template>
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header">
+                <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        title="Close" onclick={closeDataTableModal}>
+                    <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                    <span class="slds-assistive-text">close</span>
+                </button>
+                <h2 class="slds-text-heading_medium">Tabela com Seleção</h2>
+            </header>
+            
+            <div class="slds-modal__content slds-p-around_medium">
+                <table class="slds-table slds-table_bordered slds-table_cell-buffer">
+                    <thead>
+                        <tr class="slds-text-heading_small">
+                            <th>Nome</th>
+                            <th>Telefone</th>
+                            <th>Mobile</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={dataWithOptions} for:item="row">
+                            <tr key={row.id}>
+                                <td>{row.name}</td>
+                                <td>
+                                    <lightning-combobox
+                                        name="selectedTelefone"
+                                        label="Selecione"
+                                        value={row.selectedTelefone}  
+                                        options={row.telefoneOptions}
+                                        onchange={handleSelectChange}
+                                        data-id={row.id}
+                                    ></lightning-combobox>
+                                </td>
+                                <td>
+                                    <lightning-combobox
+                                        name="selectedMobile"  
+                                        label="Selecione"
+                                        value={row.selectedMobile} 
+                                        options={row.mobilePhoneOptions}  
+                                        onchange={handleSelectChange}
+                                        data-id={row.id}
+                                    ></lightning-combobox>
+                                </td>
+                                <td>
+                                    <lightning-combobox
+                                        name="selectedEmail"
+                                        label="Selecione"
+                                        value={row.selectedEmail}  
+                                        options={row.emailOptions}
+                                        onchange={handleSelectChange}
+                                        data-id={row.id}
+                                    ></lightning-combobox>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            
+            <footer class="slds-card__footer">
+                <lightning-button variant="neutral" label="Cancelar" onclick={closeDataTableModal}></lightning-button>
+                <lightning-button variant="brand" label="Confirmar" onclick={handleConfirm}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
 
-    // Chamada da API externa
-    OutbondResponse response = service.getContact('212121');
-    List<ContactResponse> novosContatos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
-
-    // Criar um Set com os CPFs para buscar no Salesforce
-    Set<String> cpfs = new Set<String>();
-    for (ContactResponse contato : novosContatos) {
-        cpfs.add(contato.CPF__c);
+<style>
+    .slds-modal__content {
+        max-height: 80vh; /* Ajuste para permitir rolagem quando o conteúdo for grande */
+        overflow-y: auto; /* Habilita a rolagem vertical */
     }
 
-    // Buscar contatos existentes no Salesforce
-    List<Contact> contatosExistentes = [SELECT Id, CPF__c, Phone, Email FROM Contact WHERE CPF__c IN :cpfs];
-
-    // Criar um mapa CPF -> Contato existente
-    Map<String, Contact> contatosMap = new Map<String, Contact>();
-    for (Contact contato : contatosExistentes) {
-        contatosMap.put(contato.CPF__c, contato);
+    .slds-modal__container {
+        max-width: 90%; /* Ajusta a largura do modal */
+        overflow-x: auto; /* Permite rolagem horizontal se o conteúdo for muito largo */
     }
-
-    // Lista para armazenar contatos diferentes para o front
-    List<ContactResponse> contatosParaFront = new List<ContactResponse>();
-    
-    // Lista para inserir novos contatos diretamente
-    List<Contact> contatosParaInsert = new List<Contact>();
-
-    for (ContactResponse novoContato : novosContatos) {
-        if (contatosMap.containsKey(novoContato.CPF__c)) {
-            // O contato já existe no Salesforce
-            Contact contatoAtual = contatosMap.get(novoContato.CPF__c);
-
-            // Criar sets para comparação
-            Set<String> telefonesAtuais = new Set<String>{contatoAtual.Phone};
-            Set<String> emailsAtuais = new Set<String>{contatoAtual.Email};
-
-            // Extrair os telefones da API corretamente
-            Set<String> telefonesNovos = new Set<String>();
-            for (FS1_TelephoneSocio tel : novoContato.telefones) {
-                if (tel.valor_dado_cadastral != null) {
-                    telefonesNovos.add(tel.valor_dado_cadastral.numero);
-                }
-            }
-
-            // Extrair os emails da API
-            Set<String> emailsNovos = new Set<String>();
-            for (String email : novoContato.emails) {
-                emailsNovos.add(email);
-            }
-
-            // Verificar se há diferenças
-            Boolean telefoneDiferente = !telefonesNovos.equals(telefonesAtuais);
-            Boolean emailDiferente = !emailsNovos.equals(emailsAtuais);
-
-            // Se houver diferença, enviar para o front
-            if (telefoneDiferente || emailDiferente) {
-                contatosParaFront.add(novoContato);
-            }
-        } else {
-            // O contato não existe → Criamos um novo e adicionamos para inserir diretamente
-            Contact novoRegistro = new Contact(
-                CPF__c = novoContato.CPF__c,
-                Phone = novoContato.telefones.isEmpty() || novoContato.telefones[0].valor_dado_cadastral == null 
-                    ? null 
-                    : novoContato.telefones[0].valor_dado_cadastral.numero,
-                Email = novoContato.emails.isEmpty() ? null : novoContato.emails[0],
-                Name = novoContato.name
-            );
-            contatosParaInsert.add(novoRegistro);
-        }
-    }
-
-    // Inserir novos contatos no Salesforce
-    if (!contatosParaInsert.isEmpty()) {
-        insert contatosParaInsert;
-    }
-
-    return contatosParaFront;
-}
+</style>
