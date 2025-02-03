@@ -1,54 +1,121 @@
 @AuraEnabled(cacheable=false)
 public static List<ContactResponse> GetContato() {
-    System.debug('Bateu na API');
+    // Chama o serviço externo e desserializa a resposta
+    List<ContactResponse> leads = getContactsFromService();
+    
+    // Cria um conjunto com os CPFs
+    Set<String> cpfs = getCPFs(leads);
+    
+    // Busca os contatos existentes no Salesforce
+    Map<String, Lead> mapLeadExisting = getExistingLeads(cpfs);
+    
+    // Inicializa listas
+    List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
+    List<Lead> newLeadsToInsert = new List<Lead>();
+    
+    // Processa os contatos da API
+    processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert);
+    
+    // Insere novos contatos
+    insertNewLeads(newLeadsToInsert);
+    
+    // Retorna o resultado
+    return leadToFrontChoice2;
+}
 
-    // Chamada da API externa
+// Função para obter os contatos do serviço externo
+private static List<ContactResponse> getContactsFromService() {
     OutbondResponse response = service.getContact('212121');
-    List<ContactResponse> novosContatos = (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
+    return (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
+}
 
-    // Criar um Set com os CPFs para buscar no Salesforce
+// Função para criar um Set de CPFs a partir dos leads
+private static Set<String> getCPFs(List<ContactResponse> leads) {
     Set<String> cpfs = new Set<String>();
-    for (ContactResponse contato : novosContatos) {
-        cpfs.add(contato.CPF__c);
-    }
-
-    // Buscar contatos existentes no Salesforce
-    List<Contact> contatosExistentes = [SELECT Id, CPF__c, Phone, Email FROM Contact WHERE CPF__c IN :cpfs];
-
-    // Criar um mapa CPF -> Contato existente
-    Map<String, Contact> contatosMap = new Map<String, Contact>();
-    for (Contact contato : contatosExistentes) {
-        contatosMap.put(contato.CPF__c, contato);
-    }
-
-    // Lista para armazenar contatos diferentes
-    List<ContactResponse> contatosParaFront = new List<ContactResponse>();
-
-    for (ContactResponse novoContato : novosContatos) {
-        // Verificar se já existe no Salesforce
-        if (contatosMap.containsKey(novoContato.CPF__c)) {
-            Contact contatoAtual = contatosMap.get(novoContato.CPF__c);
-
-            // Converter os telefones e e-mails para Set para facilitar comparação
-            Set<String> telefonesAtuais = new Set<String>{contatoAtual.Phone};
-            Set<String> emailsAtuais = new Set<String>{contatoAtual.Email};
-
-            Set<String> telefonesNovos = new Set<String>(novoContato.telefones);
-            Set<String> emailsNovos = new Set<String>(novoContato.emails);
-
-            // Verificar se há diferenças entre os dados existentes e os novos
-            Boolean telefoneDiferente = !telefonesNovos.equals(telefonesAtuais);
-            Boolean emailDiferente = !emailsNovos.equals(emailsAtuais);
-
-            // Se houver diferença, adicionar à lista de retorno
-            if (telefoneDiferente || emailDiferente) {
-                contatosParaFront.add(novoContato);
-            }
-        } else {
-            // Se o contato não existe, ele precisa ser criado -> enviar para o front
-            contatosParaFront.add(novoContato);
+    for (ContactResponse lead : leads) {
+        if (String.isNotBlank(lead.cpf)) {
+            cpfs.add(formatCPF(lead.cpf));
         }
     }
+    return cpfs;
+}
 
-    return contatosParaFront;
+// Função para buscar os leads existentes no Salesforce e criar um mapa
+private static Map<String, Lead> getExistingLeads(Set<String> cpfs) {
+    List<Lead> leadsExisting = [SELECT id, CPF__c, Phone, Email, MobilePhone FROM Lead WHERE CPF__c IN :cpfs];
+    Map<String, Lead> mapLeadExisting = new Map<String, Lead>();
+    for (Lead lead : leadsExisting) {
+        mapLeadExisting.put(lead.CPF__c, lead);
+    }
+    return mapLeadExisting;
+}
+
+// Função para processar cada lead da API
+private static void processLeads(
+    List<ContactResponse> leads, 
+    Map<String, Lead> mapLeadExisting, 
+    List<ContactUpdateComparison> leadToFrontChoice2, 
+    List<Lead> newLeadsToInsert) 
+{
+    for (ContactResponse newLead : leads) {
+        ContactUpdateComparison respostaContato = new ContactUpdateComparison(
+            newLead.nome,
+            newLead.cpf,
+            new List<ContactUpdateInfo>(),
+            new List<ContactUpdateInfo>()
+        );
+
+        if (mapLeadExisting.containsKey(formatCPF(newLead.cpf))) {
+            // O contato já existe no Salesforce
+            Lead leadCurrent = mapLeadExisting.get(formatCPF(newLead.cpf));
+            compareAndUpdateContact(newLead, leadCurrent, respostaContato);
+
+            if (!respostaContato.telefones.isEmpty() || !respostaContato.emails.isEmpty()) {
+                leadToFrontChoice2.add(respostaContato);
+            }
+        } else {
+            // Criar novo lead
+            Lead newLeadInsert = createNewLead(newLead);
+            newLeadsToInsert.add(newLeadInsert);
+        }
+    }
+}
+
+// Função para comparar e atualizar os contatos
+private static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
+    Lead newLead1 = new Lead();
+    assignPhoneNumbers(newLead1, newLead.telefones, newLead.optOutTelefone);
+    
+    Set<String> phonesCurrent = new Set<String>{leadCurrent.Phone};
+    Set<String> emailsCurrent = new Set<String>{leadCurrent.Email};
+
+    // Comparar telefones
+    if (!phonesCurrent.contains(newLead1.Phone)) {
+        respostaContato.addTelefone(leadCurrent.Phone, 'Atual');
+        respostaContato.addTelefone(newLead1.Phone, 'Novo');
+    }
+
+    // Comparar emails
+    if (newLead.emails != null && !newLead.emails.isEmpty()) {
+        if (!emailsCurrent.contains(newLead.emails[0].valor_dado_cadastral.email)) {
+            respostaContato.addEmail(leadCurrent.Email, 'Atual');
+            respostaContato.addEmail(newLead.emails[0].valor_dado_cadastral.email, 'Novo');
+        }
+    }
+}
+
+// Função para criar um novo Lead a partir de um ContactResponse
+private static Lead createNewLead(ContactResponse newLead) {
+    Lead newLeadInsert = new Lead(
+        Email = newLead.emails[0].valor_dado_cadastral.email
+    );
+    assignPhoneNumbers(newLeadInsert, newLead.telefones, newLead.optOutTelefone);
+    return newLeadInsert;
+}
+
+// Função para inserir novos leads no Salesforce
+private static void insertNewLeads(List<Lead> newLeadsToInsert) {
+    if (!newLeadsToInsert.isEmpty()) {
+        insert newLeadsToInsert;
+    }
 }
