@@ -70,13 +70,34 @@
 </template>
 
 <style>
-    .slds-modal__content {
-        max-height: 80vh; /* Ajuste para permitir rolagem quando o conteúdo for grande */
-        overflow-y: auto; /* Habilita a rolagem vertical */
+    /* Ajuste o modal para se adaptar melhor a diferentes tamanhos de tela */
+    .slds-modal__container {
+        max-width: 90%; /* Limita a largura do modal para 90% da tela */
+        width: auto; /* Ajusta a largura automaticamente */
+        max-height: 90vh; /* Limita a altura do modal a 90% da altura da tela */
+        overflow: hidden; /* Impede que o conteúdo ultrapasse os limites */
     }
 
-    .slds-modal__container {
-        max-width: 90%; /* Ajusta a largura do modal */
-        overflow-x: auto; /* Permite rolagem horizontal se o conteúdo for muito largo */
+    /* Ajuste o conteúdo para ser rolável se exceder o limite de altura */
+    .slds-modal__content {
+        max-height: 75vh; /* Limita a altura do conteúdo a 75% da altura da tela */
+        overflow-y: auto; /* Permite rolagem vertical se o conteúdo for grande */
+    }
+
+    /* Responsividade para telas pequenas */
+    @media (max-width: 768px) {
+        .slds-modal__container {
+            width: 95%; /* Modal ocupa 95% da largura da tela em dispositivos pequenos */
+            max-height: 80vh; /* Reduz a altura máxima para 80% da altura da tela em dispositivos pequenos */
+        }
+
+        .slds-modal__content {
+            max-height: 70vh; /* Ajuste a altura máxima do conteúdo */
+        }
+    }
+
+    /* Garantir que o backdrop ocupe toda a tela */
+    .slds-backdrop {
+        z-index: 100;
     }
 </style>
