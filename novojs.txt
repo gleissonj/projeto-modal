@@ -1,0 +1,68 @@
+import { LightningElement } from 'lwc';
+
+export default class SearchApontamento extends LightningElement {
+    dataWithOptions = [
+        {
+            name: 'John Doe',
+            cpf: '123.456.789-10',
+            phones: [],  // Sem telefone
+            emails: [ { value: 'john.doe@example.com' } ]  // Com email
+        },
+        {
+            name: 'Jane Doe',
+            cpf: '987.654.321-00',
+            phones: [
+                { value: '3333-3333', type: 'mobile' },
+                { value: '4444-4444', type: 'home' }
+            ],  // Com telefone
+            emails: []  // Sem email
+        }
+    ];
+
+    processedData = [];
+    hasPhoneColumn = false;
+    hasEmailColumn = false;
+
+    connectedCallback() {
+        this.processData();
+    }
+
+    processData() {
+        this.processedData = this.dataWithOptions.map((item, index) => ({
+            ...item,
+            id: `${item.name}-${index}`,
+            selectedPhone: '',  // Inicializa com vazio (sem telefone selecionado)
+            selectedEmail: '',  // Inicializa com vazio (sem email selecionado)
+            telefoneOptions: item.phones.map(p => ({ label: p.value, value: p.value })),
+            emailOptions: item.emails.map(e => ({ label: e.value, value: e.value }))
+        }));
+
+        // Verifica se há pelo menos um telefone em algum item para exibir a coluna de telefone
+        this.hasPhoneColumn = this.dataWithOptions.some(item => item.phones.length > 0);
+
+        // Verifica se há pelo menos um email em algum item para exibir a coluna de email
+        this.hasEmailColumn = this.dataWithOptions.some(item => item.emails.length > 0);
+    }
+
+    handleSelectChange(event) {
+        const rowId = event.target.dataset.id;
+        const selectedValue = event.target.value;
+        
+        // Encontre a linha pelo id e atualize o valor selecionado
+        const index = this.processedData.findIndex(row => row.id == rowId);
+        
+        if (index !== -1) {
+            const fieldName = event.target.name === 'selectedPhone' ? 'selectedPhone' :
+                              event.target.name === 'selectedEmail' ? 'selectedEmail' : '';
+        
+            if (fieldName) {
+                this.processedData[index][fieldName] = selectedValue;
+            }
+        }
+    }
+
+    handleConfirm() {
+        console.log('Seleções confirmadas:', JSON.stringify(this.processedData));
+        this.closeModal();  // Fechar o modal após confirmar
+    }
+}

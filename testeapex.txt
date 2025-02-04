@@ -1,0 +1,180 @@
+
+metodo getCPFs
+
+@isTest
+public class TestContactResponseService {
+
+    @isTest
+    static void testGetCPFs() {
+        // Step 1: Prepare test data
+        
+        // Valid CPF values (make sure the format is valid if needed, for example: "123.456.789-00")
+        ContactResponse lead1 = new ContactResponse();
+        lead1.cpf = '12345678900';  // Unformatted CPF
+        ContactResponse lead2 = new ContactResponse();
+        lead2.cpf = '98765432100';  // Another unformatted CPF
+
+        // Invalid CPF values (null or blank)
+        ContactResponse lead3 = new ContactResponse();
+        lead3.cpf = '';  // Empty string
+        ContactResponse lead4 = new ContactResponse();
+        lead4.cpf = null;  // Null value
+
+        // Add the leads to the list
+        List<ContactResponse> leads = new List<ContactResponse>{ lead1, lead2, lead3, lead4 };
+
+        // Step 2: Call the method
+        Test.startTest();
+        Set<String> result = YourClassName.getCPFs(leads);
+        Test.stopTest();
+
+        // Step 3: Assert that the method works as expected
+        // Assuming formatCPF adds dashes/periods to CPF
+        Set<String> expectedCpfs = new Set<String>{ '123.456.789-00', '987.654.321-00' };
+
+        // Assert that the result matches the expected CPFs
+        System.assertEquals(expectedCpfs, result);
+
+        // Step 4: Additional validation
+        // Ensure the result does not contain empty or null CPF values
+        System.assertEquals(2, result.size(), 'There should only be 2 valid CPFs');
+    }
+}
+
+
+getExistingLeads
+
+
+@isTest
+public class TestLeadService {
+
+    @isTest
+    static void testGetExistingLeads() {
+        // Step 1: Prepare test data
+
+        // Create some lead records
+        Lead lead1 = new Lead(CPF__c = '12345678900', Phone = '123-456-7890', Email = 'test1@example.com', MobilePhone = '987-654-3210');
+        Lead lead2 = new Lead(CPF__c = '98765432100', Phone = '987-654-3210', Email = 'test2@example.com', MobilePhone = '123-456-7890');
+        insert new List<Lead>{ lead1, lead2 };
+
+        // Create a set of CPF values to query for
+        Set<String> cpfsToSearch = new Set<String>{ '12345678900', '98765432100', '00000000000' }; // Including a CPF that doesn't exist
+
+        // Step 2: Call the method
+        Test.startTest();
+        Map<String, Lead> result = YourClassName.getExistingLeads(cpfsToSearch);
+        Test.stopTest();
+
+        // Step 3: Assert the results
+        // Check that we get 2 leads from the map (since one CPF doesn't exist in the database)
+        System.assertEquals(2, result.size(), 'There should be 2 leads in the map');
+
+        // Check that the map contains the correct CPF and lead information
+        System.assert(result.containsKey('12345678900'), 'Map should contain lead with CPF 12345678900');
+        System.assert(result.containsKey('98765432100'), 'Map should contain lead with CPF 98765432100');
+        System.assert(!result.containsKey('00000000000'), 'Map should not contain lead with CPF 00000000000');
+
+        // Optionally, assert some properties of the leads
+        Lead leadFromMap1 = result.get('12345678900');
+        System.assertEquals('test1@example.com', leadFromMap1.Email, 'Email should match for lead 12345678900');
+        System.assertEquals('987-654-3210', leadFromMap1.MobilePhone, 'MobilePhone should match for lead 12345678900');
+    }
+}
+
+
+processLeads
+
+@isTest
+public class TestLeadProcessingService {
+
+    @isTest
+    static void testProcessLeads() {
+        // Step 1: Prepare test data
+
+        // Existing lead data in Salesforce (this should be mapped in the method)
+        Lead existingLead = new Lead(
+            CPF__c = '12345678900', 
+            Name = 'John Doe', 
+            Phone = '123-456-7890', 
+            Email = 'john.doe@example.com'
+        );
+        insert existingLead;
+
+        // Map of existing leads
+        Map<String, Lead> mapLeadExisting = new Map<String, Lead>{
+            '12345678900' => existingLead
+        };
+
+        // ContactResponse list (this will be passed to the method)
+        ContactResponse contactResponse1 = new ContactResponse();
+        contactResponse1.cpf = '12345678900'; // CPF that exists
+        contactResponse1.nome = 'John Doe Updated';
+        ContactResponse contactResponse2 = new ContactResponse();
+        contactResponse2.cpf = '98765432100'; // CPF that does not exist
+        contactResponse2.nome = 'Jane Smith';
+
+        List<ContactResponse> leads = new List<ContactResponse>{ contactResponse1, contactResponse2 };
+
+        // Lists to capture the results
+        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
+        List<Lead> newLeadsToInsert = new List<Lead>();
+
+        // Step 2: Call the method
+        Test.startTest();
+        YourClassName.processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert);
+        Test.stopTest();
+
+        // Step 3: Assert the results
+        // Assert that the existing lead was updated and added to leadToFrontChoice2
+        System.assertEquals(1, leadToFrontChoice2.size(), 'There should be 1 lead to update in leadToFrontChoice2');
+        ContactUpdateComparison updatedLeadComparison = leadToFrontChoice2[0];
+        System.assertEquals('John Doe Updated', updatedLeadComparison.nome, 'The updated name should be reflected in the comparison');
+
+        // Assert that the new lead was added to the newLeadsToInsert list
+        System.assertEquals(1, newLeadsToInsert.size(), 'There should be 1 new lead to insert');
+        Lead newLead = newLeadsToInsert[0];
+        System.assertEquals('Jane Smith', newLead.Name, 'The new lead should have the correct name');
+        System.assertEquals('98765432100', newLead.CPF__c, 'The new lead should have the correct CPF');
+    }
+}
+
+
+compareAndUpdateContact
+
+@isTest
+private class ContactUpdateTest {
+
+    @isTest
+    static void testCompareAndUpdateContact() {
+        // Criar o Lead atual (Lead atual)
+        Lead leadCurrent = new Lead();
+        leadCurrent.Phone = '123456789';
+        leadCurrent.Email = 'oldemail@example.com';
+
+        // Criar o novo Lead (novo Contact)
+        ContactResponse newLead = new ContactResponse();
+        newLead.telefones = new String[] {'987654321'};
+        newLead.optOutTelefone = false;
+        newLead.emails = new EmailResponse[] {
+            new EmailResponse('newemail@example.com')
+        };
+
+        // Criar o objeto respostaContato (ContactUpdateComparison)
+        ContactUpdateComparison respostaContato = new ContactUpdateComparison();
+
+        // Chamar o método a ser testado
+        Test.startTest();
+        Test.executeAnonymous('compareAndUpdateContact(newLead, leadCurrent, respostaContato)');
+        Test.stopTest();
+
+        // Verificar se o método adicionou os valores corretos para o telefone e email
+        System.assertEquals(2, respostaContato.getTelefones().size(), 'Deve haver dois telefones (atual e novo) adicionados');
+        System.assertTrue(respostaContato.getTelefones().contains('Atual: 123456789'), 'Deve adicionar o telefone atual');
+        System.assertTrue(respostaContato.getTelefones().contains('Novo: 987654321'), 'Deve adicionar o novo telefone');
+        
+        System.assertEquals(2, respostaContato.getEmails().size(), 'Deve haver dois emails (atual e novo) adicionados');
+        System.assertTrue(respostaContato.getEmails().contains('Atual: oldemail@example.com'), 'Deve adicionar o email atual');
+        System.assertTrue(respostaContato.getEmails().contains('Novo: newemail@example.com'), 'Deve adicionar o novo email');
+    }
+}
+
