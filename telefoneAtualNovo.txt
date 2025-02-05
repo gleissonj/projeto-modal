@@ -1,0 +1,36 @@
+processData() {
+    this.processedData = this.dataWithOptions.map((item, index) => {
+        // Concatenando as opções de telefone
+        const telefoneOptions = item.phones.map(p => {
+            // Concatena "Atual" e "Novo" para telefones
+            const label = item.phones.some(phone => phone.type === 'Atual') 
+                          ? `Atual: ${p.value}` 
+                          : `Novo: ${p.value}`;
+            return { label, value: p.value };
+        });
+
+        // Concatenando as opções de email
+        const emailOptions = item.emails.map(e => {
+            // Concatena "Atual" e "Novo" para emails
+            const label = item.emails.some(email => email.type === 'Atual') 
+                          ? `Atual: ${e.value}` 
+                          : `Novo: ${e.value}`;
+            return { label, value: e.value };
+        });
+
+        return {
+            ...item,
+            id: `${item.name}-${index}`,
+            selectedPhone: '',  // Inicializa com vazio (sem telefone selecionado)
+            selectedEmail: '',  // Inicializa com vazio (sem email selecionado)
+            telefoneOptions,  // Adiciona as opções de telefone concatenadas
+            emailOptions,     // Adiciona as opções de email concatenadas
+        };
+    });
+
+    // Verifica se há pelo menos um telefone em algum item para exibir a coluna de telefone
+    this.hasPhoneColumn = this.dataWithOptions.some(item => item.phones.length > 0);
+
+    // Verifica se há pelo menos um email em algum item para exibir a coluna de email
+    this.hasEmailColumn = this.dataWithOptions.some(item => item.emails.length > 0);
+}
