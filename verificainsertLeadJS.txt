@@ -1,0 +1,38 @@
+@api
+GetContato() {
+    this.isLoading = true;
+
+    // Chama o serviço para obter os apontamentos
+    getApontamento(this.recordId).then((result) => {
+        this.apontamentos = result;
+        this.enableView = true;
+        this.error = undefined;
+
+        // Caso não tenha encontrado nenhum lead
+        if (this.apontamentos.length === 0 || (this.apontamentos[0].leadUpdated === false)) {
+            this.isLoading = false;
+            return this.showToast('Nenhum lead encontrado para este CNPJ');
+        }
+
+        // Caso o tamanho de apontamentos seja maior que 0, há leads para selecionar
+        if (this.apontamentos.length > 0) {
+            // Verifica se foi encontrado um lead e atualizado, mas sem novos dados para selecionar
+            if (this.apontamentos[0].leadUpdated) {
+                this.showToast('Lead encontrado e atualizado');
+            }
+            this.processData();
+            this.isDataTableModalOpen = true;
+            return this.showToast('Leads encontrados, por favor, selecione as melhores informações');
+        }
+
+        // Se nenhuma das condições for atendida, apenas retorna e limpa o carregamento
+        this.isLoading = false;
+    })
+    .catch((error) => {
+        this.error = error;
+        console.log("error", this.error.body);
+        this.apontamentos = undefined;
+        this.enableView = true;
+        this.isLoading = false;
+    });
+}

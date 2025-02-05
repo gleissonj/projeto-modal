@@ -1,0 +1,47 @@
+@IsTest
+    static void getString(){
+        // Arrange: create mock data (ContactResponse list)
+        // Arrange: Create a list of ContactResponse with direct property assignment
+        List<ContactResponse> leads = new List<ContactResponse>();
+
+        ContactResponse lead1 = new ContactResponse();
+        lead1.cpf = '123.456.789-00'; // Assign CPF directly
+
+        ContactResponse lead2 = new ContactResponse();
+        lead2.cpf = '987.654.321-00'; // Assign CPF directly
+
+        leads.add(lead1);
+        leads.add(lead2);
+
+
+        // Act: Call the method to test
+        Set<String> result = ContactController.getCPFs(leads);
+
+        // Assert: Check that the Set contains the correct formatted CPF values
+        System.assertEquals(2, result.size(), 'Should contain 2 CPF values');
+    }
+
+    @isTest
+    static void testInvalidCPFs() {
+        // Arrange: Create a list of ContactResponse with invalid CPFs
+        List<ContactResponse> leads = new List<ContactResponse>();
+
+        ContactResponse lead1 = new ContactResponse();
+        lead1.cpf = ''; // Empty CPF
+
+        ContactResponse lead2 = new ContactResponse();
+        lead2.cpf = null; // Null CPF
+
+        ContactResponse lead3 = new ContactResponse();
+        lead3.cpf = '    '; // Whitespace CPF
+
+        leads.add(lead1);
+        leads.add(lead2);
+        leads.add(lead3);
+
+        // Act: Call the method to test
+        Set<String> result = ContactController.getCPFs(leads);
+
+        // Assert: Check that the Set is empty as there are no valid CPFs
+        System.assertEquals(0, result.size(), 'Should not contain any valid CPF values');
+    }

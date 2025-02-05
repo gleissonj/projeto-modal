@@ -1,0 +1,118 @@
+public with sharing class ContactUpdateComparison {
+    @AuraEnabled public String name { get; set; }
+    @AuraEnabled public String cpf { get; set; }
+    @AuraEnabled public List<ContactUpdateInfo> phones { get; set; }
+    @AuraEnabled public List<ContactUpdateInfo> emails { get; set; }
+    @AuraEnabled public Boolean leadInsert { get; set; }  // Para indicar se o lead foi inserido
+    @AuraEnabled public Boolean leadUpdated { get; set; } // Para indicar se o lead foi encontrado e atualizado
+
+    public ContactUpdateComparison(String name, String cpf, List<ContactUpdateInfo> phones, List<ContactUpdateInfo> emails, Boolean leadUpdated) {
+        this.name = name;
+        this.cpf = cpf;
+        this.phones = phones != null ? phones : new List<ContactUpdateInfo>();
+        this.emails = emails != null ? emails : new List<ContactUpdateInfo>();
+        this.leadInsert = false;  // Inicializa como false
+        this.leadUpdated = leadUpdated; // Indica se o lead foi atualizado
+    }
+
+    // Método para setar o valor de leadInsert
+    public void setLeadInsert(Boolean status) {
+        this.leadInsert = status;
+    }
+
+    // Método para setar o valor de leadUpdated
+    public void setLeadUpdated(Boolean status) {
+        this.leadUpdated = status;
+    }
+}
+
+public with sharing class ContactService {
+
+    @AuraEnabled(cacheable=false)
+    public static List<ContactUpdateComparison> GetContato(String recordId) {
+        // Chama o serviço externo e desserializa a resposta
+        List<ContactResponse> leads = getContactsFromService(recordId);
+        
+        // Cria um conjunto com os CPFs
+        Set<String> cpfs = getCPFs(leads);
+        
+        // Busca os contatos existentes no Salesforce
+        Map<String, Lead> mapLeadExisting = getExistingLeads(cpfs);
+        
+        // Inicializa listas
+        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
+        List<Lead> newLeadsToInsert = new List<Lead>();
+        
+        // Processa os contatos da API
+        processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert);
+        
+        // Insere novos contatos
+        for (Lead newLead : newLeadsToInsert) {
+            ContactUpdateComparison comparison = new ContactUpdateComparison(
+                newLead.Name, newLead.CPF__c, new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), false);
+            
+            try {
+                insert newLead; // Insere o novo lead
+                // Define leadInsert como true (sucesso)
+                comparison.setLeadInsert(true);
+            } catch (Exception e) {
+                // Caso ocorra erro durante a inserção
+                comparison.setLeadInsert(false);
+            }
+            
+            // Adiciona o objeto de comparação à lista
+            leadToFrontChoice2.add(comparison);
+        }
+
+        // Se a lista de leads não tiver tamanho, retorna um objeto com a flag leadUpdated = false
+        if (leadToFrontChoice2.isEmpty()) {
+            ContactUpdateComparison emptyResponse = new ContactUpdateComparison(
+                '', '', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), false);
+            leadToFrontChoice2.add(emptyResponse);
+        }
+
+        // Retorna a lista para o front-end
+        return leadToFrontChoice2;
+    }
+}
+
+
+
+
+
+
+
+////// OUTRA VERSAOOO
+
+
+public with sharing class ContactUpdateComparison {
+    @AuraEnabled public String name { get; set; }
+    @AuraEnabled public String cpf { get; set; }
+    @AuraEnabled public List<ContactUpdateInfo> phones { get; set; }
+    @AuraEnabled public List<ContactUpdateInfo> emails { get; set; }
+    @AuraEnabled public Boolean leadInsert { get; set; }  // Propriedade booleana para indicar inserção
+
+    // Construtor para inicializar a classe com as informações do contato
+    public ContactUpdateComparison(String name, String cpf, List<ContactUpdateInfo> phones, List<ContactUpdateInfo> emails) {
+        this.name = name;
+        this.cpf = cpf;
+        this.phones = phones != null ? phones : new List<ContactUpdateInfo>();
+        this.emails = emails != null ? emails : new List<ContactUpdateInfo>();
+        this.leadInsert = false;  // Inicializa como false
+    }
+
+    // Método para adicionar um telefone à lista de telefones
+    public void addTelefone(String value, String type) {
+        this.phones.add(new ContactUpdateInfo(value, type));
+    }
+
+    // Método para adicionar um email à lista de emails
+    public void addEmail(String value, String type) {
+        this.emails.add(new ContactUpdateInfo(value, type));
+    }
+
+    // Método para setar o valor de leadInsert
+    public void setLeadInsert(Boolean status) {
+        this.leadInsert = status;
+    }
+}
