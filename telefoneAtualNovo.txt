@@ -34,3 +34,29 @@ processData() {
     // Verifica se há pelo menos um email em algum item para exibir a coluna de email
     this.hasEmailColumn = this.dataWithOptions.some(item => item.emails && item.emails.length > 0);
 }
+
+
+
+handleConfirm() {
+    console.log('Seleções confirmadas:', JSON.stringify(this.processedData));
+    this.closeModal();  // Fechar o modal após confirmar
+
+    const leadsToUpdate = this.processedData.map(row => {
+        // Cria um objeto inicialmente vazio
+        const lead = {};
+
+        // Verifica se selectedPhone tem valor, se sim, adiciona ao objeto
+        if (row.selectedPhone) {
+            lead.selectedPhone = row.selectedPhone.split(':')[1]?.trim(); // Limpar "Atual" ou "Novo"
+        }
+
+        // Verifica se selectedEmail tem valor, se sim, adiciona ao objeto
+        if (row.selectedEmail) {
+            lead.selectedEmail = row.selectedEmail.split(':')[1]?.trim(); // Limpar "Atual" ou "Novo"
+        }
+
+        return lead;  // Retorna o objeto lead (que pode ter apenas selectedPhone, selectedEmail ou ambos)
+    });
+
+    console.log('Leads to update:', JSON.stringify(leadsToUpdate));
+}
