@@ -8,24 +8,40 @@ GetContato() {
         this.enableView = true;
         this.error = undefined;
 
-        // Caso não tenha encontrado nenhum lead
-        if (this.apontamentos.length === 0 || (this.apontamentos[0].leadUpdated === false)) {
+        // Caso não tenha encontrado nenhum lead (lista vazia)
+        if (this.apontamentos.length === 0) {
             this.isLoading = false;
-            return this.showToast('Nenhum lead encontrado para este CNPJ');
+
+            // Verifica se houve inserção de um novo lead
+            const leadInserted = result.some(apontamento => apontamento.leadInsert);
+
+            if (leadInserted) {
+                // Se houve inserção, exibe mensagem de sucesso
+                return this.showToast('Lead inserido com sucesso!');
+            } else {
+                // Se não houve inserção nem atualização, exibe a mensagem de "nenhum lead encontrado"
+                return this.showToast('Nenhum lead encontrado para este CNPJ');
+            }
         }
 
-        // Caso o tamanho de apontamentos seja maior que 0, há leads para selecionar
+        // Caso tenha encontrado dados
         if (this.apontamentos.length > 0) {
-            // Verifica se foi encontrado um lead e atualizado, mas sem novos dados para selecionar
-            if (this.apontamentos[0].leadUpdated) {
-                this.showToast('Lead encontrado e atualizado');
+            // Verifica se algum lead foi inserido
+            const leadInserted = this.apontamentos.some(apontamento => apontamento.leadInsert);
+
+            if (leadInserted) {
+                // Se houve inserção de lead, mostra que foi inserido
+                this.showToast('Lead inserido com sucesso!');
+            } else {
+                // Se não houve inserção de lead, mas existem dados para o usuário escolher
+                this.showToast('Lead encontrado e atualizado, por favor, selecione as melhores informações');
             }
+
+            // Continua o processo de seleção de dados
             this.processData();
             this.isDataTableModalOpen = true;
-            return this.showToast('Leads encontrados, por favor, selecione as melhores informações');
         }
 
-        // Se nenhuma das condições for atendida, apenas retorna e limpa o carregamento
         this.isLoading = false;
     })
     .catch((error) => {
