@@ -44,3 +44,86 @@ describe('MyComponent', () => {
     expect(component.typeFunc).toBe(3); // Verifica se typeFunc foi atualizado para 3
   });
 });
+
+
+/////NOVO
+
+
+import { MyComponent } from './MyComponent'; // Importe o componente onde o método existe
+
+describe('MyComponent', () => {
+  let component: MyComponent;
+  let mockMultipartUploadService: any;
+
+  beforeEach(() => {
+    // Mock da dependência multipartUploadService
+    mockMultipartUploadService = {
+      downloadFileS3: jest.fn().mockReturnValue({
+        subscribe: jest.fn((successCallback, errorCallback) => {
+          successCallback(new Blob()); // Mock do sucesso da requisição (retorna um Blob vazio)
+        }),
+      }),
+    };
+
+    component = new MyComponent(mockMultipartUploadService);
+  });
+
+  it('deve mostrar uma mensagem de erro se os campos bucket ou caminho estiverem vazios', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage'); // Espiona a função showMessage
+    const bucket = { value: '' }; // Campo vazio
+    const caminho = { value: 'valid/path' }; // Campo válido
+
+    component.downloadFileAnyBucket(bucket, caminho);
+
+    expect(spyShowMessage).toHaveBeenCalledWith('Você precisa preencher os valores dos campos', 'error');
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+  });
+
+  it('deve baixar o arquivo quando bucket e caminho forem válidos', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    const bucket = { value: 'validBucket' };
+    const caminho = { value: 'valid/path' };
+
+    const createObjectURLSpy = jest.spyOn(window.URL, 'createObjectURL').mockReturnValue('mock-url');
+    const revokeObjectURLSpy = jest.spyOn(window.URL, 'revokeObjectURL');
+    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
+      href: '',
+      download: '',
+      click: jest.fn(),
+    } as any);
+
+    component.downloadFileAnyBucket(bucket, caminho);
+
+    // Verifica se a função createObjectURL foi chamada corretamente
+    expect(createObjectURLSpy).toHaveBeenCalled();
+
+    // Verifica se o link de download foi criado e o click foi chamado
+    const linkElement = createElementSpy.mock.results[0].value;
+    expect(linkElement.click).toHaveBeenCalled();
+    expect(linkElement.download).toBe('file-data.csv');
+
+    // Verifica se o método revokeObjectURL foi chamado
+    expect(revokeObjectURLSpy).toHaveBeenCalled();
+
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+    expect(spyShowMessage).not.toHaveBeenCalled(); // Não deve chamar showMessage em caso de sucesso
+  });
+
+  it('deve mostrar uma mensagem de erro se o serviço falhar', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    const bucket = { value: 'validBucket' };
+    const caminho = { value: 'valid/path' };
+
+    // Mock do erro na requisição (callback de erro)
+    mockMultipartUploadService.downloadFileS3.mockReturnValueOnce({
+      subscribe: jest.fn((_successCallback, errorCallback) => {
+        errorCallback('error'); // Força o erro
+      }),
+    });
+
+    component.downloadFileAnyBucket(bucket, caminho);
+
+    expect(spyShowMessage).toHaveBeenCalledWith('O bucket/caminho especificado não existe', 'error');
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado após o erro
+  });
+});
