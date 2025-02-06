@@ -1,50 +1,104 @@
-describe('uploadArquivoAWS', () => {
-  let instance: YourClass;
+import { MyComponent } from './MyComponent'; // Importe seu componente
+import { environment } from 'src/environments/environment'; // Importe o environment se necessário
+
+describe('MyComponent', () => {
+  let component: MyComponent;
+  let mockMultipartUploadService: any;
 
   beforeEach(() => {
-    // Create an instance of the class
-    instance = new YourClass();
+    // Mock da dependência multipartUploadService
+    mockMultipartUploadService = {
+      downloadFileS3: jest.fn().mockReturnValue({
+        subscribe: jest.fn((successCallback, errorCallback) => {
+          successCallback(new Blob()); // Mock do sucesso da requisição (retorna um Blob vazio)
+        }),
+      }),
+    };
+
+    component = new MyComponent(mockMultipartUploadService);
+  });
+
+  it('deve mostrar mensagem de erro se selectedValue não for definido', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    component.selectedValue = undefined; // Simula o valor indefinido
+
+    component.downloadFileMigration();
+
+    expect(spyShowMessage).toHaveBeenCalledWith('VocÊ precisa informar o tipo da planilha!', 'error');
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+  });
+
+  it('deve baixar o arquivo corretamente quando selectedValue for "EV1"', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    const createObjectURLSpy = jest.spyOn(window.URL, 'createObjectURL').mockReturnValue('mock-url');
+    const revokeObjectURLSpy = jest.spyOn(window.URL, 'revokeObjectURL');
+    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
+      href: '',
+      download: '',
+      click: jest.fn(),
+    } as any);
+
+    component.selectedValue = 'EV1'; // Define selectedValue como 'EV1'
+    component.downloadFileMigration();
+
+    // Verifica se createObjectURL foi chamado
+    expect(createObjectURLSpy).toHaveBeenCalled();
     
-    // Mock dependencies
-    instance.showMessage = jest.fn();
-    instance.updateFileOne = jest.fn();
-    instance.updateFileMultiple = jest.fn();
+    // Verifica se o link de download foi criado e o clique foi chamado
+    const linkElement = createElementSpy.mock.results[0].value;
+    expect(linkElement.click).toHaveBeenCalled();
+    expect(linkElement.download).toBe('EV1.csv'); // Verifica se o nome correto do arquivo foi atribuído
 
-    // Explicitly mock validaNameArquivo as a function returning a boolean
-    instance.validaNameArquivo = jest.fn();
+    // Verifica se revokeObjectURL foi chamado
+    expect(revokeObjectURLSpy).toHaveBeenCalled();
+    
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+    expect(spyShowMessage).not.toHaveBeenCalled(); // Não deve chamar showMessage em caso de sucesso
   });
 
-  test('should call updateFileOne when nameFunc is not "OPP"', async () => {
-    instance.nameFunc = 'SomeOtherValue';
-    await instance.uploadArquivoAWS();
-    expect(instance.updateFileOne).toHaveBeenCalled();
+  it('deve baixar o arquivo corretamente quando selectedValue for "EV2"', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    const createObjectURLSpy = jest.spyOn(window.URL, 'createObjectURL').mockReturnValue('mock-url');
+    const revokeObjectURLSpy = jest.spyOn(window.URL, 'revokeObjectURL');
+    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
+      href: '',
+      download: '',
+      click: jest.fn(),
+    } as any);
+
+    component.selectedValue = 'EV2'; // Define selectedValue como 'EV2'
+    component.downloadFileMigration();
+
+    // Verifica se createObjectURL foi chamado
+    expect(createObjectURLSpy).toHaveBeenCalled();
+
+    // Verifica se o link de download foi criado e o clique foi chamado
+    const linkElement = createElementSpy.mock.results[0].value;
+    expect(linkElement.click).toHaveBeenCalled();
+    expect(linkElement.download).toBe('EV2.csv'); // Verifica se o nome correto do arquivo foi atribuído
+
+    // Verifica se revokeObjectURL foi chamado
+    expect(revokeObjectURLSpy).toHaveBeenCalled();
+    
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+    expect(spyShowMessage).not.toHaveBeenCalled(); // Não deve chamar showMessage em caso de sucesso
   });
 
-  test('should show error message when selectedFiles length is not 5', async () => {
-    instance.nameFunc = 'OPP';
-    instance.selectedFiles = []; // Empty array (length != 5)
-    await instance.uploadArquivoAWS();
-    expect(instance.showMessage).toHaveBeenCalledWith("voce deve anexar 5 arquivos", "error");
-  });
+  it('deve mostrar mensagem de erro quando ocorrer um erro no download', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    const errorMock = new Error('mock error');
+    
+    // Mock de erro no serviço
+    mockMultipartUploadService.downloadFileS3.mockReturnValueOnce({
+      subscribe: jest.fn((_successCallback, errorCallback) => {
+        errorCallback(errorMock); // Força o erro
+      }),
+    });
 
-  test('should show error message when file name is invalid', async () => {
-    instance.nameFunc = 'OPP';
-    instance.selectedFiles = new Array(5); // Length is 5
-    // Mock validaNameArquivo to return false (file name invalid)
-    (instance.validaNameArquivo as jest.Mock).mockReturnValue(false);
-    await instance.uploadArquivoAWS();
-    expect(instance.showMessage).toHaveBeenCalledWith(
-      "o nome do arquivo enviado nao corresponde ao nome esperado: " + instance.valueNotFind,
-      "error"
-    );
-  });
+    component.selectedValue = 'EV1'; // Define selectedValue como 'EV1'
+    component.downloadFileMigration();
 
-  test('should call updateFileMultiple when file name is valid', async () => {
-    instance.nameFunc = 'OPP';
-    instance.selectedFiles = new Array(5); // Length is 5
-    // Mock validaNameArquivo to return true (file name valid)
-    (instance.validaNameArquivo as jest.Mock).mockReturnValue(true);
-    await instance.uploadArquivoAWS();
-    expect(instance.updateFileMultiple).toHaveBeenCalled();
+    expect(spyShowMessage).toHaveBeenCalledWith('Nao contem o arquivo no bucket!', 'error');
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
   });
 });
