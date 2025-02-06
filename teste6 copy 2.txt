@@ -1,21 +1,94 @@
-import { MyComponent } from './my-component'; // Ajuste o caminho do seu componente
+import { MyComponent } from './my-component';  // Ajuste o caminho para o seu componente
 
 describe('MyComponent', () => {
   let component: MyComponent;
-
+  
   beforeEach(() => {
-    // Inicializa o componente antes de cada teste
+    // Criação de uma instância do componente
     component = new MyComponent();
-    
-    // Mock do método showMessage para que possamos verificar se foi chamado
+
+    // Mock de funções
+    jest.spyOn(component, 'updateFileMultiple');
+    jest.spyOn(component, 'startStepFunctionProspect');
+    jest.spyOn(component, 'startStepFunctionOportunidades');
+    jest.spyOn(component, 'startStepFunction4966');
     jest.spyOn(component, 'showMessage');
   });
 
-  it('deve chamar showMessage com "Nao contem o arquivo no bucket" e "error"', () => {
-    // Chama a função downloadFileMigration
-    component.downloadFileMigration();
-    
-    // Verifica se o showMessage foi chamado com a mensagem e tipo de erro
-    expect(component.showMessage).toHaveBeenCalledWith('Nao contem o arquivo no bucket', 'error');
+  it('deve chamar updateFileMultiple e showMessage quando nameFunc for "OPP" e selectedFiles estiver vazio', () => {
+    const response = { message: 'Erro ao processar OPP' };
+
+    component.nameFunc = 'OPP';
+    component.selectedFiles = [];
+
+    // Chama o método
+    component.startStepFunctionAWS(response);
+
+    // Verifica se updateFileMultiple foi chamado
+    expect(component.updateFileMultiple).toHaveBeenCalled();
+
+    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
+    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms, já que setTimeout é usado
+    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar OPP', 'error');
+  });
+
+  it('deve chamar startStepFunctionProspect e showMessage quando nameFunc for "Prospect"', () => {
+    const response = { message: 'Erro ao processar Prospect' };
+
+    component.nameFunc = 'Prospect';
+    component.selectedFiles = [];
+
+    // Chama o método
+    component.startStepFunctionAWS(response);
+
+    // Verifica se startStepFunctionProspect foi chamado
+    expect(component.startStepFunctionProspect).toHaveBeenCalled();
+
+    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
+    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms
+    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar Prospect', 'error');
+  });
+
+  it('deve chamar startStepFunctionOportunidades e showMessage quando nameFunc for "oportunidades360"', () => {
+    const response = { message: 'Erro ao processar Oportunidades360' };
+
+    component.nameFunc = 'oportunidades360';
+    component.selectedFiles = [];
+
+    // Chama o método
+    component.startStepFunctionAWS(response);
+
+    // Verifica se startStepFunctionOportunidades foi chamado
+    expect(component.startStepFunctionOportunidades).toHaveBeenCalled();
+
+    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
+    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms
+    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar Oportunidades360', 'error');
+  });
+
+  it('deve chamar startStepFunction4966 e showMessage quando nameFunc for "atraso"', () => {
+    const response = { message: 'Erro ao processar Atraso' };
+
+    component.nameFunc = 'atraso';
+    component.selectedFiles = [];
+
+    // Chama o método
+    component.startStepFunctionAWS(response);
+
+    // Verifica se startStepFunction4966 foi chamado
+    expect(component.startStepFunction4966).toHaveBeenCalled();
+
+    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
+    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms
+    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar Atraso', 'error');
+  });
+
+  // Resetando timers antes de cada teste
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
   });
 });
