@@ -1,0 +1,44 @@
+describe('uploadArquivoAWS', () => {
+  let instance;
+  
+  beforeEach(() => {
+    // Set up your class instance and mock dependencies
+    instance = new YourClass();
+    instance.showMessage = jest.fn();
+    instance.updateFileOne = jest.fn();
+    instance.updateFileMultiple = jest.fn();
+    instance.validaNameArquivo = jest.fn();
+  });
+
+  test('should call updateFileOne when nameFunc is not "OPP"', async () => {
+    instance.nameFunc = 'SomeOtherValue';
+    await instance.uploadArquivoAWS();
+    expect(instance.updateFileOne).toHaveBeenCalled();
+  });
+
+  test('should show error message when selectedFiles length is not 5', async () => {
+    instance.nameFunc = 'OPP';
+    instance.selectedFiles = []; // Empty array (length != 5)
+    await instance.uploadArquivoAWS();
+    expect(instance.showMessage).toHaveBeenCalledWith("voce deve anexar 5 arquivos", "error");
+  });
+
+  test('should show error message when file name is invalid', async () => {
+    instance.nameFunc = 'OPP';
+    instance.selectedFiles = new Array(5); // Length is 5
+    instance.validaNameArquivo.mockReturnValue(false); // Simulating an invalid file name
+    await instance.uploadArquivoAWS();
+    expect(instance.showMessage).toHaveBeenCalledWith(
+      "o nome do arquivo enviado nao corresponde ao nome esperado: " + instance.valueNotFind,
+      "error"
+    );
+  });
+
+  test('should call updateFileMultiple when file name is valid', async () => {
+    instance.nameFunc = 'OPP';
+    instance.selectedFiles = new Array(5); // Length is 5
+    instance.validaNameArquivo.mockReturnValue(true); // Simulating a valid file name
+    await instance.uploadArquivoAWS();
+    expect(instance.updateFileMultiple).toHaveBeenCalled();
+  });
+});
