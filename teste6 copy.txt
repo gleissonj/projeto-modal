@@ -30,6 +30,14 @@ public class LeadProcessorTest {
 
         List<ContactResponse> leads = new List<ContactResponse>{newLead1, newLead2};
         
+        // Initialize the list properties if needed
+        for (ContactResponse lead : leads) {
+            lead.telefones = new List<Telephone>();
+            lead.emails = new List<Email>();
+            lead.optOut = new List<OptOut>();
+            lead.optOutTelefone = new optOutTelefoneResponse();
+        }
+        
         // Step 3: Prepare the map of existing leads
         Map<String, Lead> mapLeadExisting = new Map<String, Lead>{
             '12345678901' => existingLead1,
