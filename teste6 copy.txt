@@ -5,32 +5,41 @@ public class LeadServiceTest {
     static void testCreateNewLead() {
         
         // Step 1: Create a mock ContactResponse
-        
-        // Create EmailRegistrationData instance
+
+        // Criando EmailRegistrationData
         EmailRegistrationData emailData = new EmailRegistrationData();
-        emailData.email = 'carlos.silva@example.com';
+        emailData.email = 'carlos.silva@example.com';  // Campo de email na classe EmailRegistrationData
         
-        // Create Email instance
+        // Criando Email
         Email email = new Email();
-        email.id_email = '1';
-        email.valor_dado_cadastral = emailData;
+        email.id_email = '1';  // Atribuindo um ID fictício para o email
+        email.valor_dado_cadastral = emailData;  // Associando o EmailRegistrationData
         
-        // Create Telephone instance
+        // Criando TelephoneRegistrationData
+        TelephoneRegistrationData phoneData = new TelephoneRegistrationData();
+        phoneData.numero = '1234567890';  // O número de telefone
+        phoneData.ddi = '55';  // DDI (Exemplo)
+        phoneData.ddd = '11';  // DDD (Exemplo)
+        phoneData.tipo = 'Mobile';  // Tipo de telefone
+        
+        // Criando Telephone
         Telephone phone = new Telephone();
-        phone.number = '1234567890';
+        phone.id_telefone = '1';  // Atribuindo um ID fictício para o telefone
+        phone.valor_dado_cadastral = phoneData;  // Associando o TelephoneRegistrationData
         
-        // Create ContactResponse instance
+        // Criando ContactResponse
         ContactResponse newLead = new ContactResponse();
         newLead.nome = 'Carlos Silva';
         newLead.cpf = '12345678901';
-        newLead.emails = new List<Email>{email};
-        newLead.telefones = new List<Telephone>{phone};
-        newLead.optOutTelefone = false;  // Assuming this is a boolean field indicating phone opt-out
+        newLead.emails = new List<Email>{email};  // Lista de emails
+        newLead.telefones = new List<Telephone>{phone};  // Lista de telefones
+        newLead.optOutTelefone = false;  // Definindo opt-out de telefone
         
         Id recordPageId = 'someRecordId';  // Use a valid Record Id for testing
         
         // Step 2: Mock or stub external methods
-        // We assume that `splitName`, `formatCPF`, and `FS1_LeadRecordType.prospectId()` work as expected
+        // We will assume that splitName, formatCPF, and FS1_LeadRecordType.prospectId() work as expected
+        // So we will just call the method directly without stubbing
         
         // Step 3: Call the method under test
         Test.startTest();
