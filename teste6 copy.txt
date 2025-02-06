@@ -62,4 +62,6 @@ public class LeadServiceTest {
         System.assertEquals('1234567890', createdLead.Phone, 'The phone number should be correctly assigned.');
         
         // Check the phone opt-out field (if it should not opt-out)
-        System.assertEquals(false, createdLead.HasOpt
+        System.assertEquals(false, createdLead.HasOptedOutOfPhone, 'The phone opt-out flag should be correctly set.');
+    }
+}
