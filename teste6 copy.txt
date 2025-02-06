@@ -1,70 +1,65 @@
 @isTest
-public class LeadProcessorTest {
-    
+public class LeadServiceTest {
+
     @isTest
-    static void testProcessLeads() {
+    static void testCreateNewLead() {
         
-        // Step 1: Create mock data for the existing leads
-        Lead existingLead1 = new Lead(
-            FirstName = 'John',
-            LastName = 'Doe',
-            HU7_CPF__c = '12345678901',
-            Prospect__c = 'someRecordId'
-        );
+        // Step 1: Create a mock ContactResponse
         
-        Lead existingLead2 = new Lead(
-            FirstName = 'Jane',
-            LastName = 'Doe',
-            HU7_CPF__c = '98765432100',
-            Prospect__c = 'someRecordId'
-        );
+        // Create EmailRegistrationData instance
+        EmailRegistrationData emailData = new EmailRegistrationData();
+        emailData.email = 'carlos.silva@example.com';
         
-        // Step 2: Create mock ContactResponse data (new leads)
-        ContactResponse newLead1 = new ContactResponse();
-        newLead1.nome = 'Carlos Silva';
-        newLead1.cpf = '12345678901'; // Existing lead in the map
-
-        ContactResponse newLead2 = new ContactResponse();
-        newLead2.nome = 'Ana Pereira';
-        newLead2.cpf = '55555555555'; // New lead
-
-        List<ContactResponse> leads = new List<ContactResponse>{newLead1, newLead2};
+        // Create Email instance
+        Email email = new Email();
+        email.id_email = '1';
+        email.valor_dado_cadastral = emailData;
         
-        // Initialize the list properties if needed
-        for (ContactResponse lead : leads) {
-            lead.telefones = new List<Telephone>();
-            lead.emails = new List<Email>();
-            lead.optOut = new List<OptOut>();
-            lead.optOutTelefone = new optOutTelefoneResponse();
-        }
+        // Create Telephone instance
+        Telephone phone = new Telephone();
+        phone.number = '1234567890';
         
-        // Step 3: Prepare the map of existing leads
-        Map<String, Lead> mapLeadExisting = new Map<String, Lead>{
-            '12345678901' => existingLead1,
-            '98765432100' => existingLead2
-        };
+        // Create ContactResponse instance
+        ContactResponse newLead = new ContactResponse();
+        newLead.nome = 'Carlos Silva';
+        newLead.cpf = '12345678901';
+        newLead.emails = new List<Email>{email};
+        newLead.telefones = new List<Telephone>{phone};
+        newLead.optOutTelefone = false;  // Assuming this is a boolean field indicating phone opt-out
         
-        // Step 4: Prepare the lists for ContactUpdateComparison and newLeadsToInsert
-        List<ContactUpdateComparison> leadToFrontChoice = new List<ContactUpdateComparison>();
-        List<Lead> newLeadsToInsert = new List<Lead>();
+        Id recordPageId = 'someRecordId';  // Use a valid Record Id for testing
         
-        Id recordIdPage = 'someRecordId'; // Using a valid record ID for the test
+        // Step 2: Mock or stub external methods
+        // We assume that `splitName`, `formatCPF`, and `FS1_LeadRecordType.prospectId()` work as expected
         
-        // Step 5: Call the method to be tested (processLeads)
+        // Step 3: Call the method under test
         Test.startTest();
-        LeadProcessor.processLeads(leads, mapLeadExisting, leadToFrontChoice, newLeadsToInsert, recordIdPage);
+        Lead createdLead = LeadService.createNewLead(newLead, recordPageId);
         Test.stopTest();
         
-        // Step 6: Assertions
-        // Assert that the leadToFrontChoice list was populated with updated leads
-        System.assertEquals(1, leadToFrontChoice.size(), 'The leadToFrontChoice should have 1 entry for the updated existing lead.');
+        // Step 4: Assertions
         
-        // Check if the first entry in leadToFrontChoice corresponds to the updated lead
-        ContactUpdateComparison comparison1 = leadToFrontChoice[0];
-        System.assertEquals('12345678901', comparison1.cpf, 'The CPF of the updated lead should be 12345678901.');
-
-        // Assert that no new lead was inserted (since newLead2 has no matching CPF in the map)
-        System.assertEquals(1, newLeadsToInsert.size(), 'There should be 1 new lead inserted.');
-        System.assertEquals('55555555555', newLeadsToInsert[0].HU7_CPF__c, 'The CPF of the new lead should be 55555555555.');
-    }
-}
+        // Check if the created Lead's fields are correctly populated
+        System.assertNotEquals(createdLead, null, 'The created lead should not be null.');
+        
+        // Check if CPF was set correctly
+        System.assertEquals('12345678901', createdLead.HU7_CPF__c, 'The CPF should be correctly set.');
+        
+        // Check if name was split and set correctly
+        System.assertEquals('Carlos', createdLead.FirstName, 'The first name should be correctly set.');
+        System.assertEquals('Silva', createdLead.LastName, 'The last name should be correctly set.');
+        
+        // Check if the email was set correctly
+        System.assertEquals('carlos.silva@example.com', createdLead.Email, 'The email should be correctly set.');
+        
+        // Check if RecordTypeId is assigned correctly (assuming this works as expected)
+        System.assertNotEquals(createdLead.RecordTypeId, null, 'The RecordTypeId should be set.');
+        
+        // Check if the Prospect__c field is correctly set
+        System.assertEquals(recordPageId, createdLead.Prospect__c, 'The Prospect__c should be set correctly.');
+        
+        // Check if phone number is correctly set
+        System.assertEquals('1234567890', createdLead.Phone, 'The phone number should be correctly assigned.');
+        
+        // Check the phone opt-out field (if it should not opt-out)
+        System.assertEquals(false, createdLead.HasOpt
