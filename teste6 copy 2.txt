@@ -1,31 +1,76 @@
-it('deve baixar o arquivo corretamente quando selectedValue for "EV1"', () => {
-  // Espiando o método showMessage para garantir que ele não seja chamado
-  const spyShowMessage = jest.spyOn(component, 'showMessage');
-  
-  // Mock de sucesso no download (simula um Blob vazio)
-  multipartUploadService.downloadFileS3.mockReturnValue({
-    subscribe: (successCallback: Function) => {
-      successCallback(new Blob()); // Simula sucesso com um Blob vazio
-    },
+import { MyComponent } from './MyComponent'; // Ajuste para o caminho correto
+import { environment } from 'src/environments/environment'; // Ajuste para o caminho correto
+
+describe('MyComponent', () => {
+  let component: MyComponent;
+  let multipartUploadService: any;
+
+  beforeEach(() => {
+    // Mock do serviço de upload
+    multipartUploadService = {
+      downloadFileS3: jest.fn(), // Mock do método downloadFileS3
+    };
+
+    // Criando uma instância do componente com o mock
+    component = new MyComponent(multipartUploadService);
+
+    // Mock de `window.URL.createObjectURL` para retornar uma URL falsa
+    jest.spyOn(window.URL, 'createObjectURL').mockImplementation(() => 'mock-url');
+    // Mock de `window.URL.revokeObjectURL` para evitar efeitos colaterais
+    jest.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
+    // Mock do método `createElement` de `document` para criar o link de download
+    jest.spyOn(document, 'createElement').mockReturnValue({
+      href: '',
+      download: '',
+      click: jest.fn(),
+    } as any);
   });
 
-  // Configurando selectedValue como "EV1"
-  component.selectedValue = 'EV1';
+  it('deve baixar o arquivo corretamente quando selectedValue for "EV1"', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    
+    // Mock de sucesso no download (simula um Blob vazio)
+    multipartUploadService.downloadFileS3.mockReturnValue({
+      subscribe: (successCallback: Function) => {
+        successCallback(new Blob()); // Simula sucesso com um Blob vazio
+      },
+    });
 
-  // Chamando o método que estamos testando
-  component.downloadFileMigration();
+    component.selectedValue = 'EV1'; // Simulando selectedValue como 'EV1'
 
-  // Verificando se window.URL.createObjectURL foi chamado corretamente
-  expect(createObjectURLSpy).toHaveBeenCalled();
-  
-  // Verificando se o link de download foi criado corretamente e clicado
-  const linkElement = createElementSpy.mock.results[0].value;
-  expect(linkElement.click).toHaveBeenCalled();
-  expect(linkElement.download).toBe('EV1.csv'); // Verifica o nome correto do arquivo
+    component.downloadFileMigration(); // Chamando o método a ser testado
 
-  // Verificando se window.URL.revokeObjectURL foi chamado após o clique
-  expect(revokeObjectURLSpy).toHaveBeenCalled();
-  
-  expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
-  expect(spyShowMessage).not.toHaveBeenCalled(); // Não deve chamar showMessage em caso de sucesso
+    // Verificando se window.URL.createObjectURL foi chamado corretamente
+    expect(window.URL.createObjectURL).toHaveBeenCalled();
+    
+    // Verificando se o link de download foi criado corretamente e clicado
+    const linkElement = document.createElement.mock.results[0].value;
+    expect(linkElement.click).toHaveBeenCalled();
+    expect(linkElement.download).toBe('EV1.csv'); // Verifica o nome correto do arquivo
+
+    // Verificando se window.URL.revokeObjectURL foi chamado após o clique
+    expect(window.URL.revokeObjectURL).toHaveBeenCalled();
+    
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+    expect(spyShowMessage).not.toHaveBeenCalled(); // Não deve chamar showMessage em caso de sucesso
+  });
+
+  it('deve mostrar mensagem de erro quando ocorrer um erro no download', () => {
+    const spyShowMessage = jest.spyOn(component, 'showMessage');
+    const errorMock = new Error('mock error');
+    
+    // Mock de erro no download (simula falha no download)
+    multipartUploadService.downloadFileS3.mockReturnValue({
+      subscribe: (successCallback: Function, errorCallback: Function) => {
+        errorCallback(errorMock); // Simula o erro no download
+      },
+    });
+
+    component.selectedValue = 'EV1'; // Simulando selectedValue como 'EV1'
+    component.downloadFileMigration(); // Chamando o método a ser testado
+
+    // Verifica se a mensagem de erro foi exibida
+    expect(spyShowMessage).toHaveBeenCalledWith('Nao contem o arquivo no bucket!', 'error');
+    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+  });
 });
