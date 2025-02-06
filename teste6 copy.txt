@@ -132,13 +132,22 @@ describe('MyComponent', () => {
 
 //novoContato
 it('deve atualizar typeFunc quando o usuário tem permissão para Evs e selectedIndex é 2', () => {
-  component.getGruposUser = ['group1'];  // Defina os grupos do usuário
-  component.permissionsDownloadEvs = ['group1'];  // Defina as permissões para Evs
-  const spyShowMessage = jest.spyOn(component, 'showMessage');  // Espiona a função showMessage
-  const event = { selectedIndex: 2 };  // Define selectedIndex como 2
+  // Configuração do estado do componente
+  component.getGruposUser = ['group1'];  // Grupo que o usuário pertence
+  component.permissionsDownloadEvs = ['group1'];  // Permissão para acessar a funcionalidade Evs
   
-  component.updateSorting(event);  // Chama a função original
+  const spyShowMessage = jest.spyOn(component, 'showMessage');  // Espiona showMessage para garantir que não será chamada
 
-  expect(component.typeFunc).toBe(2);  // Verifica se typeFunc foi atualizado para 2
-  expect(spyShowMessage).not.toHaveBeenCalled();  // Verifica se showMessage não foi chamada
+  // Evento com selectedIndex igual a 2
+  const event = { selectedIndex: 2 };
+  
+  // Chama o método
+  component.updateSorting(event);
+
+  // Verifica se typeFunc foi corretamente atualizado
+  expect(component.typeFunc).toBe(2);
+  
+  // Verifica se a função showMessage não foi chamada
+  expect(spyShowMessage).not.toHaveBeenCalled();
 });
+
