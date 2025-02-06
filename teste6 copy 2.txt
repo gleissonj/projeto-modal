@@ -43,8 +43,10 @@ describe('MyComponent', () => {
     // Verificando se window.URL.createObjectURL foi chamado corretamente
     expect(window.URL.createObjectURL).toHaveBeenCalled();
     
-    // Verificando se o link de download foi criado corretamente e clicado
-    const linkElement = document.createElement.mock.results[0].value;
+    // Acessando o primeiro link gerado pelo mock de `document.createElement`
+    const linkElement = document.createElement.mock.calls[0][0]; // `createElement` foi chamado uma vez e a criação de um link (`<a>`) foi a primeira chamada.
+    
+    // Verificando se o link foi clicado
     expect(linkElement.click).toHaveBeenCalled();
     expect(linkElement.download).toBe('EV1.csv'); // Verifica o nome correto do arquivo
 
