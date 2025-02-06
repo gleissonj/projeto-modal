@@ -4,11 +4,13 @@ public class LeadServiceTest {
     @isTest
     static void testCreateNewLead() {
         
-        // Step 1: Create a mock ContactResponse
+        // Step 1: Criar um mock de ContactResponse
 
         // Criando EmailRegistrationData
         EmailRegistrationData emailData = new EmailRegistrationData();
         emailData.email = 'carlos.silva@example.com';  // Campo de email na classe EmailRegistrationData
+        emailData.principal = 'true';  // Indicando que o email é principal, se necessário
+        emailData.data_atualizacao = '2025-02-06';  // Data de atualização fictícia
         
         // Criando Email
         Email email = new Email();
@@ -21,11 +23,20 @@ public class LeadServiceTest {
         phoneData.ddi = '55';  // DDI (Exemplo)
         phoneData.ddd = '11';  // DDD (Exemplo)
         phoneData.tipo = 'Mobile';  // Tipo de telefone
+        phoneData.ramal = '';  // Sem ramal
         
         // Criando Telephone
         Telephone phone = new Telephone();
         phone.id_telefone = '1';  // Atribuindo um ID fictício para o telefone
         phone.valor_dado_cadastral = phoneData;  // Associando o TelephoneRegistrationData
+        
+        // Criando OptOutTelefone
+        optOutTelefone optOutData = new optOutTelefone();
+        optOutData.indicador_possui_telefone_bloqueado = 'false';  // Não possui telefone bloqueado
+        
+        // Criando optOutTelefoneResponse
+        optOutTelefoneResponse optOutResponse = new optOutTelefoneResponse();
+        optOutResponse.data = optOutData;
         
         // Criando ContactResponse
         ContactResponse newLead = new ContactResponse();
@@ -33,44 +44,44 @@ public class LeadServiceTest {
         newLead.cpf = '12345678901';
         newLead.emails = new List<Email>{email};  // Lista de emails
         newLead.telefones = new List<Telephone>{phone};  // Lista de telefones
-        newLead.optOutTelefone = false;  // Definindo opt-out de telefone
+        newLead.optOutTelefone = optOutResponse;  // Associando o optOutTelefoneResponse
         
         Id recordPageId = 'someRecordId';  // Use a valid Record Id for testing
         
         // Step 2: Mock or stub external methods
-        // We will assume that splitName, formatCPF, and FS1_LeadRecordType.prospectId() work as expected
-        // So we will just call the method directly without stubbing
+        // Assumimos que splitName, formatCPF e FS1_LeadRecordType.prospectId() funcionam corretamente
+        // Portanto, vamos chamar o método diretamente sem precisar de stubbing
         
-        // Step 3: Call the method under test
+        // Step 3: Chamar o método de teste
         Test.startTest();
         Lead createdLead = LeadService.createNewLead(newLead, recordPageId);
         Test.stopTest();
         
-        // Step 4: Assertions
+        // Step 4: Asserções
         
-        // Check if the created Lead's fields are correctly populated
-        System.assertNotEquals(createdLead, null, 'The created lead should not be null.');
+        // Verificar se o Lead foi criado corretamente
+        System.assertNotEquals(createdLead, null, 'O lead criado não deve ser nulo.');
         
-        // Check if CPF was set correctly
-        System.assertEquals('12345678901', createdLead.HU7_CPF__c, 'The CPF should be correctly set.');
+        // Verificar se o CPF foi setado corretamente
+        System.assertEquals('12345678901', createdLead.HU7_CPF__c, 'O CPF deve ser setado corretamente.');
         
-        // Check if name was split and set correctly
-        System.assertEquals('Carlos', createdLead.FirstName, 'The first name should be correctly set.');
-        System.assertEquals('Silva', createdLead.LastName, 'The last name should be correctly set.');
+        // Verificar se o nome foi separado corretamente
+        System.assertEquals('Carlos', createdLead.FirstName, 'O primeiro nome deve ser setado corretamente.');
+        System.assertEquals('Silva', createdLead.LastName, 'O sobrenome deve ser setado corretamente.');
         
-        // Check if the email was set correctly
-        System.assertEquals('carlos.silva@example.com', createdLead.Email, 'The email should be correctly set.');
+        // Verificar se o email foi setado corretamente
+        System.assertEquals('carlos.silva@example.com', createdLead.Email, 'O email deve ser setado corretamente.');
         
-        // Check if RecordTypeId is assigned correctly (assuming this works as expected)
-        System.assertNotEquals(createdLead.RecordTypeId, null, 'The RecordTypeId should be set.');
+        // Verificar se o RecordTypeId foi atribuído corretamente
+        System.assertNotEquals(createdLead.RecordTypeId, null, 'O RecordTypeId deve ser setado.');
         
-        // Check if the Prospect__c field is correctly set
-        System.assertEquals(recordPageId, createdLead.Prospect__c, 'The Prospect__c should be set correctly.');
+        // Verificar se o Prospect__c foi atribuído corretamente
+        System.assertEquals(recordPageId, createdLead.Prospect__c, 'O Prospect__c deve ser setado corretamente.');
         
-        // Check if phone number is correctly set
-        System.assertEquals('1234567890', createdLead.Phone, 'The phone number should be correctly assigned.');
+        // Verificar se o número de telefone foi atribuído corretamente
+        System.assertEquals('1234567890', createdLead.Phone, 'O número de telefone deve ser atribuído corretamente.');
         
-        // Check the phone opt-out field (if it should not opt-out)
-        System.assertEquals(false, createdLead.HasOptedOutOfPhone, 'The phone opt-out flag should be correctly set.');
+        // Verificar se a flag de opt-out foi configurada corretamente
+        System.assertEquals(false, createdLead.HasOptedOutOfPhone, 'A flag de opt-out de telefone deve ser configurada corretamente.');
     }
 }
