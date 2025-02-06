@@ -18,12 +18,14 @@ describe('MyComponent', () => {
     jest.spyOn(window.URL, 'createObjectURL').mockImplementation(() => 'mock-url');
     // Mock de `window.URL.revokeObjectURL` para evitar efeitos colaterais
     jest.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
-    // Mock do método `createElement` de `document` para criar o link de download
-    jest.spyOn(document, 'createElement').mockReturnValue({
+    
+    // Mock de `document.createElement` (deve ser um mock de função)
+    const createElementMock = jest.fn().mockReturnValue({
       href: '',
       download: '',
       click: jest.fn(),
-    } as any);
+    });
+    jest.spyOn(document, 'createElement').mockImplementation(createElementMock);
   });
 
   it('deve baixar o arquivo corretamente quando selectedValue for "EV1"', () => {
@@ -44,7 +46,7 @@ describe('MyComponent', () => {
     expect(window.URL.createObjectURL).toHaveBeenCalled();
     
     // Acessando o primeiro link gerado pelo mock de `document.createElement`
-    const linkElement = document.createElement.mock.calls[0][0]; // `createElement` foi chamado uma vez e a criação de um link (`<a>`) foi a primeira chamada.
+    const linkElement = (document.createElement as jest.Mock).mock.results[0].value; // Acessando o primeiro resultado da chamada
     
     // Verificando se o link foi clicado
     expect(linkElement.click).toHaveBeenCalled();
