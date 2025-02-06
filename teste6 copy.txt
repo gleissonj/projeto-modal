@@ -1,42 +1,62 @@
 @isTest
-static void testProcessLeads() {
-
-    // Step 1: Create a test user (using System.runAs to simulate the user)
-    String uniqueUsername = 'testuser' + System.currentTimeMillis() + '@example.com'; // Make the username unique
-    User testUser = new User(
-        Username = uniqueUsername,
-        Alias = 'testuser',
-        Email = 'testuser@example.com',
-        ProfileId = [SELECT Id FROM Profile WHERE Name = 'System Administrator' LIMIT 1].Id,
-        TimeZoneSidKey = 'America/New_York',
-        LocaleSidKey = 'en_US',
-        EmailEncodingKey = 'UTF-8',
-        LanguageLocaleKey = 'en_US'
-    );
-    insert testUser;
-
-    // Step 2: Use System.runAs to simulate the test running as the test user
-    System.runAs(testUser) {
+public class LeadProcessorTest {
+    
+    @isTest
+    static void testProcessLeads() {
         
-        // Step 3: Create a test Account record
-        Account testAccount = new Account(
-            Name = 'Test Account', 
-            OwnerId = testUser.Id
-        );
-        insert testAccount; // Insert to generate a valid ID and ensure access
-
-        // Step 4: Create test data (Leads)
+        // Step 1: Create mock data for the existing leads
         Lead existingLead1 = new Lead(
             FirstName = 'John',
             LastName = 'Doe',
-            HU7_CPF__c = '123.456.789-01',
-            Prospect__c = testAccount.Id,  // Referencing the valid Account ID
-            OwnerId = testUser.Id
+            HU7_CPF__c = '12345678901',
+            Prospect__c = 'someRecordId'
         );
-        insert existingLead1;
-
+        
         Lead existingLead2 = new Lead(
             FirstName = 'Jane',
             LastName = 'Doe',
-            HU7_CPF__c = '987.654.321-00',
-            Prospect__c = testAccount.Id,  // Referencing the valid Account 
+            HU7_CPF__c = '98765432100',
+            Prospect__c = 'someRecordId'
+        );
+        
+        // Step 2: Create mock ContactResponse data (new leads)
+        ContactResponse newLead1 = new ContactResponse();
+        newLead1.nome = 'Carlos Silva';
+        newLead1.cpf = '12345678901'; // Existing lead in the map
+
+        ContactResponse newLead2 = new ContactResponse();
+        newLead2.nome = 'Ana Pereira';
+        newLead2.cpf = '55555555555'; // New lead
+
+        List<ContactResponse> leads = new List<ContactResponse>{newLead1, newLead2};
+        
+        // Step 3: Prepare the map of existing leads
+        Map<String, Lead> mapLeadExisting = new Map<String, Lead>{
+            '12345678901' => existingLead1,
+            '98765432100' => existingLead2
+        };
+        
+        // Step 4: Prepare the lists for ContactUpdateComparison and newLeadsToInsert
+        List<ContactUpdateComparison> leadToFrontChoice = new List<ContactUpdateComparison>();
+        List<Lead> newLeadsToInsert = new List<Lead>();
+        
+        Id recordIdPage = 'someRecordId'; // Using a valid record ID for the test
+        
+        // Step 5: Call the method to be tested (processLeads)
+        Test.startTest();
+        LeadProcessor.processLeads(leads, mapLeadExisting, leadToFrontChoice, newLeadsToInsert, recordIdPage);
+        Test.stopTest();
+        
+        // Step 6: Assertions
+        // Assert that the leadToFrontChoice list was populated with updated leads
+        System.assertEquals(1, leadToFrontChoice.size(), 'The leadToFrontChoice should have 1 entry for the updated existing lead.');
+        
+        // Check if the first entry in leadToFrontChoice corresponds to the updated lead
+        ContactUpdateComparison comparison1 = leadToFrontChoice[0];
+        System.assertEquals('12345678901', comparison1.cpf, 'The CPF of the updated lead should be 12345678901.');
+
+        // Assert that no new lead was inserted (since newLead2 has no matching CPF in the map)
+        System.assertEquals(1, newLeadsToInsert.size(), 'There should be 1 new lead inserted.');
+        System.assertEquals('55555555555', newLeadsToInsert[0].HU7_CPF__c, 'The CPF of the new lead should be 55555555555.');
+    }
+}
