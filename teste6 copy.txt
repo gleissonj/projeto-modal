@@ -2,8 +2,9 @@
 static void testProcessLeads() {
 
     // Step 1: Create a test user (using System.runAs to simulate the user)
+    String uniqueUsername = 'testuser' + System.currentTimeMillis() + '@example.com'; // Make the username unique
     User testUser = new User(
-        Username = 'testuser@example.com',
+        Username = uniqueUsername,
         Alias = 'testuser',
         Email = 'testuser@example.com',
         ProfileId = [SELECT Id FROM Profile WHERE Name = 'System Administrator' LIMIT 1].Id,
@@ -38,50 +39,4 @@ static void testProcessLeads() {
             FirstName = 'Jane',
             LastName = 'Doe',
             HU7_CPF__c = '987.654.321-00',
-            Prospect__c = testAccount.Id,  // Referencing the valid Account ID
-            OwnerId = testUser.Id
-        );
-        insert existingLead2;
-
-        // Step 5: Create ContactResponse list (new leads)
-        ContactResponse newLead1 = new ContactResponse();
-        newLead1.nome = 'Carlos Silva';
-        newLead1.cpf = '123.456.789-01';
-
-        ContactResponse newLead2 = new ContactResponse();
-        newLead2.nome = 'Ana Pereira';
-        newLead2.cpf = '555.555.555-55';
-        
-        List<ContactResponse> leads = new List<ContactResponse>{newLead1, newLead2};
-        
-        // Step 6: Prepare the map of existing leads
-        Map<String, Lead> mapLeadExisting = new Map<String, Lead>{
-            '123.456.789-01' => existingLead1,
-            '987.654.321-00' => existingLead2
-        };
-        
-        // Step 7: Prepare the lists for ContactUpdateComparison and newLeadsToInsert
-        List<ContactUpdateComparison> leadToFrontChoice = new List<ContactUpdateComparison>();
-        List<Lead> newLeadsToInsert = new List<Lead>();
-        
-        // Use the valid account ID from the test record for recordIdPage
-        Id recordIdPage = testAccount.Id;
-
-        // Step 8: Call the method to be tested
-        Test.startTest();
-        LeadProcessor.processLeads(leads, mapLeadExisting, leadToFrontChoice, newLeadsToInsert, recordIdPage);
-        Test.stopTest();
-        
-        // Step 9: Assert the results
-        
-        // Check if the leadToFrontChoice list was populated with updated leads
-        System.assertEquals(1, leadToFrontChoice.size(), 'The leadToFrontChoice should have 1 entry for existing lead.');
-        
-        ContactUpdateComparison comparison1 = leadToFrontChoice[0];
-        System.assertEquals('123.456.789-01', comparison1.cpf, 'The CPF of the updated lead should be 123.456.789-01.');
-        
-        // Assert that a new lead was inserted for newLead2
-        System.assertEquals(1, newLeadsToInsert.size(), 'There should be one new lead inserted.');
-        System.assertEquals('555.555.555-55', newLeadsToInsert[0].HU7_CPF__c, 'The CPF of the new lead should be 555.555.555-55.');
-    }
-}
+            Prospect__c = testAccount.Id,  // Referencing the valid Account 
