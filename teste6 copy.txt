@@ -127,3 +127,18 @@ describe('MyComponent', () => {
     expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado após o erro
   });
 });
+
+
+
+//novoContato
+it('deve atualizar typeFunc quando o usuário tem permissão para Evs e selectedIndex é 2', () => {
+  component.getGruposUser = ['group1'];  // Defina os grupos do usuário
+  component.permissionsDownloadEvs = ['group1'];  // Defina as permissões para Evs
+  const spyShowMessage = jest.spyOn(component, 'showMessage');  // Espiona a função showMessage
+  const event = { selectedIndex: 2 };  // Define selectedIndex como 2
+  
+  component.updateSorting(event);  // Chama a função original
+
+  expect(component.typeFunc).toBe(2);  // Verifica se typeFunc foi atualizado para 2
+  expect(spyShowMessage).not.toHaveBeenCalled();  // Verifica se showMessage não foi chamada
+});
