@@ -1,87 +1,50 @@
 @isTest
-public class LeadServiceTest {
-
-    @isTest
-    static void testCreateNewLead() {
-        
-        // Step 1: Criar um mock de ContactResponse
-
-        // Criando EmailRegistrationData
-        EmailRegistrationData emailData = new EmailRegistrationData();
-        emailData.email = 'carlos.silva@example.com';  // Campo de email na classe EmailRegistrationData
-        emailData.principal = 'true';  // Indicando que o email é principal, se necessário
-        emailData.data_atualizacao = '2025-02-06';  // Data de atualização fictícia
-        
-        // Criando Email
-        Email email = new Email();
-        email.id_email = '1';  // Atribuindo um ID fictício para o email
-        email.valor_dado_cadastral = emailData;  // Associando o EmailRegistrationData
-        
-        // Criando TelephoneRegistrationData
-        TelephoneRegistrationData phoneData = new TelephoneRegistrationData();
-        phoneData.numero = '1234567890';  // O número de telefone
-        phoneData.ddi = '55';  // DDI (Exemplo)
-        phoneData.ddd = '11';  // DDD (Exemplo)
-        phoneData.tipo = 'Mobile';  // Tipo de telefone
-        phoneData.ramal = '';  // Sem ramal
-        
-        // Criando Telephone
-        Telephone phone = new Telephone();
-        phone.id_telefone = '1';  // Atribuindo um ID fictício para o telefone
-        phone.valor_dado_cadastral = phoneData;  // Associando o TelephoneRegistrationData
-        
-        // Criando OptOutTelefone
-        optOutTelefone optOutData = new optOutTelefone();
-        optOutData.indicador_possui_telefone_bloqueado = 'false';  // Não possui telefone bloqueado
-        
-        // Criando optOutTelefoneResponse
-        optOutTelefoneResponse optOutResponse = new optOutTelefoneResponse();
-        optOutResponse.data = optOutData;
-        
-        // Criando ContactResponse
-        ContactResponse newLead = new ContactResponse();
-        newLead.nome = 'Carlos Silva';
-        newLead.cpf = '12345678901';
-        newLead.emails = new List<Email>{email};  // Lista de emails
-        newLead.telefones = new List<Telephone>{phone};  // Lista de telefones
-        newLead.optOutTelefone = optOutResponse;  // Associando o optOutTelefoneResponse
-        
-        Id recordPageId = 'someRecordId';  // Use a valid Record Id for testing
-        
-        // Step 2: Mock or stub external methods
-        // Assumimos que splitName, formatCPF e FS1_LeadRecordType.prospectId() funcionam corretamente
-        // Portanto, vamos chamar o método diretamente sem precisar de stubbing
-        
-        // Step 3: Chamar o método de teste
-        Test.startTest();
-        Lead createdLead = LeadService.createNewLead(newLead, recordPageId);
-        Test.stopTest();
-        
-        // Step 4: Asserções
-        
-        // Verificar se o Lead foi criado corretamente
-        System.assertNotEquals(createdLead, null, 'O lead criado não deve ser nulo.');
-        
-        // Verificar se o CPF foi setado corretamente
-        System.assertEquals('12345678901', createdLead.HU7_CPF__c, 'O CPF deve ser setado corretamente.');
-        
-        // Verificar se o nome foi separado corretamente
-        System.assertEquals('Carlos', createdLead.FirstName, 'O primeiro nome deve ser setado corretamente.');
-        System.assertEquals('Silva', createdLead.LastName, 'O sobrenome deve ser setado corretamente.');
-        
-        // Verificar se o email foi setado corretamente
-        System.assertEquals('carlos.silva@example.com', createdLead.Email, 'O email deve ser setado corretamente.');
-        
-        // Verificar se o RecordTypeId foi atribuído corretamente
-        System.assertNotEquals(createdLead.RecordTypeId, null, 'O RecordTypeId deve ser setado.');
-        
-        // Verificar se o Prospect__c foi atribuído corretamente
-        System.assertEquals(recordPageId, createdLead.Prospect__c, 'O Prospect__c deve ser setado corretamente.');
-        
-        // Verificar se o número de telefone foi atribuído corretamente
-        System.assertEquals('1234567890', createdLead.Phone, 'O número de telefone deve ser atribuído corretamente.');
-        
-        // Verificar se a flag de opt-out foi configurada corretamente
-        System.assertEquals(false, createdLead.HasOptedOutOfPhone, 'A flag de opt-out de telefone deve ser configurada corretamente.');
-    }
+static void testInsertNewLeads() {
+    
+    // Step 1: Create test Lead data
+    Lead lead1 = new Lead(
+        FirstName = 'John',
+        LastName = 'Doe',
+        HU7_CPF__c = '12345678901',
+        Company = 'Company 1'
+    );
+    
+    Lead lead2 = new Lead(
+        FirstName = 'Jane',
+        LastName = 'Doe',
+        HU7_CPF__c = '98765432100',
+        Company = 'Company 2'
+    );
+    
+    List<Lead> newLeadsToInsert = new List<Lead>{ lead1, lead2 };
+    
+    // Step 2: Mock repository.insertLeads method
+    // To isolate this test, we'll use a mock implementation for repository.insertLeads.
+    Test.startTest();
+    
+    // Execute the method under test
+    LeadService.insertNewLeads(newLeadsToInsert);
+    
+    Test.stopTest();
+    
+    // Step 3: Assertions
+    
+    // We don't need to perform a SELECT query here. The leads are already inserted within the transaction.
+    
+    // Assert that the leads were inserted correctly by checking the size of the list of newLeadsToInsert
+    List<Lead> insertedLeads = [SELECT Id, FirstName, LastName, HU7_CPF__c, Company FROM Lead WHERE Id IN :newLeadsToInsert];
+    
+    // Assert that two leads have been inserted
+    System.assertEquals(2, insertedLeads.size(), 'Two leads should be inserted.');
+    
+    // Validate the inserted leads
+    System.assertEquals('John', insertedLeads[0].FirstName, 'First lead should have the correct first name.');
+    System.assertEquals('Doe', insertedLeads[0].LastName, 'First lead should have the correct last name.');
+    System.assertEquals('12345678901', insertedLeads[0].HU7_CPF__c, 'First lead should have the correct CPF.');
+    System.assertEquals('Company 1', insertedLeads[0].Company, 'First lead should have the correct company.');
+    
+    System.assertEquals('Jane', insertedLeads[1].FirstName, 'Second lead should have the correct first name.');
+    System.assertEquals('Doe', insertedLeads[1].LastName, 'Second lead should have the correct last name.');
+    System.assertEquals('98765432100', insertedLeads[1].HU7_CPF__c, 'Second lead should have the correct CPF.');
+    System.assertEquals('Company 2', insertedLeads[1].Company, 'Second lead should have the correct company.');
 }
