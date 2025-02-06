@@ -6,14 +6,16 @@ export default class SearchApontamento extends LightningElement {
             name: 'John Doe',
             cpf: '123.456.789-10',
             phones: [],  // Sem telefone
-            emails: [ { value: 'john.doe@example.com' } ]  // Com email
+            emails: [ { value: 'john.doe@example.com', type: 'Atual' },
+            { value: 'john.doe@example.com', type: 'Novo' }
+             ]  // Com email
         },
         {
             name: 'Jane Doe',
             cpf: '987.654.321-00',
             phones: [
-                { value: '3333-3333', type: 'mobile' },
-                { value: '4444-4444', type: 'home' }
+                { value: '3333-3333', type: 'Atual' },
+                { value: '4444-4444', type: 'Novo' }
             ],  // Com telefone
             emails: []  // Sem email
         }

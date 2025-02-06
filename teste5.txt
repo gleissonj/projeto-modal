@@ -76,5 +76,10 @@ export default class SearchApontamento extends LightningElement {
     handleConfirm() {
         console.log('Seleções confirmadas:', JSON.stringify(this.processedData));
         this.closeModal();  // Fechar o modal após confirmar
+
+        const leadsToUpdate = this.processedData.map(row => ({
+        selectedPhone: row.selectedPhone,
+        selectedEmail: row.seletedEmail
+        }));
     }
 }

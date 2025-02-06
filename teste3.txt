@@ -82,17 +82,24 @@ private static void processLeads(
 }
 
 // Função para comparar e atualizar os contatos
-private static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
-    Lead newLead1 = new Lead();
-    assignPhoneNumbers(newLead1, newLead.telefones, newLead.optOutTelefone);
+public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
+    Lead contactLead = new Lead();
+    assignPhoneNumbers(contactLead, newLead.telefones, newLead.optOutTelefone);
     
     Set<String> phonesCurrent = new Set<String>{leadCurrent.Phone};
     Set<String> emailsCurrent = new Set<String>{leadCurrent.Email};
+    Set<String> mobilePhonesCurrent = new Set<String>{leadCurrent.MobilePhone};
 
     // Comparar telefones
-    if (!phonesCurrent.contains(newLead1.Phone)) {
+    if (!phonesCurrent.contains(contactLead.Phone)) {
         respostaContato.addTelefone(leadCurrent.Phone, 'Atual');
-        respostaContato.addTelefone(newLead1.Phone, 'Novo');
+        respostaContato.addTelefone(contactLead.Phone, 'Novo');
+    }
+
+    // Comparar mobile phones
+    if (!mobilePhonesCurrent.contains(contactLead.MobilePhone)) {
+        respostaContato.addMobilePhones(leadCurrent.MobilePhone, 'Atual');
+        respostaContato.addMobilePhones(contactLead.MobilePhone, 'Novo');
     }
 
     // Comparar emails
@@ -105,17 +112,26 @@ private static void compareAndUpdateContact(ContactResponse newLead, Lead leadCu
 }
 
 // Função para criar um novo Lead a partir de um ContactResponse
-private static Lead createNewLead(ContactResponse newLead) {
+public static Lead createNewLead(ContactResponse newLead, Id recordPage) {
+    Map<String, String> nameParts = splitName(newLead.nome);
+    Id recordTypeFunctionId = FS1_LeadRecordType.prospectId();
+
     Lead newLeadInsert = new Lead(
-        Email = newLead.emails[0].valor_dado_cadastral.email
-    );
+        HU7_CPF__c = formatCPF(newLead.cpf),
+        Email = newLead.emails.size() > 0 ? newLead.emails[0].valor_dado_cadastral : '',
+        FirstName = nameParts.get('firstName'),
+        LastName = nameParts.get('lastName'),
+        RecordTypeId = recordTypeFunctionId,
+        Prospect__c = recordIdPage
+        );
+
     assignPhoneNumbers(newLeadInsert, newLead.telefones, newLead.optOutTelefone);
     return newLeadInsert;
 }
 
 // Função para inserir novos leads no Salesforce
-private static void insertNewLeads(List<Lead> newLeadsToInsert) {
+public static void insertNewLeads(List<Lead> newLeadsToInsert) {
     if (!newLeadsToInsert.isEmpty()) {
-        insert newLeadsToInsert;
+        repository.insertLeads(newLeadsToInsert);
     }
 }
