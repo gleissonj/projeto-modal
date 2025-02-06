@@ -1,73 +1,46 @@
-@isTest
-static void testCompareAndUpdateContact() {
-    
-    // Step 1: Create test data for ContactResponse (new lead) and Lead (current lead)
-    ContactResponse newLead = new ContactResponse(
-        nome = 'Carlos Silva',
-        cpf = '12345678901',
-        emails = new List<Email>{ 
-            new Email(
-                id_email = '1', 
-                valor_dado_cadastral = new EmailRegistrationData(
-                    principal = 'true',
-                    email = 'carlos.silva@example.com',
-                    data_atualizacao = '2025-02-06'
-                )
-            )
-        },
-        telefones = new List<Telephone>{ 
-            new Telephone(
-                id_telefone = '1', 
-                valor_dado_cadastral = new TelephoneRegistrationData(
-                    principal = 'true',
-                    tipo = 'MOBILE',
-                    ddi = '55',
-                    ddd = '11',
-                    numero = '1234567890',
-                    ramal = null
-                )
-            )
-        },
-        optOutTelefone = false
-    );
-    
-    Lead leadCurrent = new Lead(
-        FirstName = 'Carlos',
-        LastName = 'Silva',
-        HU7_CPF__c = '12345678901',
-        Phone = '0987654321',
-        MobilePhone = '1112223333',
-        Email = 'old.email@example.com'
-    );
-    
-    // Step 2: Create a ContactUpdateComparison object (to hold results of the comparison)
-    ContactUpdateComparison respostaContato = new ContactUpdateComparison(
-        newLead.nome,
-        newLead.cpf,
-        '',
-        new List<ContactUpdateInfo>(),
-        new List<ContactUpdateInfo>()
-    );
-    
-    // Step 3: Call the method under test
-    Test.startTest();
-    LeadService.compareAndUpdateContact(newLead, leadCurrent, respostaContato);
-    Test.stopTest();
-    
-    // Step 4: Assertions to validate the comparison and updates
-    
-    // Assert that the 'respostaContato' has the correct phone number changes
-    System.assertEquals(1, respostaContato.phones.size(), 'There should be 1 phone change.');
-    System.assertEquals('0987654321', respostaContato.phones[0].oldValue, 'Old phone should be correct.');
-    System.assertEquals('1234567890', respostaContato.phones[0].newValue, 'New phone should be correct.');
-    
-    // Assert that the 'respostaContato' has the correct mobile phone changes
-    System.assertEquals(1, respostaContato.mobilePhones.size(), 'There should be 1 mobile phone change.');
-    System.assertEquals('1112223333', respostaContato.mobilePhones[0].oldValue, 'Old mobile phone should be correct.');
-    System.assertEquals('1234567890', respostaContato.mobilePhones[0].newValue, 'New mobile phone should be correct.');
-    
-    // Assert that the 'respostaContato' has the correct email changes
-    System.assertEquals(1, respostaContato.emails.size(), 'There should be 1 email change.');
-    System.assertEquals('old.email@example.com', respostaContato.emails[0].oldValue, 'Old email should be correct.');
-    System.assertEquals('carlos.silva@example.com', respostaContato.emails[0].newValue, 'New email should be correct.');
-}
+import { MyComponent } from './MyComponent'; // Supondo que você tenha uma classe que contém o método updateSorting
+
+describe('MyComponent', () => {
+  let component: MyComponent;
+
+  beforeEach(() => {
+    component = new MyComponent();
+    component.getGruposUser = ['group1', 'group2']; // Exemplo de dados de grupos
+    component.permissionsDownloadBicketS3 = ['group1']; // Apenas group1 tem permissão para BicketS3
+    component.permissionsDownloadEvs = ['group2']; // Apenas group2 tem permissão para Evs
+  });
+
+  it('deve atualizar typeFunc quando o usuário tem permissão para BicketS3 e selectedIndex é 1', () => {
+    const event = { selectedIndex: 1 };
+    component.updateSorting(event); // Chama a função original
+    expect(component.typeFunc).toBe(1); // Verifica se typeFunc foi atualizado para 1
+  });
+
+  it('deve exibir a mensagem de erro quando o usuário não tem permissão para BicketS3 e selectedIndex é 1', () => {
+    const event = { selectedIndex: 1 };
+    component.getGruposUser = ['group2']; // Agora, o group2 não tem permissão para BicketS3
+    const spy = jest.spyOn(component, 'showMessage'); // Espiona a função showMessage
+    component.updateSorting(event); // Chama a função original
+    expect(spy).toHaveBeenCalledWith('Você precisa de permissão para acessar essa funcionalidade. Entre em contato com o ADM', 'error');
+  });
+
+  it('deve atualizar typeFunc quando o usuário tem permissão para Evs e selectedIndex é 2', () => {
+    const event = { selectedIndex: 2 };
+    component.updateSorting(event); // Chama a função original
+    expect(component.typeFunc).toBe(2); // Verifica se typeFunc foi atualizado para 2
+  });
+
+  it('deve exibir a mensagem de erro quando o usuário não tem permissão para Evs e selectedIndex é 2', () => {
+    const event = { selectedIndex: 2 };
+    component.getGruposUser = ['group1']; // Agora, o group1 não tem permissão para Evs
+    const spy = jest.spyOn(component, 'showMessage'); // Espiona a função showMessage
+    component.updateSorting(event); // Chama a função original
+    expect(spy).toHaveBeenCalledWith('Você precisa de permissão para acessar essa funcionalidade. Entre em contato com o ADM', 'error');
+  });
+
+  it('deve atualizar typeFunc para outros valores de selectedIndex', () => {
+    const event = { selectedIndex: 3 }; // Outro valor de selectedIndex
+    component.updateSorting(event); // Chama a função original
+    expect(component.typeFunc).toBe(3); // Verifica se typeFunc foi atualizado para 3
+  });
+});
