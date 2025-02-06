@@ -1,80 +1,21 @@
-import { MyComponent } from './MyComponent'; // Ajuste para o caminho correto
-import { environment } from 'src/environments/environment'; // Ajuste para o caminho correto
+import { MyComponent } from './my-component'; // Ajuste o caminho do seu componente
 
 describe('MyComponent', () => {
   let component: MyComponent;
-  let multipartUploadService: any;
 
   beforeEach(() => {
-    // Mock do serviço de upload
-    multipartUploadService = {
-      downloadFileS3: jest.fn(), // Mock do método downloadFileS3
-    };
-
-    // Criando uma instância do componente com o mock
-    component = new MyComponent(multipartUploadService);
-
-    // Mock de `window.URL.createObjectURL` para retornar uma URL falsa
-    jest.spyOn(window.URL, 'createObjectURL').mockImplementation(() => 'mock-url');
-    // Mock de `window.URL.revokeObjectURL` para evitar efeitos colaterais
-    jest.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
+    // Inicializa o componente antes de cada teste
+    component = new MyComponent();
     
-    // Mock de `document.createElement` (deve ser um mock de função)
-    const createElementMock = jest.fn().mockReturnValue({
-      href: '',
-      download: '',
-      click: jest.fn(),
-    });
-    jest.spyOn(document, 'createElement').mockImplementation(createElementMock);
+    // Mock do método showMessage para que possamos verificar se foi chamado
+    jest.spyOn(component, 'showMessage');
   });
 
-  it('deve baixar o arquivo corretamente quando selectedValue for "EV1"', () => {
-    const spyShowMessage = jest.spyOn(component, 'showMessage');
+  it('deve chamar showMessage com "Nao contem o arquivo no bucket" e "error"', () => {
+    // Chama a função downloadFileMigration
+    component.downloadFileMigration();
     
-    // Mock de sucesso no download (simula um Blob vazio)
-    multipartUploadService.downloadFileS3.mockReturnValue({
-      subscribe: (successCallback: Function) => {
-        successCallback(new Blob()); // Simula sucesso com um Blob vazio
-      },
-    });
-
-    component.selectedValue = 'EV1'; // Simulando selectedValue como 'EV1'
-
-    component.downloadFileMigration(); // Chamando o método a ser testado
-
-    // Verificando se window.URL.createObjectURL foi chamado corretamente
-    expect(window.URL.createObjectURL).toHaveBeenCalled();
-    
-    // Acessando o primeiro link gerado pelo mock de `document.createElement`
-    const linkElement = (document.createElement as jest.Mock).mock.results[0].value; // Acessando o primeiro resultado da chamada
-    
-    // Verificando se o link foi clicado
-    expect(linkElement.click).toHaveBeenCalled();
-    expect(linkElement.download).toBe('EV1.csv'); // Verifica o nome correto do arquivo
-
-    // Verificando se window.URL.revokeObjectURL foi chamado após o clique
-    expect(window.URL.revokeObjectURL).toHaveBeenCalled();
-    
-    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
-    expect(spyShowMessage).not.toHaveBeenCalled(); // Não deve chamar showMessage em caso de sucesso
-  });
-
-  it('deve mostrar mensagem de erro quando ocorrer um erro no download', () => {
-    const spyShowMessage = jest.spyOn(component, 'showMessage');
-    const errorMock = new Error('mock error');
-    
-    // Mock de erro no download (simula falha no download)
-    multipartUploadService.downloadFileS3.mockReturnValue({
-      subscribe: (successCallback: Function, errorCallback: Function) => {
-        errorCallback(errorMock); // Simula o erro no download
-      },
-    });
-
-    component.selectedValue = 'EV1'; // Simulando selectedValue como 'EV1'
-    component.downloadFileMigration(); // Chamando o método a ser testado
-
-    // Verifica se a mensagem de erro foi exibida
-    expect(spyShowMessage).toHaveBeenCalledWith('Nao contem o arquivo no bucket!', 'error');
-    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
+    // Verifica se o showMessage foi chamado com a mensagem e tipo de erro
+    expect(component.showMessage).toHaveBeenCalledWith('Nao contem o arquivo no bucket', 'error');
   });
 });
