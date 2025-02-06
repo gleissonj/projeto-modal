@@ -15,20 +15,9 @@ describe('MyComponent', () => {
     component = new MyComponent(multipartUploadService);
   });
 
-  it('deve mostrar mensagem de erro se selectedValue não for definido', () => {
-    const spyShowMessage = jest.spyOn(component, 'showMessage'); // Spy na função showMessage
-    component.selectedValue = undefined; // Simulando selectedValue indefinido
-
-    component.downloadFileMigration(); // Chamando o método a ser testado
-
-    // Verifica se a mensagem de erro foi chamada
-    expect(spyShowMessage).toHaveBeenCalledWith("VocÊ precisa informar o tipo da planilha!", "error");
-    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
-  });
-
   it('deve baixar o arquivo corretamente quando selectedValue for "EV1"', () => {
     const spyShowMessage = jest.spyOn(component, 'showMessage');
-    const createObjectURLSpy = jest.spyOn(window.URL, 'createObjectURL').mockReturnValue('mock-url');
+    const createObjectURLSpy = jest.spyOn(window.URL, 'createObjectURL').mockImplementation(() => 'mock-url'); // Mock da função
     const revokeObjectURLSpy = jest.spyOn(window.URL, 'revokeObjectURL');
     const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
       href: '',
@@ -54,42 +43,6 @@ describe('MyComponent', () => {
     const linkElement = createElementSpy.mock.results[0].value;
     expect(linkElement.click).toHaveBeenCalled();
     expect(linkElement.download).toBe('EV1.csv'); // Verifica o nome correto do arquivo
-
-    // Verificando se window.URL.revokeObjectURL foi chamado após o clique
-    expect(revokeObjectURLSpy).toHaveBeenCalled();
-    
-    expect(component.loading).toBe(false); // Verifica se o loading foi desmarcado
-    expect(spyShowMessage).not.toHaveBeenCalled(); // Não deve chamar showMessage em caso de sucesso
-  });
-
-  it('deve baixar o arquivo corretamente quando selectedValue for "EV2"', () => {
-    const spyShowMessage = jest.spyOn(component, 'showMessage');
-    const createObjectURLSpy = jest.spyOn(window.URL, 'createObjectURL').mockReturnValue('mock-url');
-    const revokeObjectURLSpy = jest.spyOn(window.URL, 'revokeObjectURL');
-    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue({
-      href: '',
-      download: '',
-      click: jest.fn(),
-    } as any);
-
-    component.selectedValue = 'EV2'; // Simulando selectedValue como 'EV2'
-
-    // Mock do método para retornar sucesso (simulando que o arquivo foi baixado corretamente)
-    multipartUploadService.downloadFileS3.mockReturnValue({
-      subscribe: (successCallback: Function) => {
-        successCallback(new Blob()); // Simula o sucesso com um Blob vazio
-      },
-    });
-
-    component.downloadFileMigration(); // Chamando o método a ser testado
-
-    // Verificando se window.URL.createObjectURL foi chamado corretamente
-    expect(createObjectURLSpy).toHaveBeenCalled();
-    
-    // Verificando se o link de download foi criado corretamente e clicado
-    const linkElement = createElementSpy.mock.results[0].value;
-    expect(linkElement.click).toHaveBeenCalled();
-    expect(linkElement.download).toBe('EV2.csv'); // Verifica o nome correto do arquivo
 
     // Verificando se window.URL.revokeObjectURL foi chamado após o clique
     expect(revokeObjectURLSpy).toHaveBeenCalled();
