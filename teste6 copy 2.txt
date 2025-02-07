@@ -1,94 +1,103 @@
-import { MyComponent } from './my-component';  // Ajuste o caminho para o seu componente
+import { YourClass } from './YourClass'; // Import the class containing the handleConfirm method
+import { updateLeadsFromSelection } from './someModule'; // Import the module that contains updateLeadsFromSelection
 
-describe('MyComponent', () => {
-  let component: MyComponent;
-  
+jest.mock('./someModule', () => ({
+  updateLeadsFromSelection: jest.fn(),
+}));
+
+describe('YourClass - handleConfirm', () => {
+  let instance: YourClass;
+
   beforeEach(() => {
-    // Criação de uma instância do componente
-    component = new MyComponent();
+    // Create a fresh instance of the class before each test
+    instance = new YourClass();
 
-    // Mock de funções
-    jest.spyOn(component, 'updateFileMultiple');
-    jest.spyOn(component, 'startStepFunctionProspect');
-    jest.spyOn(component, 'startStepFunctionOportunidades');
-    jest.spyOn(component, 'startStepFunction4966');
-    jest.spyOn(component, 'showMessage');
+    // Mock methods to prevent side effects and control flow
+    instance.showToast = jest.fn();
+    instance.refreshPage = jest.fn();
+    instance.closedModal = jest.fn();
   });
 
-  it('deve chamar updateFileMultiple e showMessage quando nameFunc for "OPP" e selectedFiles estiver vazio', () => {
-    const response = { message: 'Erro ao processar OPP' };
+  it('should show a warning when phone is not selected', () => {
+    instance.hasPhoneColumn = true;
+    instance.processedData = [{ selectedPhone: null, selectedEmail: 'test@example.com', selectedMobilePhone: '12345' }];
+    
+    instance.handleConfirm();
 
-    component.nameFunc = 'OPP';
-    component.selectedFiles = [];
-
-    // Chama o método
-    component.startStepFunctionAWS(response);
-
-    // Verifica se updateFileMultiple foi chamado
-    expect(component.updateFileMultiple).toHaveBeenCalled();
-
-    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
-    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms, já que setTimeout é usado
-    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar OPP', 'error');
+    expect(instance.showToast).toHaveBeenCalledWith(
+      'Por favor, preencha o campo telefone',
+      'warning',
+      'Atenção!'
+    );
+    expect(instance.isLoading).toBe(false);
+    expect(instance.isValid).toBe(false); // The validation should be set to false
   });
 
-  it('deve chamar startStepFunctionProspect e showMessage quando nameFunc for "Prospect"', () => {
-    const response = { message: 'Erro ao processar Prospect' };
+  it('should show a warning when email is not selected', () => {
+    instance.hasEmailColumn = true;
+    instance.processedData = [{ selectedPhone: '12345', selectedEmail: null, selectedMobilePhone: '67890' }];
+    
+    instance.handleConfirm();
 
-    component.nameFunc = 'Prospect';
-    component.selectedFiles = [];
-
-    // Chama o método
-    component.startStepFunctionAWS(response);
-
-    // Verifica se startStepFunctionProspect foi chamado
-    expect(component.startStepFunctionProspect).toHaveBeenCalled();
-
-    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
-    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms
-    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar Prospect', 'error');
+    expect(instance.showToast).toHaveBeenCalledWith(
+      'Por favor, preencha o campo email',
+      'warning',
+      'Atenção!'
+    );
+    expect(instance.isLoading).toBe(false);
+    expect(instance.isValid).toBe(false); // The validation should be set to false
   });
 
-  it('deve chamar startStepFunctionOportunidades e showMessage quando nameFunc for "oportunidades360"', () => {
-    const response = { message: 'Erro ao processar Oportunidades360' };
+  it('should show a warning when mobile phone is not selected', () => {
+    instance.hasMobilePhoneColumn = true;
+    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: null }];
+    
+    instance.handleConfirm();
 
-    component.nameFunc = 'oportunidades360';
-    component.selectedFiles = [];
-
-    // Chama o método
-    component.startStepFunctionAWS(response);
-
-    // Verifica se startStepFunctionOportunidades foi chamado
-    expect(component.startStepFunctionOportunidades).toHaveBeenCalled();
-
-    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
-    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms
-    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar Oportunidades360', 'error');
+    expect(instance.showToast).toHaveBeenCalledWith(
+      'Por favor, preencha o campo mobile',
+      'warning',
+      'Atenção!'
+    );
+    expect(instance.isLoading).toBe(false);
+    expect(instance.isValid).toBe(false); // The validation should be set to false
   });
 
-  it('deve chamar startStepFunction4966 e showMessage quando nameFunc for "atraso"', () => {
-    const response = { message: 'Erro ao processar Atraso' };
+  it('should update leads if all required fields are selected', async () => {
+    instance.hasPhoneColumn = true;
+    instance.hasEmailColumn = true;
+    instance.hasMobilePhoneColumn = true;
+    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890', idLead: 1 }];
+    instance.isValid = true;
 
-    component.nameFunc = 'atraso';
-    component.selectedFiles = [];
+    updateLeadsFromSelection.mockResolvedValueOnce('success'); // Mock successful update
 
-    // Chama o método
-    component.startStepFunctionAWS(response);
+    await instance.handleConfirm();
 
-    // Verifica se startStepFunction4966 foi chamado
-    expect(component.startStepFunction4966).toHaveBeenCalled();
-
-    // Verifica se showMessage foi chamado após 500ms com a mensagem correta
-    jest.advanceTimersByTime(500);  // Avança o tempo para 500ms
-    expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar Atraso', 'error');
+    expect(instance.isLoading).toBe(false);
+    expect(instance.showToast).toHaveBeenCalledWith(
+      'Dados Atualizados, aguarde a pagina atualizar',
+      'success',
+      'Sucesso!'
+    );
+    expect(instance.refreshPage).toHaveBeenCalled();
+    expect(instance.closedModal).toHaveBeenCalled();
   });
 
-  // Resetando timers antes de cada teste
-  beforeAll(() => {
-    jest.useFakeTimers();
-  });
+  it('should handle errors when updateLeadsFromSelection fails', async () => {
+    instance.hasPhoneColumn = true;
+    instance.hasEmailColumn = true;
+    instance.hasMobilePhoneColumn = true;
+    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890', idLead: 1 }];
+    instance.isValid = true;
 
-  afterAll(() => {
-    jest.useRealTimers();
+    updateLeadsFromSelection.mockRejectedValueOnce(new Error('Some error'));
+
+    await instance.handleConfirm();
+
+    expect(instance.isLoading).toBe(false);
+    expect(instance.showToast).not.toHaveBeenCalled();
+    expect(instance.refreshPage).not.toHaveBeenCalled();
+    expect(instance.closedModal).toHaveBeenCalled();
   });
 });
