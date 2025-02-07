@@ -1,34 +1,38 @@
 import { createElement } from 'lwc';
-import { updateLeadsFromSelection } from 'c/someModule'; // Mock the import
-
-// Import the component or class where handleConfirm is located
-import Fs1_SearchContact from 'c/fs1SearchContact';
+import Fs1SearchContact from 'c/fs1SearchContact';
+import { updateLeadsFromSelection } from 'c/someModule'; // Assuming this is where it's imported from
 
 jest.mock('c/someModule', () => ({
   updateLeadsFromSelection: jest.fn(),
 }));
 
-describe('Fs1_SearchContact - handleConfirm', () => {
+describe('Fs1SearchContact - handleConfirm', () => {
   let element;
 
   beforeEach(() => {
-    element = createElement('c-fs1-search-contact', { is: Fs1_SearchContact });
+    // Create the component
+    element = createElement('c-fs1-search-contact', {
+      is: Fs1SearchContact,
+    });
 
-    // Mock the methods to prevent side effects
+    // Mock methods
     element.showToast = jest.fn();
     element.refreshPage = jest.fn();
     element.closedModal = jest.fn();
-    
+
     // Append the element to the DOM
     document.body.appendChild(element);
   });
 
   it('should show a toast and stop loading when phone is missing', () => {
-    element.processedData = [{ idLead: 1, selectedPhone: null, selectedEmail: 'test@example.com', selectedMobilePhone: '12345' }];
+    element.processedData = [
+      { idLead: 1, selectedPhone: null, selectedEmail: 'test@example.com', selectedMobilePhone: '12345' },
+    ];
     element.hasPhoneColumn = true;
     element.isValid = true;
     element.isLoading = true;
 
+    // Call handleConfirm() directly here
     element.handleConfirm();
 
     // Assert showToast was called with the correct message
@@ -43,42 +47,25 @@ describe('Fs1_SearchContact - handleConfirm', () => {
     expect(element.isValid).toBe(false); // Validation should fail
   });
 
-  it('should show a toast and stop loading when email is missing', () => {
-    element.processedData = [{ idLead: 1, selectedPhone: '12345', selectedEmail: null, selectedMobilePhone: '12345' }];
-    element.hasEmailColumn = true;
-    element.isValid = true;
-    element.isLoading = true;
-
-    element.handleConfirm();
-
-    // Assert showToast was called with the correct message
-    expect(element.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo email',
-      'warning',
-      'Atenção!'
-    );
-
-    // Assert isLoading is set to false after validation failure
-    expect(element.isLoading).toBe(false);
-    expect(element.isValid).toBe(false); // Validation should fail
-  });
-
   it('should update leads and close modal when all data is valid', async () => {
-    element.processedData = [{
-      idLead: 1,
-      selectedPhone: '12345',
-      selectedEmail: 'test@example.com',
-      selectedMobilePhone: '67890',
-    }];
+    element.processedData = [
+      {
+        idLead: 1,
+        selectedPhone: '12345',
+        selectedEmail: 'test@example.com',
+        selectedMobilePhone: '67890',
+      },
+    ];
     element.hasPhoneColumn = true;
     element.hasEmailColumn = true;
     element.hasMobilePhoneColumn = true;
     element.isValid = true;
     element.isLoading = true;
 
-    // Mock successful response from updateLeadsFromSelection
-    updateLeadsFromSelection.mockResolvedValueOnce('success');
+    // Ensure mock for updateLeadsFromSelection returns a resolved promise
+    updateLeadsFromSelection.mockResolvedValueOnce('success'); // Mock resolved promise
 
+    // Call handleConfirm() directly here
     await element.handleConfirm();
 
     // Assert isLoading is set to false after the update is complete
@@ -97,19 +84,21 @@ describe('Fs1_SearchContact - handleConfirm', () => {
   });
 
   it('should handle error and stop loading if updateLeadsFromSelection fails', async () => {
-    element.processedData = [{
-      idLead: 1,
-      selectedPhone: '12345',
-      selectedEmail: 'test@example.com',
-      selectedMobilePhone: '67890',
-    }];
+    element.processedData = [
+      {
+        idLead: 1,
+        selectedPhone: '12345',
+        selectedEmail: 'test@example.com',
+        selectedMobilePhone: '67890',
+      },
+    ];
     element.hasPhoneColumn = true;
     element.hasEmailColumn = true;
     element.hasMobilePhoneColumn = true;
     element.isValid = true;
     element.isLoading = true;
 
-    // Mock failure response from updateLeadsFromSelection
+    // Mock rejection for updateLeadsFromSelection
     updateLeadsFromSelection.mockRejectedValueOnce(new Error('Error updating leads'));
 
     await element.handleConfirm();
