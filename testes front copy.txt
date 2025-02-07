@@ -102,3 +102,27 @@ describe('Fs1SearchContact - handleSelectChange', () => {
     expect(element.processedData[0].selectedPhone).toBe('12345');
   });
 });
+
+
+
+handleSelectChange(event) {
+  const rowId = event.target.dataset.id;
+  const selectedValue = event.target.value;
+
+  const index = this.processedData.findIndex(row => row.id == rowId);
+
+  if (index !== -1) {
+    // Identificando o campo que precisa ser alterado
+    const fieldName = event.target.name === 'selectedPhone' ? 'selectedPhone' :
+      event.target.name === 'selectedEmail' ? 'selectedEmail' :
+      event.target.name === 'selectedMobilePhone' ? 'selectedMobilePhone' : '';
+
+    if (fieldName) {
+      // Atualizando o campo diretamente, mas sem substituir o objeto inteiro
+      this.processedData[index] = {
+        ...this.processedData[index],
+        [fieldName]: selectedValue
+      };
+    }
+  }
+}
