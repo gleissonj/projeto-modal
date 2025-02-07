@@ -3,18 +3,18 @@ import { LightningElement, api } from 'lwc';
 export default class TabelaComSelecao extends LightningElement {
     @api processedData;  // Recebe os dados da tabela
 
-    // Computa se há dados para mostrar
-    get hasDataToShow() {
-        // Verifica se existe pelo menos uma linha com dados em mobileOptions ou emailOptions
-        return this.processedData.some(row => row.mobileOptions.length > 0 || row.emailOptions.length > 0);
+    // Computa se há dados válidos em cada linha
+    get processedDataWithValidity() {
+        return this.processedData.map(row => ({
+            ...row,
+            hasData: row.mobileOptions.length > 0 || row.emailOptions.length > 0
+        }));
     }
 
     handleSelectChange(event) {
-        // Lógica para lidar com a alteração de seleção
         const selectedValue = event.target.value;
         const rowId = event.target.dataset.id;
 
-        // Encontre a linha correspondente e atualize o valor selecionado
         const row = this.processedData.find(item => item.id === rowId);
         if (event.target.name === 'selectedPhone') {
             row.selectedPhone = selectedValue;
@@ -24,7 +24,6 @@ export default class TabelaComSelecao extends LightningElement {
     }
 
     handleConfirm() {
-        // Lógica para o botão de confirmação
         console.log('Dados confirmados:', this.processedData);
     }
 }
