@@ -1,145 +1,87 @@
 import { createElement } from 'lwc';
-import Fs1SearchContact from 'c/fs1SearchContact';
+import YourComponent from 'c/yourComponent'; // Altere para o nome correto do seu componente
 
-describe('Fs1SearchContact - handleSelectChange', () => {
-  let element;
+describe('YourComponent - processData', () => {
+    let element;
 
-  beforeEach(() => {
-    // Criação do componente
-    element = createElement('c-fs1-search-contact', {
-      is: Fs1SearchContact,
+    beforeEach(() => {
+        // Cria o componente antes de cada teste
+        element = createElement('c-your-component', {
+            is: YourComponent
+        });
+
+        // Adiciona o componente ao corpo do documento para que ele seja montado
+        document.body.appendChild(element);
     });
 
-    // Adicionando o elemento ao DOM
-    document.body.appendChild(element);
-  });
+    it('should process data correctly and update processedData', () => {
+        // Mock de dados de entrada
+        const mockContacts = [
+            {
+                idLead: 1,
+                name: 'John Doe',
+                phones: [{ type: 'Atual', value: '123-456' }, { type: 'Novo', value: '789-101' }],
+                emails: [{ type: 'Atual', value: 'john.doe@example.com' }],
+                mobilePhones: [{ type: 'Novo', value: '111-222' }]
+            },
+            {
+                idLead: 2,
+                name: 'Jane Smith',
+                phones: [{ type: 'Novo', value: '333-444' }],
+                emails: [],
+                mobilePhones: [{ type: 'Atual', value: '555-666' }]
+            }
+        ];
 
-  it('deve atualizar selectedPhone no processedData quando o telefone for alterado', () => {
-    // Definindo o estado inicial de processedData
-    element.processedData = [
-      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
-    ];
+        // Configura o mock de contatos
+        element.contacts = mockContacts;
+        
+        // Chama o método processData
+        element.processData();
+        
+        // Aguardar o próximo ciclo de atualização do DOM
+        return Promise.resolve().then(() => {
+            // Verifica se a processedData foi populada corretamente
+            expect(element.processedData).toEqual([
+                {
+                    id: 'John Doe-0',
+                    idLead: 1,
+                    selectedPhone: '',
+                    selectedEmail: '',
+                    selectedMobilePhone: '',
+                    telefoneOptions: [
+                        { label: 'Atual: 123-456', value: '123-456' },
+                        { label: 'Novo: 789-101', value: '789-101' }
+                    ],
+                    emailOptions: [
+                        { label: 'Atual: john.doe@example.com', value: 'john.doe@example.com' }
+                    ],
+                    mobilePhoneOptions: [
+                        { label: 'Novo: 111-222', value: '111-222' }
+                    ]
+                },
+                {
+                    id: 'Jane Smith-1',
+                    idLead: 2,
+                    selectedPhone: '',
+                    selectedEmail: '',
+                    selectedMobilePhone: '',
+                    telefoneOptions: [
+                        { label: 'Novo: 333-444', value: '333-444' }
+                    ],
+                    emailOptions: [],
+                    mobilePhoneOptions: [
+                        { label: 'Atual: 555-666', value: '555-666' }
+                    ]
+                }
+            ]);
 
-    // Criando o evento de mudança com os dados do target (simulando a interação do usuário)
-    const mockEvent = {
-      target: {
-        dataset: { id: '1' },
-        name: 'selectedPhone',
-        value: '54321',
-      },
-    };
+            // Verifica se as variáveis hasPhoneColumn, hasEmailColumn e hasMobilePhone estão corretas
+            expect(element.hasPhoneColumn).toBe(true);
+            expect(element.hasEmailColumn).toBe(true);
+            expect(element.hasMobilePhone).toBe(true);
+        });
+    });
 
-    // Chamando handleSelectChange com o evento simulado
-    element.handleSelectChange(mockEvent);
-
-    // Verificando se o valor de selectedPhone foi alterado corretamente no processedData
-    expect(element.processedData[0].selectedPhone).toBe('54321');
-  });
-
-  it('deve atualizar selectedEmail no processedData quando o email for alterado', () => {
-    // Definindo o estado inicial de processedData
-    element.processedData = [
-      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
-    ];
-
-    // Criando o evento de mudança com os dados do target (simulando a interação do usuário)
-    const mockEvent = {
-      target: {
-        dataset: { id: '1' },
-        name: 'selectedEmail',
-        value: 'newemail@example.com',
-      },
-    };
-
-    // Chamando handleSelectChange com o evento simulado
-    element.handleSelectChange(mockEvent);
-
-    // Verificando se o valor de selectedEmail foi alterado corretamente no processedData
-    expect(element.processedData[0].selectedEmail).toBe('newemail@example.com');
-  });
-
-  it('deve atualizar selectedMobilePhone no processedData quando o telefone móvel for alterado', () => {
-    // Definindo o estado inicial de processedData
-    element.processedData = [
-      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
-    ];
-
-    // Criando o evento de mudança com os dados do target (simulando a interação do usuário)
-    const mockEvent = {
-      target: {
-        dataset: { id: '1' },
-        name: 'selectedMobilePhone',
-        value: '98765',
-      },
-    };
-
-    // Chamando handleSelectChange com o evento simulado
-    element.handleSelectChange(mockEvent);
-
-    // Verificando se o valor de selectedMobilePhone foi alterado corretamente no processedData
-    expect(element.processedData[0].selectedMobilePhone).toBe('98765');
-  });
-
-  it('não deve fazer nada se o id não for encontrado no processedData', () => {
-    // Definindo o estado inicial de processedData
-    element.processedData = [
-      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
-    ];
-
-    // Criando o evento de mudança com um id que não existe no processedData
-    const mockEvent = {
-      target: {
-        dataset: { id: '999' }, // id que não existe no processedData
-        name: 'selectedPhone',
-        value: '54321',
-      },
-    };
-
-    // Chamando handleSelectChange com o evento simulado
-    element.handleSelectChange(mockEvent);
-
-    // Verificando se nada foi alterado no processedData
-    expect(element.processedData[0].selectedPhone).toBe('12345');
-  });
+    // Outros testes, se necessário, podem ser adicionados aqui
 });
-
-
-
-handleSelectChange(event) {
-  const rowId = event.target.dataset.id;
-  const selectedValue = event.target.value;
-
-  const index = this.processedData.findIndex(row => row.id == rowId);
-
-  if (index !== -1) {
-    // Identificando o campo que precisa ser alterado
-    const fieldName = event.target.name === 'selectedPhone' ? 'selectedPhone' :
-      event.target.name === 'selectedEmail' ? 'selectedEmail' :
-      event.target.name === 'selectedMobilePhone' ? 'selectedMobilePhone' : '';
-
-    if (fieldName) {
-      // Atualizando o campo diretamente, mas sem substituir o objeto inteiro
-      this.processedData[index] = {
-        ...this.processedData[index],
-        [fieldName]: selectedValue
-      };
-    }
-  }
-}
-
-
-
-if (fieldName) {
-  // Criando uma cópia do objeto atual para evitar mutação direta
-  const updatedRow = { ...this.processedData[index] };
-
-  // Atualizando o campo desejado
-  updatedRow[fieldName] = selectedValue;
-
-  // Substituindo o item no array com a versão atualizada
-  this.processedData = [
-    ...this.processedData.slice(0, index), // Parte do array antes do item modificado
-    updatedRow, // O item modificado
-    ...this.processedData.slice(index + 1)  // Parte do array após o item modificado
-  ];
-}
