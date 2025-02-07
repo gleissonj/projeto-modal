@@ -1,30 +1,30 @@
 processData() {
     this.processedData = this.contacts.map((item, index) => {
         // Processa os telefones
-        const telefoneOptions = item.phones && item.phones.length > 0 
+        const telefoneOptions = item.phones && item.phones.length > 0
             ? item.phones.map(p => {
-                const label = p.type == 'Atual' ? `Atual: ${p.value}` : `Novo: ${p.value}`;
+                const label = p.type === 'Atual' ? `Atual: ${p.value}` : `Novo: ${p.value}`;
                 return { label, value: p.value };
-            })
+            }).filter(option => option.value) // Filtra opções vazias
             : [];
-        
+
         // Processa os emails
-        const emailOptions = item.emails && item.emails.length > 0 
+        const emailOptions = item.emails && item.emails.length > 0
             ? item.emails.map(e => {
                 const label = e.type === 'Atual' ? `Atual: ${e.value}` : `Novo: ${e.value}`;
                 return { label, value: e.value };
-            })
+            }).filter(option => option.value) // Filtra opções vazias
             : [];
 
         // Processa os celulares
-        const mobilePhoneOptions = item.mobilePhones && item.mobilePhones.length > 0 
+        const mobilePhoneOptions = item.mobilePhones && item.mobilePhones.length > 0
             ? item.mobilePhones.map(e => {
                 const label = e.type === 'Atual' ? `Atual: ${e.value}` : `Novo: ${e.value}`;
                 return { label, value: e.value };
-            })
+            }).filter(option => option.value) // Filtra opções vazias
             : [];
 
-        // Verifica se existem apenas um valor preenchido, e ajusta os campos selecionados
+        // Inicializa as variáveis para armazenar os valores selecionados
         let selectedEmail = '';
         if (emailOptions.length === 1 && emailOptions[0].value) {
             selectedEmail = emailOptions[0].value;
