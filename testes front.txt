@@ -1,210 +1,30 @@
+import { LightningElement, api } from 'lwc';
 
+export default class TabelaComSelecao extends LightningElement {
+    @api processedData;  // Recebe os dados da tabela
 
+    // Computa se há dados para mostrar
+    get hasDataToShow() {
+        // Verifica se existe pelo menos uma linha com dados em mobileOptions ou emailOptions
+        return this.processedData.some(row => row.mobileOptions.length > 0 || row.emailOptions.length > 0);
+    }
 
+    handleSelectChange(event) {
+        // Lógica para lidar com a alteração de seleção
+        const selectedValue = event.target.value;
+        const rowId = event.target.dataset.id;
 
-handleConfirm
+        // Encontre a linha correspondente e atualize o valor selecionado
+        const row = this.processedData.find(item => item.id === rowId);
+        if (event.target.name === 'selectedPhone') {
+            row.selectedPhone = selectedValue;
+        } else if (event.target.name === 'selectedEmail') {
+            row.selectedEmail = selectedValue;
+        }
+    }
 
-/////////////
-
-
-import { YourClass } from './YourClass'; // Import the class containing the handleConfirm method
-import { updateLeadsFromSelection } from './someModule'; // Import the module that contains updateLeadsFromSelection
-
-jest.mock('./someModule', () => ({
-  updateLeadsFromSelection: jest.fn(),
-}));
-
-describe('YourClass - handleConfirm', () => {
-  let instance: YourClass;
-
-  beforeEach(() => {
-    // Create a fresh instance of the class before each test
-    instance = new YourClass();
-
-    // Mock methods to prevent side effects and control flow
-    instance.showToast = jest.fn();
-    instance.refreshPage = jest.fn();
-    instance.closedModal = jest.fn();
-  });
-
-  it('should show a warning when phone is not selected', () => {
-    instance.hasPhoneColumn = true;
-    instance.processedData = [{ selectedPhone: null, selectedEmail: 'test@example.com', selectedMobilePhone: '12345' }];
-    
-    instance.handleConfirm();
-
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo telefone',
-      'warning',
-      'Atenção!'
-    );
-    expect(instance.isLoading).toBe(false);
-    expect(instance.isValid).toBe(false); // The validation should be set to false
-  });
-
-  it('should show a warning when email is not selected', () => {
-    instance.hasEmailColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: null, selectedMobilePhone: '67890' }];
-    
-    instance.handleConfirm();
-
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo email',
-      'warning',
-      'Atenção!'
-    );
-    expect(instance.isLoading).toBe(false);
-    expect(instance.isValid).toBe(false); // The validation should be set to false
-  });
-
-  it('should show a warning when mobile phone is not selected', () => {
-    instance.hasMobilePhoneColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: null }];
-    
-    instance.handleConfirm();
-
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo mobile',
-      'warning',
-      'Atenção!'
-    );
-    expect(instance.isLoading).toBe(false);
-    expect(instance.isValid).toBe(false); // The validation should be set to false
-  });
-
-  it('should update leads if all required fields are selected', async () => {
-    instance.hasPhoneColumn = true;
-    instance.hasEmailColumn = true;
-    instance.hasMobilePhoneColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890', idLead: 1 }];
-    instance.isValid = true;
-
-    updateLeadsFromSelection.mockResolvedValueOnce('success'); // Mock successful update
-
-    await instance.handleConfirm();
-
-    expect(instance.isLoading).toBe(false);
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Dados Atualizados, aguarde a pagina atualizar',
-      'success',
-      'Sucesso!'
-    );
-    expect(instance.refreshPage).toHaveBeenCalled();
-    expect(instance.closedModal).toHaveBeenCalled();
-  });
-
-  it('should handle errors when updateLeadsFromSelection fails', async () => {
-    instance.hasPhoneColumn = true;
-    instance.hasEmailColumn = true;
-    instance.hasMobilePhoneColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890', idLead: 1 }];
-    instance.isValid = true;
-
-    updateLeadsFromSelection.mockRejectedValueOnce(new Error('Some error'));
-
-    await instance.handleConfirm();
-
-    expect(instance.isLoading).toBe(false);
-    expect(instance.showToast).not.toHaveBeenCalled();
-    expect(instance.refreshPage).not.toHaveBeenCalled();
-    expect(instance.closedModal).toHaveBeenCalled();
-  });
-});
-
-
-
-
-HANDLECHANGE 
-
-
-import { YourClass } from './YourClass'; // Import the class containing the handleSelectChange method
-
-describe('YourClass - handleSelectChange', () => {
-  let instance: YourClass;
-
-  beforeEach(() => {
-    instance = new YourClass();
-
-    // Sample initial processedData
-    instance.processedData = [
-      { id: '1', selectedPhone: '12345', selectedEmail: 'test1@example.com', selectedMobilePhone: '98765' },
-      { id: '2', selectedPhone: '23456', selectedEmail: 'test2@example.com', selectedMobilePhone: '87654' },
-    ];
-  });
-
-  it('should update selectedPhone when event target name is selectedPhone', () => {
-    const event = {
-      target: {
-        dataset: { id: '1' }, 
-        value: '54321', 
-        name: 'selectedPhone',
-      }
-    };
-
-    instance.handleSelectChange(event);
-
-    expect(instance.processedData[0].selectedPhone).toBe('54321');
-  });
-
-  it('should update selectedEmail when event target name is selectedEmail', () => {
-    const event = {
-      target: {
-        dataset: { id: '2' },
-        value: 'updated@example.com',
-        name: 'selectedEmail',
-      }
-    };
-
-    instance.handleSelectChange(event);
-
-    expect(instance.processedData[1].selectedEmail).toBe('updated@example.com');
-  });
-
-  it('should update selectedMobilePhone when event target name is selectedMobilePhone', () => {
-    const event = {
-      target: {
-        dataset: { id: '1' },
-        value: '11111',
-        name: 'selectedMobilePhone',
-      }
-    };
-
-    instance.handleSelectChange(event);
-
-    expect(instance.processedData[0].selectedMobilePhone).toBe('11111');
-  });
-
-  it('should not update if field name is not recognized', () => {
-    const event = {
-      target: {
-        dataset: { id: '1' },
-        value: 'nonexistent',
-        name: 'nonexistentField',
-      }
-    };
-
-    instance.handleSelectChange(event);
-
-    // The value should remain unchanged
-    expect(instance.processedData[0].selectedPhone).toBe('12345');
-    expect(instance.processedData[0].selectedEmail).toBe('test1@example.com');
-    expect(instance.processedData[0].selectedMobilePhone).toBe('98765');
-  });
-
-  it('should not update anything if id is not found in processedData', () => {
-    const event = {
-      target: {
-        dataset: { id: '999' }, // ID that does not exist in processedData
-        value: '12345',
-        name: 'selectedPhone',
-      }
-    };
-
-    instance.handleSelectChange(event);
-
-    // The data should not change as the id '999' doesn't exist
-    expect(instance.processedData[0].selectedPhone).toBe('12345');
-    expect(instance.processedData[1].selectedPhone).toBe('23456');
-  });
-
-});
+    handleConfirm() {
+        // Lógica para o botão de confirmação
+        console.log('Dados confirmados:', this.processedData);
+    }
+}
