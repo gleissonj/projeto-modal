@@ -1,118 +1,104 @@
 import { createElement } from 'lwc';
 import Fs1SearchContact from 'c/fs1SearchContact';
-import { updateLeadsFromSelection } from 'c/someModule'; // Assuming this is where it's imported from
 
-jest.mock('c/someModule', () => ({
-  updateLeadsFromSelection: jest.fn(),
-}));
-
-describe('Fs1SearchContact - handleConfirm', () => {
+describe('Fs1SearchContact - handleSelectChange', () => {
   let element;
 
   beforeEach(() => {
-    // Create the component
+    // Criação do componente
     element = createElement('c-fs1-search-contact', {
       is: Fs1SearchContact,
     });
 
-    // Mock methods
-    element.showToast = jest.fn();
-    element.refreshPage = jest.fn();
-    element.closedModal = jest.fn();
-
-    // Append the element to the DOM
+    // Adicionando o elemento ao DOM
     document.body.appendChild(element);
   });
 
-  it('should show a toast and stop loading when phone is missing', () => {
+  it('deve atualizar selectedPhone no processedData quando o telefone for alterado', () => {
+    // Definindo o estado inicial de processedData
     element.processedData = [
-      { idLead: 1, selectedPhone: null, selectedEmail: 'test@example.com', selectedMobilePhone: '12345' },
+      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
     ];
-    element.hasPhoneColumn = true;
-    element.isValid = true;
-    element.isLoading = true;
 
-    // Call handleConfirm() directly here
-    element.handleConfirm();
+    // Criando o evento de mudança com os dados do target (simulando a interação do usuário)
+    const mockEvent = {
+      target: {
+        dataset: { id: '1' },
+        name: 'selectedPhone',
+        value: '54321',
+      },
+    };
 
-    // Assert showToast was called with the correct message
-    expect(element.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo telefone',
-      'warning',
-      'Atenção!'
-    );
+    // Chamando handleSelectChange com o evento simulado
+    element.handleSelectChange(mockEvent);
 
-    // Assert isLoading is set to false after validation failure
-    expect(element.isLoading).toBe(false);
-    expect(element.isValid).toBe(false); // Validation should fail
+    // Verificando se o valor de selectedPhone foi alterado corretamente no processedData
+    expect(element.processedData[0].selectedPhone).toBe('54321');
   });
 
-  it('should update leads and close modal when all data is valid', async () => {
+  it('deve atualizar selectedEmail no processedData quando o email for alterado', () => {
+    // Definindo o estado inicial de processedData
     element.processedData = [
-      {
-        idLead: 1,
-        selectedPhone: '12345',
-        selectedEmail: 'test@example.com',
-        selectedMobilePhone: '67890',
-      },
+      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
     ];
-    element.hasPhoneColumn = true;
-    element.hasEmailColumn = true;
-    element.hasMobilePhoneColumn = true;
-    element.isValid = true;
-    element.isLoading = true;
 
-    // Ensure mock for updateLeadsFromSelection returns a resolved promise
-    updateLeadsFromSelection.mockResolvedValueOnce('success'); // Mock resolved promise
+    // Criando o evento de mudança com os dados do target (simulando a interação do usuário)
+    const mockEvent = {
+      target: {
+        dataset: { id: '1' },
+        name: 'selectedEmail',
+        value: 'newemail@example.com',
+      },
+    };
 
-    // Call handleConfirm() directly here
-    await element.handleConfirm();
+    // Chamando handleSelectChange com o evento simulado
+    element.handleSelectChange(mockEvent);
 
-    // Assert isLoading is set to false after the update is complete
-    expect(element.isLoading).toBe(false);
-
-    // Assert showToast was called with the success message
-    expect(element.showToast).toHaveBeenCalledWith(
-      'Dados Atualizados, aguarde a pagina atualizar',
-      'success',
-      'Sucesso!'
-    );
-
-    // Assert refreshPage and closedModal were called
-    expect(element.refreshPage).toHaveBeenCalled();
-    expect(element.closedModal).toHaveBeenCalled();
+    // Verificando se o valor de selectedEmail foi alterado corretamente no processedData
+    expect(element.processedData[0].selectedEmail).toBe('newemail@example.com');
   });
 
-  it('should handle error and stop loading if updateLeadsFromSelection fails', async () => {
+  it('deve atualizar selectedMobilePhone no processedData quando o telefone móvel for alterado', () => {
+    // Definindo o estado inicial de processedData
     element.processedData = [
-      {
-        idLead: 1,
-        selectedPhone: '12345',
-        selectedEmail: 'test@example.com',
-        selectedMobilePhone: '67890',
-      },
+      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
     ];
-    element.hasPhoneColumn = true;
-    element.hasEmailColumn = true;
-    element.hasMobilePhoneColumn = true;
-    element.isValid = true;
-    element.isLoading = true;
 
-    // Mock rejection for updateLeadsFromSelection
-    updateLeadsFromSelection.mockRejectedValueOnce(new Error('Error updating leads'));
+    // Criando o evento de mudança com os dados do target (simulando a interação do usuário)
+    const mockEvent = {
+      target: {
+        dataset: { id: '1' },
+        name: 'selectedMobilePhone',
+        value: '98765',
+      },
+    };
 
-    await element.handleConfirm();
+    // Chamando handleSelectChange com o evento simulado
+    element.handleSelectChange(mockEvent);
 
-    // Assert isLoading is set to false after the error
-    expect(element.isLoading).toBe(false);
+    // Verificando se o valor de selectedMobilePhone foi alterado corretamente no processedData
+    expect(element.processedData[0].selectedMobilePhone).toBe('98765');
+  });
 
-    // Assert showToast is not called in case of error
-    expect(element.showToast).not.toHaveBeenCalled();
-    
-    // Assert refreshPage is not called due to error
-    expect(element.refreshPage).not.toHaveBeenCalled();
+  it('não deve fazer nada se o id não for encontrado no processedData', () => {
+    // Definindo o estado inicial de processedData
+    element.processedData = [
+      { id: 1, selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890' },
+    ];
 
-    // Assert closedModal is called
-    expect(element.closedModal).toHaveBeenCalled();
+    // Criando o evento de mudança com um id que não existe no processedData
+    const mockEvent = {
+      target: {
+        dataset: { id: '999' }, // id que não existe no processedData
+        name: 'selectedPhone',
+        value: '54321',
+      },
+    };
+
+    // Chamando handleSelectChange com o evento simulado
+    element.handleSelectChange(mockEvent);
+
+    // Verificando se nada foi alterado no processedData
+    expect(element.processedData[0].selectedPhone).toBe('12345');
   });
 });
