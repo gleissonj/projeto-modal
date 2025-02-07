@@ -1,0 +1,129 @@
+import { createElement } from 'lwc';
+import { updateLeadsFromSelection } from 'c/someModule'; // Mock the import
+
+// Import the component or class where handleConfirm is located
+import Fs1_SearchContact from 'c/fs1SearchContact';
+
+jest.mock('c/someModule', () => ({
+  updateLeadsFromSelection: jest.fn(),
+}));
+
+describe('Fs1_SearchContact - handleConfirm', () => {
+  let element;
+
+  beforeEach(() => {
+    element = createElement('c-fs1-search-contact', { is: Fs1_SearchContact });
+
+    // Mock the methods to prevent side effects
+    element.showToast = jest.fn();
+    element.refreshPage = jest.fn();
+    element.closedModal = jest.fn();
+    
+    // Append the element to the DOM
+    document.body.appendChild(element);
+  });
+
+  it('should show a toast and stop loading when phone is missing', () => {
+    element.processedData = [{ idLead: 1, selectedPhone: null, selectedEmail: 'test@example.com', selectedMobilePhone: '12345' }];
+    element.hasPhoneColumn = true;
+    element.isValid = true;
+    element.isLoading = true;
+
+    element.handleConfirm();
+
+    // Assert showToast was called with the correct message
+    expect(element.showToast).toHaveBeenCalledWith(
+      'Por favor, preencha o campo telefone',
+      'warning',
+      'Atenção!'
+    );
+
+    // Assert isLoading is set to false after validation failure
+    expect(element.isLoading).toBe(false);
+    expect(element.isValid).toBe(false); // Validation should fail
+  });
+
+  it('should show a toast and stop loading when email is missing', () => {
+    element.processedData = [{ idLead: 1, selectedPhone: '12345', selectedEmail: null, selectedMobilePhone: '12345' }];
+    element.hasEmailColumn = true;
+    element.isValid = true;
+    element.isLoading = true;
+
+    element.handleConfirm();
+
+    // Assert showToast was called with the correct message
+    expect(element.showToast).toHaveBeenCalledWith(
+      'Por favor, preencha o campo email',
+      'warning',
+      'Atenção!'
+    );
+
+    // Assert isLoading is set to false after validation failure
+    expect(element.isLoading).toBe(false);
+    expect(element.isValid).toBe(false); // Validation should fail
+  });
+
+  it('should update leads and close modal when all data is valid', async () => {
+    element.processedData = [{
+      idLead: 1,
+      selectedPhone: '12345',
+      selectedEmail: 'test@example.com',
+      selectedMobilePhone: '67890',
+    }];
+    element.hasPhoneColumn = true;
+    element.hasEmailColumn = true;
+    element.hasMobilePhoneColumn = true;
+    element.isValid = true;
+    element.isLoading = true;
+
+    // Mock successful response from updateLeadsFromSelection
+    updateLeadsFromSelection.mockResolvedValueOnce('success');
+
+    await element.handleConfirm();
+
+    // Assert isLoading is set to false after the update is complete
+    expect(element.isLoading).toBe(false);
+
+    // Assert showToast was called with the success message
+    expect(element.showToast).toHaveBeenCalledWith(
+      'Dados Atualizados, aguarde a pagina atualizar',
+      'success',
+      'Sucesso!'
+    );
+
+    // Assert refreshPage and closedModal were called
+    expect(element.refreshPage).toHaveBeenCalled();
+    expect(element.closedModal).toHaveBeenCalled();
+  });
+
+  it('should handle error and stop loading if updateLeadsFromSelection fails', async () => {
+    element.processedData = [{
+      idLead: 1,
+      selectedPhone: '12345',
+      selectedEmail: 'test@example.com',
+      selectedMobilePhone: '67890',
+    }];
+    element.hasPhoneColumn = true;
+    element.hasEmailColumn = true;
+    element.hasMobilePhoneColumn = true;
+    element.isValid = true;
+    element.isLoading = true;
+
+    // Mock failure response from updateLeadsFromSelection
+    updateLeadsFromSelection.mockRejectedValueOnce(new Error('Error updating leads'));
+
+    await element.handleConfirm();
+
+    // Assert isLoading is set to false after the error
+    expect(element.isLoading).toBe(false);
+
+    // Assert showToast is not called in case of error
+    expect(element.showToast).not.toHaveBeenCalled();
+    
+    // Assert refreshPage is not called due to error
+    expect(element.refreshPage).not.toHaveBeenCalled();
+
+    // Assert closedModal is called
+    expect(element.closedModal).toHaveBeenCalled();
+  });
+});
