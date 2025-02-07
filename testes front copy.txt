@@ -56,7 +56,28 @@ processData() {
         };
     });
 
-    this.hasPhoneColumn = this.contacts.some(item => item.phones.length > 0);
-    this.hasEmailColumn = this.contacts.some(item => item.emails.length > 0);
-    this.hasMobilePhone = this.contacts.some(item => item.mobilePhones.length > 0);
+    // Verifica se há pelo menos uma opção válida em cada coluna
+    this.hasPhoneColumn = this.contacts.some(item => {
+        const telefoneOptions = item.phones && item.phones.length > 0
+            ? item.phones.map(p => ({ label: p.type === 'Atual' ? `Atual: ${p.value}` : `Novo: ${p.value}`, value: p.value }))
+            .filter(option => option.value) // Filtra opções vazias
+            : [];
+        return telefoneOptions.length > 0; // Verifica se existem opções válidas
+    });
+
+    this.hasEmailColumn = this.contacts.some(item => {
+        const emailOptions = item.emails && item.emails.length > 0
+            ? item.emails.map(e => ({ label: e.type === 'Atual' ? `Atual: ${e.value}` : `Novo: ${e.value}`, value: e.value }))
+            .filter(option => option.value) // Filtra opções vazias
+            : [];
+        return emailOptions.length > 0; // Verifica se existem opções válidas
+    });
+
+    this.hasMobilePhone = this.contacts.some(item => {
+        const mobilePhoneOptions = item.mobilePhones && item.mobilePhones.length > 0
+            ? item.mobilePhones.map(e => ({ label: e.type === 'Atual' ? `Atual: ${e.value}` : `Novo: ${e.value}`, value: e.value }))
+            .filter(option => option.value) // Filtra opções vazias
+            : [];
+        return mobilePhoneOptions.length > 0; // Verifica se existem opções válidas
+    });
 }
