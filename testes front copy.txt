@@ -35,52 +35,49 @@ describe('YourComponent - processData', () => {
 
         // Configura o mock de contatos
         element.contacts = mockContacts;
-        
+
         // Chama o método processData
         element.processData();
-        
-        // Aguardar o próximo ciclo de atualização do DOM
-        return Promise.resolve().then(() => {
-            // Verifica se a processedData foi populada corretamente
-            expect(element.processedData).toEqual([
-                {
-                    id: 'John Doe-0',
-                    idLead: 1,
-                    selectedPhone: '',
-                    selectedEmail: '',
-                    selectedMobilePhone: '',
-                    telefoneOptions: [
-                        { label: 'Atual: 123-456', value: '123-456' },
-                        { label: 'Novo: 789-101', value: '789-101' }
-                    ],
-                    emailOptions: [
-                        { label: 'Atual: john.doe@example.com', value: 'john.doe@example.com' }
-                    ],
-                    mobilePhoneOptions: [
-                        { label: 'Novo: 111-222', value: '111-222' }
-                    ]
-                },
-                {
-                    id: 'Jane Smith-1',
-                    idLead: 2,
-                    selectedPhone: '',
-                    selectedEmail: '',
-                    selectedMobilePhone: '',
-                    telefoneOptions: [
-                        { label: 'Novo: 333-444', value: '333-444' }
-                    ],
-                    emailOptions: [],
-                    mobilePhoneOptions: [
-                        { label: 'Atual: 555-666', value: '555-666' }
-                    ]
-                }
-            ]);
 
-            // Verifica se as variáveis hasPhoneColumn, hasEmailColumn e hasMobilePhone estão corretas
-            expect(element.hasPhoneColumn).toBe(true);
-            expect(element.hasEmailColumn).toBe(true);
-            expect(element.hasMobilePhone).toBe(true);
-        });
+        // Verifica se a processedData foi populada corretamente
+        expect(element.processedData).toEqual([
+            {
+                id: 'John Doe-0',
+                idLead: 1,
+                selectedPhone: '',
+                selectedEmail: '',
+                selectedMobilePhone: '',
+                telefoneOptions: [
+                    { label: 'Atual: 123-456', value: '123-456' },
+                    { label: 'Novo: 789-101', value: '789-101' }
+                ],
+                emailOptions: [
+                    { label: 'Atual: john.doe@example.com', value: 'john.doe@example.com' }
+                ],
+                mobilePhoneOptions: [
+                    { label: 'Novo: 111-222', value: '111-222' }
+                ]
+            },
+            {
+                id: 'Jane Smith-1',
+                idLead: 2,
+                selectedPhone: '',
+                selectedEmail: '',
+                selectedMobilePhone: '',
+                telefoneOptions: [
+                    { label: 'Novo: 333-444', value: '333-444' }
+                ],
+                emailOptions: [],
+                mobilePhoneOptions: [
+                    { label: 'Atual: 555-666', value: '555-666' }
+                ]
+            }
+        ]);
+
+        // Verifica se as variáveis hasPhoneColumn, hasEmailColumn e hasMobilePhone estão corretas
+        expect(element.hasPhoneColumn).toBe(true);
+        expect(element.hasEmailColumn).toBe(true);
+        expect(element.hasMobilePhone).toBe(true);
     });
 
     // Outros testes, se necessário, podem ser adicionados aqui
