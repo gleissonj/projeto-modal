@@ -126,3 +126,20 @@ handleSelectChange(event) {
     }
   }
 }
+
+
+
+if (fieldName) {
+  // Criando uma cópia do objeto atual para evitar mutação direta
+  const updatedRow = { ...this.processedData[index] };
+
+  // Atualizando o campo desejado
+  updatedRow[fieldName] = selectedValue;
+
+  // Substituindo o item no array com a versão atualizada
+  this.processedData = [
+    ...this.processedData.slice(0, index), // Parte do array antes do item modificado
+    updatedRow, // O item modificado
+    ...this.processedData.slice(index + 1)  // Parte do array após o item modificado
+  ];
+}
