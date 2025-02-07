@@ -1,84 +1,62 @@
-import { createElement } from 'lwc';
-import YourComponent from 'c/yourComponent'; // Altere para o nome correto do seu componente
+processData() {
+    this.processedData = this.contacts.map((item, index) => {
+        // Processa os telefones
+        const telefoneOptions = item.phones && item.phones.length > 0 
+            ? item.phones.map(p => {
+                const label = p.type == 'Atual' ? `Atual: ${p.value}` : `Novo: ${p.value}`;
+                return { label, value: p.value };
+            })
+            : [];
+        
+        // Processa os emails
+        const emailOptions = item.emails && item.emails.length > 0 
+            ? item.emails.map(e => {
+                const label = e.type === 'Atual' ? `Atual: ${e.value}` : `Novo: ${e.value}`;
+                return { label, value: e.value };
+            })
+            : [];
 
-describe('YourComponent - processData', () => {
-    let element;
+        // Processa os celulares
+        const mobilePhoneOptions = item.mobilePhones && item.mobilePhones.length > 0 
+            ? item.mobilePhones.map(e => {
+                const label = e.type === 'Atual' ? `Atual: ${e.value}` : `Novo: ${e.value}`;
+                return { label, value: e.value };
+            })
+            : [];
 
-    beforeEach(() => {
-        // Cria o componente antes de cada teste
-        element = createElement('c-your-component', {
-            is: YourComponent
-        });
+        // Verifica se existem apenas um valor preenchido, e ajusta os campos selecionados
+        let selectedEmail = '';
+        if (emailOptions.length === 1 && emailOptions[0].value) {
+            selectedEmail = emailOptions[0].value;
+            emailOptions.length = 0; // Limpa as opções de email
+        }
 
-        // Adiciona o componente ao corpo do documento para que ele seja montado
-        document.body.appendChild(element);
+        let selectedPhone = '';
+        if (telefoneOptions.length === 1 && telefoneOptions[0].value) {
+            selectedPhone = telefoneOptions[0].value;
+            telefoneOptions.length = 0; // Limpa as opções de telefone
+        }
+
+        let selectedMobilePhone = '';
+        if (mobilePhoneOptions.length === 1 && mobilePhoneOptions[0].value) {
+            selectedMobilePhone = mobilePhoneOptions[0].value;
+            mobilePhoneOptions.length = 0; // Limpa as opções de mobilePhone
+        }
+
+        return {
+            ...item,
+            id: `${item.name}-${index}`,
+            idLead: item.idLead,
+            selectedPhone,
+            selectedEmail,
+            selectedMobilePhone,
+            telefoneOptions,
+            emailOptions,
+            mobilePhoneOptions
+        };
     });
 
-    it('should process data correctly and update processedData', () => {
-        // Mock de dados de entrada
-        const mockContacts = [
-            {
-                idLead: 1,
-                name: 'John Doe',
-                phones: [{ type: 'Atual', value: '123-456' }, { type: 'Novo', value: '789-101' }],
-                emails: [{ type: 'Atual', value: 'john.doe@example.com' }],
-                mobilePhones: [{ type: 'Novo', value: '111-222' }]
-            },
-            {
-                idLead: 2,
-                name: 'Jane Smith',
-                phones: [{ type: 'Novo', value: '333-444' }],
-                emails: [],
-                mobilePhones: [{ type: 'Atual', value: '555-666' }]
-            }
-        ];
-
-        // Configura o mock de contatos
-        element.contacts = mockContacts;
-
-        // Chama o método processData
-        element.processData();
-
-        // Verifica se a processedData foi populada corretamente
-        expect(element.processedData).toEqual([
-            {
-                id: 'John Doe-0',
-                idLead: 1,
-                selectedPhone: '',
-                selectedEmail: '',
-                selectedMobilePhone: '',
-                telefoneOptions: [
-                    { label: 'Atual: 123-456', value: '123-456' },
-                    { label: 'Novo: 789-101', value: '789-101' }
-                ],
-                emailOptions: [
-                    { label: 'Atual: john.doe@example.com', value: 'john.doe@example.com' }
-                ],
-                mobilePhoneOptions: [
-                    { label: 'Novo: 111-222', value: '111-222' }
-                ]
-            },
-            {
-                id: 'Jane Smith-1',
-                idLead: 2,
-                selectedPhone: '',
-                selectedEmail: '',
-                selectedMobilePhone: '',
-                telefoneOptions: [
-                    { label: 'Novo: 333-444', value: '333-444' }
-                ],
-                emailOptions: [],
-                mobilePhoneOptions: [
-                    { label: 'Atual: 555-666', value: '555-666' }
-                ]
-            }
-        ]);
-
-        // Verifica se as variáveis hasPhoneColumn, hasEmailColumn e hasMobilePhone estão corretas
-        expect(element.hasPhoneColumn).toBe(true);
-        expect(element.hasEmailColumn).toBe(true);
-        expect(element.hasMobilePhone).toBe(true);
-    });
-
-    // Outros testes, se necessário, podem ser adicionados aqui
-});
+    this.hasPhoneColumn = this.contacts.some(item => item.phones.length > 0);
+    this.hasEmailColumn = this.contacts.some(item => item.emails.length > 0);
+    this.hasMobilePhone = this.contacts.some(item => item.mobilePhones.length > 0);
+}
