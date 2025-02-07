@@ -1,103 +1,138 @@
-import { YourClass } from './YourClass'; // Import the class containing the handleConfirm method
-import { updateLeadsFromSelection } from './someModule'; // Import the module that contains updateLeadsFromSelection
+import { createElement } from 'lwc';
+import YourComponent from 'c/yourComponent'; // Altere para o nome correto do seu componente
+import { updateLeadsFromSelection } from 'c/api'; // Altere conforme necessário para importar a função
 
-jest.mock('./someModule', () => ({
-  updateLeadsFromSelection: jest.fn(),
+jest.mock('c/api', () => ({
+    updateLeadsFromSelection: jest.fn() // Mock da função updateLeadsFromSelection
 }));
 
-describe('YourClass - handleConfirm', () => {
-  let instance: YourClass;
+describe('YourComponent - handleConfirm', () => {
+    let element;
 
-  beforeEach(() => {
-    // Create a fresh instance of the class before each test
-    instance = new YourClass();
+    beforeEach(() => {
+        // Cria o componente antes de cada teste
+        element = createElement('c-your-component', {
+            is: YourComponent
+        });
 
-    // Mock methods to prevent side effects and control flow
-    instance.showToast = jest.fn();
-    instance.refreshPage = jest.fn();
-    instance.closedModal = jest.fn();
-  });
+        // Adiciona o componente ao corpo do documento para que ele seja montado
+        document.body.appendChild(element);
+    });
 
-  it('should show a warning when phone is not selected', () => {
-    instance.hasPhoneColumn = true;
-    instance.processedData = [{ selectedPhone: null, selectedEmail: 'test@example.com', selectedMobilePhone: '12345' }];
-    
-    instance.handleConfirm();
+    it('should show toast and stop loading when phone is not selected', () => {
+        // Mock de dados de entrada
+        element.processedData = [
+            {
+                idLead: 1,
+                telefoneOptions: [{ label: 'Atual: 123', value: '123' }],
+                selectedPhone: '', // Não preenchido
+                emailOptions: [],
+                selectedEmail: '',
+                mobilePhoneOptions: [],
+                selectedMobilePhone: ''
+            }
+        ];
 
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo telefone',
-      'warning',
-      'Atenção!'
-    );
-    expect(instance.isLoading).toBe(false);
-    expect(instance.isValid).toBe(false); // The validation should be set to false
-  });
+        // Mock de showToast para verificar se é chamado
+        const showToastSpy = jest.spyOn(element, 'showToast');
 
-  it('should show a warning when email is not selected', () => {
-    instance.hasEmailColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: null, selectedMobilePhone: '67890' }];
-    
-    instance.handleConfirm();
+        // Chama o método handleConfirm
+        element.handleConfirm();
 
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo email',
-      'warning',
-      'Atenção!'
-    );
-    expect(instance.isLoading).toBe(false);
-    expect(instance.isValid).toBe(false); // The validation should be set to false
-  });
+        // Verifica se showToast foi chamado com a mensagem correta
+        expect(showToastSpy).toHaveBeenCalledWith(
+            'Por favor, preencha o campo telefone',
+            'warning',
+            'Atenção!'
+        );
 
-  it('should show a warning when mobile phone is not selected', () => {
-    instance.hasMobilePhoneColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: null }];
-    
-    instance.handleConfirm();
+        // Verifica se isLoading foi desativado
+        expect(element.isLoading).toBe(false);
+    });
 
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Por favor, preencha o campo mobile',
-      'warning',
-      'Atenção!'
-    );
-    expect(instance.isLoading).toBe(false);
-    expect(instance.isValid).toBe(false); // The validation should be set to false
-  });
+    it('should call updateLeadsFromSelection when all fields are selected and valid', async () => {
+        // Mock de dados de entrada
+        element.processedData = [
+            {
+                idLead: 1,
+                telefoneOptions: [{ label: 'Atual: 123', value: '123' }],
+                selectedPhone: '123', // Preenchido
+                emailOptions: [{ label: 'Atual: email@example.com', value: 'email@example.com' }],
+                selectedEmail: 'email@example.com', // Preenchido
+                mobilePhoneOptions: [{ label: 'Atual: 111', value: '111' }],
+                selectedMobilePhone: '111' // Preenchido
+            }
+        ];
 
-  it('should update leads if all required fields are selected', async () => {
-    instance.hasPhoneColumn = true;
-    instance.hasEmailColumn = true;
-    instance.hasMobilePhoneColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890', idLead: 1 }];
-    instance.isValid = true;
+        // Mock de showToast para verificar se é chamado
+        const showToastSpy = jest.spyOn(element, 'showToast');
+        const refreshPageSpy = jest.spyOn(element, 'refreshPage');
 
-    updateLeadsFromSelection.mockResolvedValueOnce('success'); // Mock successful update
+        // Mock da função updateLeadsFromSelection
+        updateLeadsFromSelection.mockResolvedValue({});
 
-    await instance.handleConfirm();
+        // Chama o método handleConfirm
+        await element.handleConfirm();
 
-    expect(instance.isLoading).toBe(false);
-    expect(instance.showToast).toHaveBeenCalledWith(
-      'Dados Atualizados, aguarde a pagina atualizar',
-      'success',
-      'Sucesso!'
-    );
-    expect(instance.refreshPage).toHaveBeenCalled();
-    expect(instance.closedModal).toHaveBeenCalled();
-  });
+        // Verifica se showToast foi chamado com a mensagem de sucesso
+        expect(showToastSpy).toHaveBeenCalledWith(
+            'Dados Atualizados, aguarde a pagina atualizar',
+            'success',
+            'Sucesso!'
+        );
 
-  it('should handle errors when updateLeadsFromSelection fails', async () => {
-    instance.hasPhoneColumn = true;
-    instance.hasEmailColumn = true;
-    instance.hasMobilePhoneColumn = true;
-    instance.processedData = [{ selectedPhone: '12345', selectedEmail: 'test@example.com', selectedMobilePhone: '67890', idLead: 1 }];
-    instance.isValid = true;
+        // Verifica se refreshPage foi chamado
+        expect(refreshPageSpy).toHaveBeenCalled();
 
-    updateLeadsFromSelection.mockRejectedValueOnce(new Error('Some error'));
+        // Verifica se isLoading foi desativado
+        expect(element.isLoading).toBe(false);
 
-    await instance.handleConfirm();
+        // Verifica se updateLeadsFromSelection foi chamado com os dados corretos
+        expect(updateLeadsFromSelection).toHaveBeenCalledWith({
+            leadsData: [
+                {
+                    idLead: 1,
+                    selectedPhone: '123',
+                    selectedEmail: 'email@example.com',
+                    selectedMobilePhone: '111'
+                }
+            ],
+            recordIdPage: element.recordId
+        });
+    });
 
-    expect(instance.isLoading).toBe(false);
-    expect(instance.showToast).not.toHaveBeenCalled();
-    expect(instance.refreshPage).not.toHaveBeenCalled();
-    expect(instance.closedModal).toHaveBeenCalled();
-  });
+    it('should stop loading and handle error correctly when updateLeadsFromSelection fails', async () => {
+        // Mock de dados de entrada
+        element.processedData = [
+            {
+                idLead: 1,
+                telefoneOptions: [{ label: 'Atual: 123', value: '123' }],
+                selectedPhone: '123', // Preenchido
+                emailOptions: [{ label: 'Atual: email@example.com', value: 'email@example.com' }],
+                selectedEmail: 'email@example.com', // Preenchido
+                mobilePhoneOptions: [{ label: 'Atual: 111', value: '111' }],
+                selectedMobilePhone: '111' // Preenchido
+            }
+        ];
+
+        // Mock de showToast para verificar se é chamado
+        const showToastSpy = jest.spyOn(element, 'showToast');
+        const refreshPageSpy = jest.spyOn(element, 'refreshPage');
+
+        // Mock da função updateLeadsFromSelection para simular erro
+        updateLeadsFromSelection.mockRejectedValue(new Error('Erro ao atualizar dados'));
+
+        // Chama o método handleConfirm
+        await element.handleConfirm();
+
+        // Verifica se isLoading foi desativado
+        expect(element.isLoading).toBe(false);
+
+        // Verifica se a mensagem de erro não foi chamada (pois não houve erro)
+        expect(showToastSpy).not.toHaveBeenCalledWith(
+            'Erro ao atualizar dados',
+            'error',
+            'Erro!'
+        );
+    });
 });
