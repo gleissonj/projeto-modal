@@ -1,127 +1,45 @@
-@isTest
-private class TestFS1_ContactUpdateComparison {
-
-    @isTest
-    static void testAddTelefone() {
-        
-        // 1. Configuração: Criando os dados iniciais para os telefones e emails
-        List<FS1_ContactUpdateInfo> initialPhones = new List<FS1_ContactUpdateInfo>{
-            new FS1_ContactUpdateInfo('1234567890', 'Mobile')
-        };
-        
-        List<FS1_ContactUpdateInfo> initialEmails = new List<FS1_ContactUpdateInfo>{
-            new FS1_ContactUpdateInfo('test@example.com', 'Work')
-        };
-        
-        // 2. Criar uma instância de FS1_ContactUpdateComparison com os dados iniciais
-        FS1_ContactUpdateComparison contactUpdate = new FS1_ContactUpdateComparison(
-            'John Doe', 
-            '12345678901', 
-            'Lead001', 
-            initialPhones, 
-            initialEmails
+private static void processLeads(
+    List<ContactResponse> leads, 
+    Map<String, Lead> mapLeadExisting, 
+    List<ContactUpdateComparison> leadToFrontChoice2, 
+    List<Lead> newLeadsToInsert) 
+{
+    for (ContactResponse newLead : leads) {
+        ContactUpdateComparison respostaContato = new ContactUpdateComparison(
+            newLead.nome,
+            newLead.cpf,
+            new List<ContactUpdateInfo>(),
+            new List<ContactUpdateInfo>()
         );
-        
-        // 3. Verificar que a lista de telefones possui 1 item inicialmente
-        System.assertEquals(1, contactUpdate.phones.size(), 'A lista de telefones deve ter um item inicialmente');
-        
-        // 4. Chamar o método addTelefone para adicionar um novo telefone
-        contactUpdate.addTelefone('9876543210', 'Home');
-        
-        // 5. Verificar que a lista de telefones agora tem 2 itens
-        System.assertEquals(2, contactUpdate.phones.size(), 'A lista de telefones deve ter dois itens após adicionar um novo telefone');
-        
-        // 6. Verificar se o telefone adicionado tem o valor e tipo corretos
-        FS1_ContactUpdateInfo addedPhone = contactUpdate.phones[1]; // O novo telefone estará no índice 1
-        System.assertEquals('9876543210', addedPhone.value, 'O número do novo telefone deve ser 9876543210');
-        System.assertEquals('Home', addedPhone.type, 'O tipo do novo telefone deve ser "Home"');
+
+        if (mapLeadExisting.containsKey(formatCPF(newLead.cpf))) {
+            // O contato já existe no Salesforce
+            Lead leadCurrent = mapLeadExisting.get(formatCPF(newLead.cpf));
+            compareAndUpdateContact(newLead, leadCurrent, respostaContato);
+
+            boolean hasNovoTelefone = containsNovoType(respostaContato.telefones);
+            boolean hasNovoEmail = containsNovoType(respostaContato.emails);
+
+            boolean hasValidTelefone = !respostaContato.telefones.isEmpty();
+            boolean hasValidEmail = !respostaContato.emails.isEmpty();
+
+            // Verifique se há "Novo" e se as listas não estão vazias
+            if ((hasNovoTelefone && hasValidTelefone) || (hasNovoEmail && hasValidEmail)) {
+                leadToFrontChoice2.add(respostaContato);
+            }
+        } else {
+            // Criar novo lead
+            Lead newLeadInsert = createNewLead(newLead);
+            newLeadsToInsert.add(newLeadInsert);
+        }
     }
 }
 
-
-
-
-
-@isTest
-private class TestFS1_ContactUpdateComparison {
-
-    @isTest
-    static void testAddEmail() {
-        
-        // 1. Configuração: Criar os dados iniciais para os telefones e emails
-        List<FS1_ContactUpdateInfo> initialPhones = new List<FS1_ContactUpdateInfo>{
-            new FS1_ContactUpdateInfo('1234567890', 'Mobile')
-        };
-        
-        List<FS1_ContactUpdateInfo> initialEmails = new List<FS1_ContactUpdateInfo>{
-            new FS1_ContactUpdateInfo('test@example.com', 'Work')
-        };
-        
-        // 2. Criar uma instância de FS1_ContactUpdateComparison com os dados iniciais
-        FS1_ContactUpdateComparison contactUpdate = new FS1_ContactUpdateComparison(
-            'John Doe', 
-            '12345678901', 
-            'Lead001', 
-            initialPhones, 
-            initialEmails
-        );
-        
-        // 3. Verificar que a lista de emails tem 1 item inicialmente
-        System.assertEquals(1, contactUpdate.emails.size(), 'A lista de emails deve ter um item inicialmente');
-        
-        // 4. Chamar o método addEmail para adicionar um novo email
-        contactUpdate.addEmail('new_email@example.com', 'Personal');
-        
-        // 5. Verificar que a lista de emails agora tem 2 itens
-        System.assertEquals(2, contactUpdate.emails.size(), 'A lista de emails deve ter dois itens após adicionar um novo email');
-        
-        // 6. Verificar se o novo email adicionado tem o valor e tipo corretos
-        FS1_ContactUpdateInfo addedEmail = contactUpdate.emails[1]; // O novo email estará no índice 1
-        System.assertEquals('new_email@example.com', addedEmail.value, 'O novo email deve ser new_email@example.com');
-        System.assertEquals('Personal', addedEmail.type, 'O tipo do novo email deve ser "Personal"');
+private static boolean containsNovoType(List<ContactUpdateInfo> list) {
+    for (ContactUpdateInfo info : list) {
+        if ("Novo".equals(info.type)) {
+            return true;
+        }
     }
-}
-
-
-
-
-@isTest
-private class TestFS1_ContactUpdateComparison {
-
-    @isTest
-    static void testSetLeadInsert() {
-        
-        // 1. Configuração: Criar os dados iniciais para os telefones e emails
-        List<FS1_ContactUpdateInfo> initialPhones = new List<FS1_ContactUpdateInfo>{
-            new FS1_ContactUpdateInfo('1234567890', 'Mobile')
-        };
-        
-        List<FS1_ContactUpdateInfo> initialEmails = new List<FS1_ContactUpdateInfo>{
-            new FS1_ContactUpdateInfo('test@example.com', 'Work')
-        };
-        
-        // 2. Criar uma instância de FS1_ContactUpdateComparison com os dados iniciais
-        FS1_ContactUpdateComparison contactUpdate = new FS1_ContactUpdateComparison(
-            'John Doe', 
-            '12345678901', 
-            'Lead001', 
-            initialPhones, 
-            initialEmails
-        );
-        
-        // 3. Verificar que o valor de leadInsert é false inicialmente
-        System.assertEquals(false, contactUpdate.leadInsert, 'O valor de leadInsert deve ser false inicialmente');
-        
-        // 4. Chamar o método setLeadInsert para definir leadInsert como true
-        contactUpdate.setLeadInsert(true);
-        
-        // 5. Verificar que o valor de leadInsert agora é true
-        System.assertEquals(true, contactUpdate.leadInsert, 'O valor de leadInsert deve ser true após chamada de setLeadInsert(true)');
-        
-        // 6. Chamar o método setLeadInsert novamente para definir leadInsert como false
-        contactUpdate.setLeadInsert(false);
-        
-        // 7. Verificar que o valor de leadInsert agora é false
-        System.assertEquals(false, contactUpdate.leadInsert, 'O valor de leadInsert deve ser false após chamada de setLeadInsert(false)');
-    }
+    return false;
 }
