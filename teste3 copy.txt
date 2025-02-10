@@ -27,16 +27,23 @@ public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCur
     }
 
     // Remover entradas sem a propriedade 'Novo'
-    removeIfNoNovo(respostaContato.telefones);
+    removeIfNoNovo(respostaContato.phones);
     removeIfNoNovo(respostaContato.mobilePhones);
     removeIfNoNovo(respostaContato.emails);
 }
 
-// Método para remover valores que não possuem 'Novo'
-private static void removeIfNoNovo(List<ContactUpdateItem> items) {
-    for (int i = items.size() - 1; i >= 0; i--) {
-        if (!items.get(i).getStatus().equals('Novo')) {
-            items.remove(i);
+// Método para remover valores sem 'Novo' nas listas
+private static void removeIfNoNovo(List<ContactUpdateInfo> items) {
+    // Criando uma lista para armazenar os itens com o status "Novo"
+    List<ContactUpdateInfo> toRemove = new List<ContactUpdateInfo>();
+
+    // Iterando sobre a lista de itens e marcando os que não são "Novo" para remoção
+    for (ContactUpdateInfo item : items) {
+        if (!item.type.equals('Novo')) {
+            toRemove.add(item);
         }
     }
+
+    // Remover os itens que não são "Novo"
+    items.removeAll(toRemove);
 }
