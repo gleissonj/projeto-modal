@@ -1,0 +1,42 @@
+public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
+    Lead contactLead = new Lead();
+    assignPhoneNumbers(contactLead, newLead.telefones, newLead.optOutTelefone);
+    
+    Set<String> phonesCurrent = new Set<String>{leadCurrent.Phone};
+    Set<String> emailsCurrent = new Set<String>{leadCurrent.Email};
+    Set<String> mobilePhonesCurrent = new Set<String>{leadCurrent.MobilePhone};
+
+    // Comparar telefones
+    if (!phonesCurrent.contains(contactLead.Phone)) {
+        respostaContato.addTelefone(leadCurrent.Phone, 'Atual');
+        respostaContato.addTelefone(contactLead.Phone, 'Novo');
+    }
+
+    // Comparar mobile phones
+    if (!mobilePhonesCurrent.contains(contactLead.MobilePhone)) {
+        respostaContato.addMobilePhones(leadCurrent.MobilePhone, 'Atual');
+        respostaContato.addMobilePhones(contactLead.MobilePhone, 'Novo');
+    }
+
+    // Comparar emails
+    if (newLead.emails != null && !newLead.emails.isEmpty()) {
+        if (!emailsCurrent.contains(newLead.emails[0].valor_dado_cadastral.email)) {
+            respostaContato.addEmail(leadCurrent.Email, 'Atual');
+            respostaContato.addEmail(newLead.emails[0].valor_dado_cadastral.email, 'Novo');
+        }
+    }
+
+    // Remover entradas sem a propriedade 'Novo'
+    removeIfNoNovo(respostaContato.telefones);
+    removeIfNoNovo(respostaContato.mobilePhones);
+    removeIfNoNovo(respostaContato.emails);
+}
+
+// Método para remover valores que não possuem 'Novo'
+private static void removeIfNoNovo(List<ContactUpdateItem> items) {
+    for (int i = items.size() - 1; i >= 0; i--) {
+        if (!items.get(i).getStatus().equals('Novo')) {
+            items.remove(i);
+        }
+    }
+}
