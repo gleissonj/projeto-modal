@@ -82,3 +82,46 @@ private class TestFS1_ContactUpdateComparison {
     }
 }
 
+
+
+
+@isTest
+private class TestFS1_ContactUpdateComparison {
+
+    @isTest
+    static void testSetLeadInsert() {
+        
+        // 1. Configuração: Criar os dados iniciais para os telefones e emails
+        List<FS1_ContactUpdateInfo> initialPhones = new List<FS1_ContactUpdateInfo>{
+            new FS1_ContactUpdateInfo('1234567890', 'Mobile')
+        };
+        
+        List<FS1_ContactUpdateInfo> initialEmails = new List<FS1_ContactUpdateInfo>{
+            new FS1_ContactUpdateInfo('test@example.com', 'Work')
+        };
+        
+        // 2. Criar uma instância de FS1_ContactUpdateComparison com os dados iniciais
+        FS1_ContactUpdateComparison contactUpdate = new FS1_ContactUpdateComparison(
+            'John Doe', 
+            '12345678901', 
+            'Lead001', 
+            initialPhones, 
+            initialEmails
+        );
+        
+        // 3. Verificar que o valor de leadInsert é false inicialmente
+        System.assertEquals(false, contactUpdate.leadInsert, 'O valor de leadInsert deve ser false inicialmente');
+        
+        // 4. Chamar o método setLeadInsert para definir leadInsert como true
+        contactUpdate.setLeadInsert(true);
+        
+        // 5. Verificar que o valor de leadInsert agora é true
+        System.assertEquals(true, contactUpdate.leadInsert, 'O valor de leadInsert deve ser true após chamada de setLeadInsert(true)');
+        
+        // 6. Chamar o método setLeadInsert novamente para definir leadInsert como false
+        contactUpdate.setLeadInsert(false);
+        
+        // 7. Verificar que o valor de leadInsert agora é false
+        System.assertEquals(false, contactUpdate.leadInsert, 'O valor de leadInsert deve ser false após chamada de setLeadInsert(false)');
+    }
+}
