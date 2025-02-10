@@ -1,97 +1,40 @@
 @isTest
-private class TestAddTelefone {
-    
+private class TestContactUpdateComparison {
+
     // This method tests the addTelefone functionality
     @isTest
     static void testAddTelefone() {
         
-        // Setup: Create a mock object for the class containing the addTelefone method
-        MyContactHandler contactHandler = new MyContactHandler();
+        // Setup: Create mock data for phones and emails
+        List<FS1_ContactUpdateInfo> initialPhones = new List<FS1_ContactUpdateInfo>{
+            new FS1_ContactUpdateInfo('1234567890', 'Mobile')
+        };
         
-        // Assume that FS1_ContactUpdateInfo is a class that has value and type as its properties
-        String phoneValue = '1234567890';
-        String phoneType = 'Mobile';
+        List<FS1_ContactUpdateInfo> initialEmails = new List<FS1_ContactUpdateInfo>{
+            new FS1_ContactUpdateInfo('test@example.com', 'Work')
+        };
         
-        // Call the method to test
-        contactHandler.addTelefone(phoneValue, phoneType);
+        // Instantiate ContactUpdateComparison with mock data
+        ContactUpdateComparison contactUpdate = new ContactUpdateComparison(
+            'John Doe', 
+            '12345678901', 
+            'Lead001', 
+            initialPhones, 
+            initialEmails
+        );
         
-        // Test: Verify that the phone list has one element added
-        System.assertEquals(1, contactHandler.phone.size(), 'Phone list should have one entry');
+        // Check that the phones list has one entry initially
+        System.assertEquals(1, contactUpdate.phones.size(), 'Phone list should initially have one entry');
         
-        // Test: Verify that the added phone's value and type are correct
-        FS1_ContactUpdateInfo addedContact = contactHandler.phone[0];
-        System.assertEquals(phoneValue, addedContact.value, 'Phone value should be the same');
-        System.assertEquals(phoneType, addedContact.type, 'Phone type should be the same');
-    }
-    
-    // This is the class where the addTelefone method resides (you'll have to modify it as needed)
-    public class MyContactHandler {
-        public List<FS1_ContactUpdateInfo> phone = new List<FS1_ContactUpdateInfo>();
-
-        public void addTelefone(String value, String type) {
-            this.phone.add(new FS1_ContactUpdateInfo(value, type));
-        }
-    }
-
-    // Example of FS1_ContactUpdateInfo class
-    public class FS1_ContactUpdateInfo {
-        public String value { get; set; }
-        public String type { get; set; }
-
-        public FS1_ContactUpdateInfo(String value, String type) {
-            this.value = value;
-            this.type = type;
-        }
-    }
-}
-
-
-
-ADD Email
-
-@isTest
-private class TestAddEmail {
-
-    // This method tests the addEmail functionality
-    @isTest
-    static void testAddEmail() {
+        // Add a new phone using the addTelefone method
+        contactUpdate.addTelefone('9876543210', 'Home');
         
-        // Setup: Create a mock object for the class containing the addEmail method
-        MyContactHandler contactHandler = new MyContactHandler();
+        // Test: Verify that the phone list has been updated (now it should have two entries)
+        System.assertEquals(2, contactUpdate.phones.size(), 'Phone list should have two entries after adding a new phone');
         
-        // Mock data for the test
-        String emailValue = 'test@example.com';
-        String emailType = 'Work';
-        
-        // Call the method to test
-        contactHandler.addEmail(emailValue, emailType);
-        
-        // Test: Verify that the email list has one element added
-        System.assertEquals(1, contactHandler.emails.size(), 'Email list should have one entry');
-        
-        // Test: Verify that the added email's value and type are correct
-        FS1_ContactUpdateInfo addedEmail = contactHandler.emails[0];
-        System.assertEquals(emailValue, addedEmail.value, 'Email value should be the same');
-        System.assertEquals(emailType, addedEmail.type, 'Email type should be the same');
-    }
-
-    // This is the class where the addEmail method resides (you’ll have to modify it as needed)
-    public class MyContactHandler {
-        public List<FS1_ContactUpdateInfo> emails = new List<FS1_ContactUpdateInfo>();
-
-        public void addEmail(String value, String type) {
-            this.emails.add(new FS1_ContactUpdateInfo(value, type));
-        }
-    }
-
-    // Example of FS1_ContactUpdateInfo class
-    public class FS1_ContactUpdateInfo {
-        public String value { get; set; }
-        public String type { get; set; }
-
-        public FS1_ContactUpdateInfo(String value, String type) {
-            this.value = value;
-            this.type = type;
-        }
+        // Verify that the new phone's value and type are correct
+        FS1_ContactUpdateInfo addedPhone = contactUpdate.phones[1];
+        System.assertEquals('9876543210', addedPhone.value, 'New phone number should be 9876543210');
+        System.assertEquals('Home', addedPhone.type, 'New phone type should be Home');
     }
 }
