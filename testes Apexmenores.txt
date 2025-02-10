@@ -1,11 +1,10 @@
 @isTest
-private class TestContactUpdateComparison {
+private class TestFS1_ContactUpdateComparison {
 
-    // This method tests the addTelefone functionality
     @isTest
     static void testAddTelefone() {
         
-        // Setup: Create mock data for phones and emails
+        // 1. Configuração: Criando os dados iniciais para os telefones e emails
         List<FS1_ContactUpdateInfo> initialPhones = new List<FS1_ContactUpdateInfo>{
             new FS1_ContactUpdateInfo('1234567890', 'Mobile')
         };
@@ -14,8 +13,8 @@ private class TestContactUpdateComparison {
             new FS1_ContactUpdateInfo('test@example.com', 'Work')
         };
         
-        // Instantiate ContactUpdateComparison with mock data
-        ContactUpdateComparison contactUpdate = new ContactUpdateComparison(
+        // 2. Criar uma instância de FS1_ContactUpdateComparison com os dados iniciais
+        FS1_ContactUpdateComparison contactUpdate = new FS1_ContactUpdateComparison(
             'John Doe', 
             '12345678901', 
             'Lead001', 
@@ -23,18 +22,18 @@ private class TestContactUpdateComparison {
             initialEmails
         );
         
-        // Check that the phones list has one entry initially
-        System.assertEquals(1, contactUpdate.phones.size(), 'Phone list should initially have one entry');
+        // 3. Verificar que a lista de telefones possui 1 item inicialmente
+        System.assertEquals(1, contactUpdate.phones.size(), 'A lista de telefones deve ter um item inicialmente');
         
-        // Add a new phone using the addTelefone method
+        // 4. Chamar o método addTelefone para adicionar um novo telefone
         contactUpdate.addTelefone('9876543210', 'Home');
         
-        // Test: Verify that the phone list has been updated (now it should have two entries)
-        System.assertEquals(2, contactUpdate.phones.size(), 'Phone list should have two entries after adding a new phone');
+        // 5. Verificar que a lista de telefones agora tem 2 itens
+        System.assertEquals(2, contactUpdate.phones.size(), 'A lista de telefones deve ter dois itens após adicionar um novo telefone');
         
-        // Verify that the new phone's value and type are correct
-        FS1_ContactUpdateInfo addedPhone = contactUpdate.phones[1];
-        System.assertEquals('9876543210', addedPhone.value, 'New phone number should be 9876543210');
-        System.assertEquals('Home', addedPhone.type, 'New phone type should be Home');
+        // 6. Verificar se o telefone adicionado tem o valor e tipo corretos
+        FS1_ContactUpdateInfo addedPhone = contactUpdate.phones[1]; // O novo telefone estará no índice 1
+        System.assertEquals('9876543210', addedPhone.value, 'O número do novo telefone deve ser 9876543210');
+        System.assertEquals('Home', addedPhone.type, 'O tipo do novo telefone deve ser "Home"');
     }
 }
