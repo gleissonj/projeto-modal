@@ -61,3 +61,55 @@ private static void removeIfNovo(List<ContactUpdateInfo> items) {
     items.clear();
     items.addAll(itemsToKeep);
 }
+
+
+
+
+tested
+
+
+
+@isTest
+public class ContactUpdateComparisonTest {
+
+    @isTest
+    public static void testHasNovoType() {
+        // Caso 1: Nenhum item com tipo 'Novo' e valor preenchido
+        List<ContactUpdateInfo> list1 = new List<ContactUpdateInfo>{
+            new ContactUpdateInfo('123456789', 'Atual'),
+            new ContactUpdateInfo('987654321', 'Atual')
+        };
+        Boolean result1 = ContactUpdateComparison.hasNovoType(list1);
+        System.assertEquals(false, result1, 'Esperado: false, pois nenhum item tem tipo "Novo" e valor preenchido.');
+
+        // Caso 2: Um item com tipo 'Novo' e valor preenchido
+        List<ContactUpdateInfo> list2 = new List<ContactUpdateInfo>{
+            new ContactUpdateInfo('123456789', 'Novo'),
+            new ContactUpdateInfo('987654321', 'Atual')
+        };
+        Boolean result2 = ContactUpdateComparison.hasNovoType(list2);
+        System.assertEquals(true, result2, 'Esperado: true, pois existe um item com tipo "Novo" e valor preenchido.');
+
+        // Caso 3: Um item com tipo 'Novo' mas valor vazio
+        List<ContactUpdateInfo> list3 = new List<ContactUpdateInfo>{
+            new ContactUpdateInfo('', 'Novo'),
+            new ContactUpdateInfo('987654321', 'Atual')
+        };
+        Boolean result3 = ContactUpdateComparison.hasNovoType(list3);
+        System.assertEquals(false, result3, 'Esperado: false, pois o item com tipo "Novo" tem valor vazio.');
+
+        // Caso 4: Vários itens com tipo 'Novo' e valor preenchido
+        List<ContactUpdateInfo> list4 = new List<ContactUpdateInfo>{
+            new ContactUpdateInfo('123456789', 'Novo'),
+            new ContactUpdateInfo('987654321', 'Novo')
+        };
+        Boolean result4 = ContactUpdateComparison.hasNovoType(list4);
+        System.assertEquals(true, result4, 'Esperado: true, pois todos os itens têm tipo "Novo" e valor preenchido.');
+
+        // Caso 5: Nenhum item na lista
+        List<ContactUpdateInfo> list5 = new List<ContactUpdateInfo>();
+        Boolean result5 = ContactUpdateComparison.hasNovoType(list5);
+        System.assertEquals(false, result5, 'Esperado: false, pois a lista está vazia.');
+    }
+}
+
