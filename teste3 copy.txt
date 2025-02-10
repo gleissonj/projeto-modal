@@ -26,24 +26,38 @@ public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCur
         }
     }
 
-    // Remover entradas sem a propriedade 'Novo'
-    removeIfNoNovo(respostaContato.phones);
-    removeIfNoNovo(respostaContato.mobilePhones);
-    removeIfNoNovo(respostaContato.emails);
+    // Verificar se todos os três tipos de listas não têm o tipo 'Novo'
+    if (!hasNovoType(respostaContato.phones) && !hasNovoType(respostaContato.mobilePhones) && !hasNovoType(respostaContato.emails)) {
+        // Se todos estiverem sem 'Novo', removemos os itens
+        removeIfNovo(respostaContato.phones);
+        removeIfNovo(respostaContato.mobilePhones);
+        removeIfNovo(respostaContato.emails);
+    }
 }
 
-// Método para remover valores sem 'Novo' nas listas
-private static void removeIfNoNovo(List<ContactUpdateInfo> items) {
-    // Criando uma lista para armazenar os itens com o status "Novo"
-    List<ContactUpdateInfo> toRemove = new List<ContactUpdateInfo>();
-
-    // Iterando sobre a lista de itens e marcando os que não são "Novo" para remoção
+// Método para verificar se algum item na lista tem o tipo 'Novo'
+private static Boolean hasNovoType(List<ContactUpdateInfo> items) {
     for (ContactUpdateInfo item : items) {
-        if (!item.type.equals('Novo')) {
-            toRemove.add(item);
+        if (item.type == 'Novo') {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Método para remover valores com tipo 'Novo' nas listas
+private static void removeIfNovo(List<ContactUpdateInfo> items) {
+    // Criando uma lista para armazenar os itens que não têm o tipo 'Novo' (só 'Atual')
+    List<ContactUpdateInfo> itemsToKeep = new List<ContactUpdateInfo>();
+
+    // Iterando sobre os itens e mantendo os que têm status diferente de 'Novo' (somente 'Atual')
+    for (ContactUpdateInfo item : items) {
+        if (item.type != 'Novo') {
+            itemsToKeep.add(item);
         }
     }
 
-    // Remover os itens que não são "Novo"
-    items.removeAll(toRemove);
+    // Atualizando a lista original para conter apenas os itens com status diferente de 'Novo'
+    items.clear();
+    items.addAll(itemsToKeep);
 }
