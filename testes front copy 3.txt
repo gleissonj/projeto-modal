@@ -1,0 +1,60 @@
+// myComponent.test.js
+import { createElement } from 'lwc';
+import MyComponent from 'c/myComponent';
+
+const flushPromises = () => new Promise(setImmediate);
+
+describe('c-my-component', () => {
+    let element;
+
+    beforeEach(() => {
+        element = createElement('c-my-component', {
+            is: MyComponent
+        });
+        document.body.appendChild(element); // Adiciona o componente ao DOM
+    });
+
+    it('should process contact data correctly', async () => {
+        // Mock de dados para contacts
+        const mockContacts = [
+            {
+                name: 'John Doe',
+                idLead: '12345',
+                phones: [{ type: 'Atual', value: '1234' }, { type: 'Novo', value: '5678' }],
+                emails: [{ type: 'Atual', value: 'john.doe@example.com' }],
+                mobilePhones: [{ type: 'Novo', value: '9876' }]
+            },
+            {
+                name: 'Jane Doe',
+                idLead: '67890',
+                phones: [{ type: 'Atual', value: '4321' }],
+                emails: [{ type: 'Novo', value: 'jane.doe@example.com' }],
+                mobilePhones: [{ type: 'Atual', value: '8765' }]
+            }
+        ];
+
+        // Definir os dados de contatos diretamente
+        element.contacts = mockContacts;
+
+        // Chame o método que usa a propriedade contacts
+        element.processData();
+
+        // Aguarde que as promessas sejam resolvidas e o DOM seja atualizado
+        await flushPromises();
+
+        // Verifique os resultados
+        expect(element.processedData.length).toBe(2); // Espera 2 contatos processados
+        expect(element.hasPhoneColumn).toBe(true); // Deve ter a coluna de telefones
+        expect(element.hasEmailColumn).toBe(true); // Deve ter a coluna de emails
+        expect(element.hasMobilePhone).toBe(true); // Deve ter a coluna de celular
+
+        // Verifique os dados processados
+        const firstContact = element.processedData[0];
+        expect(firstContact.selectedPhone).toBe('1234'); // Espera que o telefone selecionado seja '1234'
+        expect(firstContact.selectedEmail).toBe('john.doe@example.com'); // Espera que o email selecionado seja o primeiro
+
+        const secondContact = element.processedData[1];
+        expect(secondContact.selectedPhone).toBe('4321'); // Espera que o telefone selecionado seja '4321'
+        expect(secondContact.selectedEmail).toBe('jane.doe@example.com'); // Espera que o email selecionado seja o primeiro
+    });
+});
