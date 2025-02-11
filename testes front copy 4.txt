@@ -15,25 +15,25 @@ describe('c-my-component', () => {
         document.body.appendChild(element); // Garante que o componente foi adicionado ao DOM
     });
 
-    it('should set hasPhoneColumn to true when setHasPhoneColumn(true) is called', async () => {
-        // Chama o setter
-        element.setHasPhoneColumn(true);
+    it('should set contacts property correctly when setContacts is called', async () => {
+        // Mock de dados para contacts
+        const mockContacts = [
+            {
+                idLead: 1,
+                name: "teste",
+                phones: [],
+                emails: [],
+                mobilePhones: []
+            }
+        ];
+
+        // Chama o setter setContacts com o mock de dados
+        element.setContacts(mockContacts);
 
         // Aguarde a renderização do componente
         await flushPromises();
 
-        // Verifique se a propriedade hasPhoneColumn foi definida como true
-        expect(element.hasPhoneColumn).toBe(true);
-    });
-
-    it('should set hasPhoneColumn to false when setHasPhoneColumn(false) is called', async () => {
-        // Chama o setter
-        element.setHasPhoneColumn(false);
-
-        // Aguarde a renderização do componente
-        await flushPromises();
-
-        // Verifique se a propriedade hasPhoneColumn foi definida como false
-        expect(element.hasPhoneColumn).toBe(false);
+        // Verifique se a propriedade contacts foi definida corretamente
+        expect(element.contacts).toEqual(mockContacts);
     });
 });
