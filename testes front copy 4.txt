@@ -1,0 +1,39 @@
+import { createElement } from 'lwc';
+import MyComponent from 'c/myComponent';
+
+// Função para garantir que as promessas sejam resolvidas
+const flushPromises = () => new Promise(setImmediate);
+
+describe('c-my-component', () => {
+    let element;
+
+    beforeEach(() => {
+        // Criação do componente
+        element = createElement('c-my-component', {
+            is: MyComponent
+        });
+        document.body.appendChild(element); // Garante que o componente foi adicionado ao DOM
+    });
+
+    it('should set hasPhoneColumn to true when setHasPhoneColumn(true) is called', async () => {
+        // Chama o setter
+        element.setHasPhoneColumn(true);
+
+        // Aguarde a renderização do componente
+        await flushPromises();
+
+        // Verifique se a propriedade hasPhoneColumn foi definida como true
+        expect(element.hasPhoneColumn).toBe(true);
+    });
+
+    it('should set hasPhoneColumn to false when setHasPhoneColumn(false) is called', async () => {
+        // Chama o setter
+        element.setHasPhoneColumn(false);
+
+        // Aguarde a renderização do componente
+        await flushPromises();
+
+        // Verifique se a propriedade hasPhoneColumn foi definida como false
+        expect(element.hasPhoneColumn).toBe(false);
+    });
+});
