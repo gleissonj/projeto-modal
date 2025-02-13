@@ -1,0 +1,91 @@
+@isTest
+private class ProcessLeadsTest {
+
+    @isTest
+    static void testProcessLeads_AllFieldsBlank() {
+        // Preparando dados de teste
+        Lead lead1 = new Lead(
+            FirstName = 'John',
+            LastName = 'Doe',
+            Prospect__c = 'someRecordId',  // use um Id válido para o campo Prospect__c
+            Phone = '',
+            MobilePhone = '',
+            Email = ''
+        );
+        
+        insert lead1;
+
+        // Preparando os dados de leads
+        List<ContactResponse> leads = new List<ContactResponse>();
+        ContactResponse contact = new ContactResponse(
+            nome = 'John Doe',
+            cpf = '12345678900', // CPF válido para o teste
+            telefone = '',
+            celular = '',
+            email = ''
+        );
+        leads.add(contact);
+
+        // Mapa de leads existentes simulando a busca de um lead existente
+        Map<String, Lead> mapLeadExisting = new Map<String, Lead>();
+        mapLeadExisting.put('12345678900', lead1);
+
+        // Listas para armazenar novos leads ou atualizações
+        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
+        List<Lead> newLeadsToInsert = new List<Lead>();
+        List<Lead> newLeadsUpdate = new List<Lead>();
+
+        // Simulando a execução do método processLeads
+        Test.startTest();
+        MyLeadProcessor.processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert, newLeadsUpdate, 'someRecordId');
+        Test.stopTest();
+
+        // Verificando se o lead foi atualizado corretamente
+        System.assertEquals(1, newLeadsUpdate.size(), 'Esperava-se 1 lead para ser atualizado.');
+        Lead updatedLead = newLeadsUpdate[0];
+        System.assertNotEquals(updatedLead, null, 'Lead atualizado não deve ser nulo.');
+    }
+    
+    @isTest
+    static void testProcessLeads_FieldsNotBlank() {
+        // Preparando dados de teste
+        Lead lead2 = new Lead(
+            FirstName = 'Jane',
+            LastName = 'Smith',
+            Prospect__c = 'someRecordId',  // use um Id válido para o campo Prospect__c
+            Phone = '123456789',
+            MobilePhone = '',
+            Email = 'jane.smith@example.com'
+        );
+        
+        insert lead2;
+
+        // Preparando os dados de leads
+        List<ContactResponse> leads = new List<ContactResponse>();
+        ContactResponse contact = new ContactResponse(
+            nome = 'Jane Smith',
+            cpf = '98765432100', // CPF válido para o teste
+            telefone = '123456789',
+            celular = '',
+            email = 'jane.smith@example.com'
+        );
+        leads.add(contact);
+
+        // Mapa de leads existentes simulando a busca de um lead existente
+        Map<String, Lead> mapLeadExisting = new Map<String, Lead>();
+        mapLeadExisting.put('98765432100', lead2);
+
+        // Listas para armazenar novos leads ou atualizações
+        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
+        List<Lead> newLeadsToInsert = new List<Lead>();
+        List<Lead> newLeadsUpdate = new List<Lead>();
+
+        // Simulando a execução do método processLeads
+        Test.startTest();
+        MyLeadProcessor.processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert, newLeadsUpdate, 'someRecordId');
+        Test.stopTest();
+
+        // Verificando se o lead não foi atualizado
+        System.assertEquals(0, newLeadsUpdate.size(), 'Não deveria haver leads para atualização.');
+    }
+}
