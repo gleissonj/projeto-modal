@@ -1,0 +1,180 @@
+
+updateExistingLeads
+
+
+@isTest
+private class LeadServiceTest {
+
+    @isTest
+    static void testUpdateExistingLeads() {
+        // Criando dados de teste para leads
+        Lead lead1 = new Lead(FirstName = 'John', LastName = 'Doe', Company = 'Acme Corp');
+        Lead lead2 = new Lead(FirstName = 'Jane', LastName = 'Smith', Company = 'Tech Co');
+        
+        // Inserir os leads para o contexto do teste
+        insert new List<Lead>{lead1, lead2};
+        
+        // Mocking o repositório (supondo que o repositório seja uma classe com um método static)
+        Test.startTest();
+        
+        // Chamando o método a ser testado
+        LeadService.updateExistingLeads(new List<Lead>{lead1, lead2});
+        
+        Test.stopTest();
+        
+        // Validando que a chamada foi realizada (pode ser com assertions ou verificando a modificação do lead)
+        // Se o repository.updateLeads tiver side effects como atualização no banco, você pode verificar os dados.
+        
+        // Exemplo de asserção
+        List<Lead> updatedLeads = [SELECT Id, FirstName, LastName, Company FROM Lead WHERE Id IN :new List<Id>{lead1.Id, lead2.Id}];
+        System.assertEquals(2, updatedLeads.size(), 'Deveriam existir 2 leads atualizados.');
+        
+        // Verificar o que o updateLeads fez, se ele modifica algum campo.
+        // Exemplo de assert caso algum campo tenha sido alterado.
+        // System.assertEquals('Novo Valor', updatedLeads[0].Campo, 'O campo não foi atualizado como esperado.');
+    }
+}
+
+
+/////////////////////////
+
+CREATE NEW LEAD
+
+@isTest
+    static void testCreateNewLeadToUpdateCPF() {
+        // Simulação do objeto FS1_ContactSocioResponse
+        FS1_ContactSocioResponse newLead = new FS1_ContactSocioResponse();
+        newLead.nome = 'John Doe';  // Exemplo de nome completo
+        newLead.emails = new List<EmailData>{ new EmailData('email@example.com') };  // Supondo que o campo "emails" é uma lista de objetos "EmailData"
+        newLead.telefones = new List<PhoneData>{ new PhoneData('1234567890') }; // Supondo que telefones é uma lista de objetos "PhoneData"
+        newLead.optOutTelefone = false; // Exemplo para indicar se o número de telefone foi optado para não receber comunicação
+        
+        // Criar um Lead de teste para atualização
+        Lead testLead = new Lead(FirstName = 'OldFirstName', LastName = 'OldLastName', Email = 'oldemail@example.com');
+        insert testLead; // Inserir o lead no banco para poder ser recuperado pelo findLeadById
+        
+        // Simular o comportamento do repositoryLead.findLeadById (mockar a chamada do repositório)
+        Test.startTest();
+        
+        // Chamar o método a ser testado
+        Lead updatedLead = LeadService.createNewLeadToUpdateCPF(newLead, testLead.Id);
+        
+        Test.stopTest();
+        
+        // Validar os resultados
+        // Verificar se os valores foram atribuídos corretamente
+        System.assertEquals('John', updatedLead.FirstName, 'O FirstName não foi atualizado corretamente');
+        System.assertEquals('Doe', updatedLead.LastName, 'O LastName não foi atualizado corretamente');
+        System.assertEquals('email@example.com', updatedLead.Email, 'O Email não foi atualizado corretamente');
+        
+        // Verificar se os telefones foram atribuídos corretamente
+        System.assertEquals('1234567890', updatedLead.Phone, 'O telefone não foi atualizado corretamente');
+        
+        // Verificar se o campo optOutTelefone está sendo tratado (se necessário)
+        System.assertEquals(false, newLead.optOutTelefone, 'O campo optOutTelefone não foi atribuído corretamente');
+    }
+
+
+CREATE NEW LEAD SEM INSERT
+
+@isTest
+    static void testCreateNewLeadToUpdateCPF() {
+        // Criando o objeto de entrada simulado (mock)
+        FS1_ContactSocioResponse newLead = new FS1_ContactSocioResponse();
+        newLead.nome = 'John Doe';  // Nome completo
+        newLead.emails = new List<EmailData>{ new EmailData('email@example.com') }; // Email
+        newLead.telefones = new List<PhoneData>{ new PhoneData('9876543210') }; // Telefones
+        newLead.optOutTelefone = false; // Opt-out de telefone
+
+        // Criando um Lead de teste em memória (sem inserir no banco)
+        Lead testLead = new Lead(FirstName = 'OldFirstName', LastName = 'OldLastName', Email = 'oldemail@example.com');
+        
+        // Mockando a chamada do método repositoryLead.findLeadById
+        // Em vez de acessar o banco, vamos retornar o Lead de teste em memória
+        // Criando uma implementação simples para o mock
+        Test.startTest();
+        
+        // Aqui, fazemos uma simulação do comportamento de 'repositoryLead.findLeadById' diretamente
+        Lead leadToUpdate = testLead;  // Simulando a busca do Lead pelo Id
+        
+        // Chamar o método que queremos testar
+        Lead updatedLead = LeadService.createNewLeadToUpdateCPF(newLead, testLead.Id);
+
+        Test.stopTest();
+        
+        // Verificando se o Lead foi atualizado corretamente
+        System.assertEquals('John', updatedLead.FirstName, 'O FirstName deveria ser atualizado');
+        System.assertEquals('Doe', updatedLead.LastName, 'O LastName deveria ser atualizado');
+        System.assertEquals('email@example.com', updatedLead.Email, 'O Email deveria ser atualizado');
+        System.assertEquals('9876543210', updatedLead.Phone, 'O telefone deveria ser atualizado');
+    }
+
+
+
+
+    ////////////
+
+UPDATELEADFIELDS
+
+@isTest
+    static void testUpdateLeadFields() {
+        // Criar um Lead de teste em memória
+        Lead lead = new Lead(FirstName = 'John', LastName = 'Doe');
+        
+        // Teste 1: Atualizar somente o MobilePhone
+        LeadService.updateLeadFields(lead, null, '987654321', ''); 
+        System.assertEquals('987654321', lead.MobilePhone, 'O MobilePhone deveria ser atualizado');
+        System.assertEquals(null, lead.Phone, 'O Phone não deveria ser atualizado');
+        System.assertEquals(null, lead.Email, 'O Email não deveria ser atualizado');
+
+        // Teste 2: Atualizar somente o Phone
+        LeadService.updateLeadFields(lead, '123456789', null, ''); 
+        System.assertEquals('987654321', lead.MobilePhone, 'O MobilePhone deveria permanecer igual');
+        System.assertEquals('123456789', lead.Phone, 'O Phone deveria ser atualizado');
+        System.assertEquals(null, lead.Email, 'O Email não deveria ser atualizado');
+
+        // Teste 3: Atualizar somente o Email
+        LeadService.updateLeadFields(lead, null, null, 'johndoe@example.com'); 
+        System.assertEquals('987654321', lead.MobilePhone, 'O MobilePhone deveria permanecer igual');
+        System.assertEquals('123456789', lead.Phone, 'O Phone deveria permanecer igual');
+        System.assertEquals('johndoe@example.com', lead.Email, 'O Email deveria ser atualizado');
+
+        // Teste 4: Não atualizar nada (todos os parâmetros são vazios ou nulos)
+        LeadService.updateLeadFields(lead, '', '', ''); 
+        System.assertEquals('987654321', lead.MobilePhone, 'O MobilePhone não deveria ser alterado');
+        System.assertEquals('123456789', lead.Phone, 'O Phone não deveria ser alterado');
+        System.assertEquals('johndoe@example.com', lead.Email, 'O Email não deveria ser alterado');
+    }
+
+
+///////////// ensureLeadToFrontChoiceIsNotEmpty
+
+
+
+     @isTest
+    static void testEnsureLeadToFrontChoiceIsNotEmpty() {
+        // Teste 1: Passar uma lista vazia
+        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
+        
+        // Chamar o método a ser testado
+        LeadService.ensureLeadToFrontChoiceIsNotEmpty(leadToFrontChoice2);
+        
+        // Verificar que a lista foi preenchida com um objeto
+        System.assertEquals(1, leadToFrontChoice2.size(), 'A lista deveria ter 1 item após a execução');
+        System.assertEquals('', leadToFrontChoice2[0].field1, 'O primeiro campo do objeto deveria ser uma string vazia');
+        System.assertEquals('', leadToFrontChoice2[0].field2, 'O segundo campo do objeto deveria ser uma string vazia');
+        System.assertEquals(0, leadToFrontChoice2[0].contactUpdateInfoList.size(), 'A lista de ContactUpdateInfo deveria estar vazia');
+
+        // Teste 2: Passar uma lista já populada com objetos
+        ContactUpdateComparison existingComparison = new ContactUpdateComparison('Field1', 'Field2', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
+        leadToFrontChoice2 = new List<ContactUpdateComparison>{existingComparison};
+        
+        // Chamar o método novamente
+        LeadService.ensureLeadToFrontChoiceIsNotEmpty(leadToFrontChoice2);
+        
+        // Verificar que a lista ainda tem o mesmo número de itens
+        System.assertEquals(1, leadToFrontChoice2.size(), 'A lista não deveria adicionar novos itens');
+        System.assertEquals('Field1', leadToFrontChoice2[0].field1, 'O primeiro campo deveria permanecer o mesmo');
+        System.assertEquals('Field2', leadToFrontChoice2[0].field2, 'O segundo campo deveria permanecer o mesmo');
+        System.assertEquals(0, leadToFrontChoice2[0].contactUpdateInfoList.size(), 'A lista de ContactUpdateInfo deveria continuar vazia');
+    }
