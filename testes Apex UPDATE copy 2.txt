@@ -1,66 +1,66 @@
 @isTest
-private class FS1_ContactSocioControllerTest {
-
+private class LeadServiceTest {
+    
     @isTest
-    static void testEnsureLeadToFrontChoiceIsNotEmpty() {
-        // Teste 1: Passar uma lista vazia
-        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
+    static void testCreateNewLeadToUpdateCPF() {
         
-        // Chamar o método a ser testado
-        LeadService.ensureLeadToFrontChoiceIsNotEmpty(leadToFrontChoice2);
+        // 1. Criar um Lead de exemplo (leadCurrent) que será atualizado
+        Lead leadCurrent = new Lead(
+            FirstName = 'OldFirstName',
+            LastName = 'OldLastName',
+            Email = 'oldemail@example.com',
+            Phone = '1234567890',
+            MobilePhone = '0987654321'
+        );
+        insert leadCurrent;  // Inserir o Lead no banco de dados para referência no teste
+
+        // 2. Criar dados de entrada simulando o ContactResponse
+        ContactResponse newLead = new ContactResponse();
+        newLead.nome = 'NewFirstName NewLastName';
         
-        // Verificar que a lista foi preenchida com um objeto
-        System.assertEquals(1, leadToFrontChoice2.size(), 'A lista deveria ter 1 item após a execução');
-        System.assertEquals('', leadToFrontChoice2[0].name, 'O nome do objeto deveria ser uma string vazia');
-        System.assertEquals('', leadToFrontChoice2[0].cpf, 'O CPF do objeto deveria ser uma string vazia');
-        System.assertEquals(0, leadToFrontChoice2[0].phones.size(), 'A lista de telefones deveria estar vazia');
-        System.assertEquals(0, leadToFrontChoice2[0].emails.size(), 'A lista de emails deveria estar vazia');
-        System.assertEquals(0, leadToFrontChoice2[0].mobilePhones.size(), 'A lista de telefones móveis deveria estar vazia');
+        // Criando uma lista de emails de exemplo
+        Email email = new Email();
+        email.id_email = '1';
+        email.valor_dado_cadastral = new EmailRegistrationData();
+        email.valor_dado_cadastral.email = 'newemail@example.com';
+        newLead.emails = new List<Email>{ email };
         
-        // Teste 2: Passar uma lista já populada com objetos
-        List<ContactUpdateInfo> phones = new List<ContactUpdateInfo>();
-        List<ContactUpdateInfo> emails = new List<ContactUpdateInfo>();
-        List<ContactUpdateInfo> mobilePhones = new List<ContactUpdateInfo>();
+        // Criando uma lista de telefones de exemplo
+        Telephone phone1 = new Telephone();
+        phone1.id_telefone = '1';
+        phone1.valor_dado_cadastral = new TelephoneRegistrationData();
+        phone1.valor_dado_cadastral.numero = '1231231234';
+        phone1.valor_dado_cadastral.tipo = 'Mobile';
         
-        // Criar o objeto existente
-        ContactUpdateComparison existingComparison = new ContactUpdateComparison('John Doe', '123456789', 'LeadId', phones, emails, mobilePhones);
-        leadToFrontChoice2 = new List<ContactUpdateComparison>{existingComparison};
+        Telephone phone2 = new Telephone();
+        phone2.id_telefone = '2';
+        phone2.valor_dado_cadastral = new TelephoneRegistrationData();
+        phone2.valor_dado_cadastral.numero = '9879879876';
+        phone2.valor_dado_cadastral.tipo = 'Work';
         
-        // Chamar o método novamente
-        LeadService.ensureLeadToFrontChoiceIsNotEmpty(leadToFrontChoice2);
+        newLead.telefones = new List<Telephone>{ phone1, phone2 };
         
-        // Verificar que a lista ainda tem o mesmo número de itens
-        System.assertEquals(1, leadToFrontChoice2.size(), 'A lista não deveria adicionar novos itens');
-        System.assertEquals('John Doe', leadToFrontChoice2[0].name, 'O nome deveria permanecer o mesmo');
-        System.assertEquals('123456789', leadToFrontChoice2[0].cpf, 'O CPF deveria permanecer o mesmo');
-        System.assertEquals(0, leadToFrontChoice2[0].phones.size(), 'A lista de telefones deveria continuar vazia');
-        System.assertEquals(0, leadToFrontChoice2[0].emails.size(), 'A lista de emails deveria continuar vazia');
-        System.assertEquals(0, leadToFrontChoice2[0].mobilePhones.size(), 'A lista de telefones móveis deveria continuar vazia');
+        // Criando optOutTelefoneResponse
+        optOutTelefone optOutTelefoneData = new optOutTelefone();
+        optOutTelefoneData.indicador_possui_telefone_bloqueado = 'No';
+        
+        optOutTelefoneResponse optOutTelefoneResponseData = new optOutTelefoneResponse();
+        optOutTelefoneResponseData.data = optOutTelefoneData;
+        newLead.optOutTelefone = optOutTelefoneResponseData;
+
+        // 3. Chamar o método que você está testando
+        Lead updatedLead = LeadService.createNewLeadToUpdateCPF(newLead, leadCurrent);
+        
+        // 4. Verificar se os campos do Lead foram atualizados corretamente
+        // Verificando FirstName e LastName
+        System.assertEquals('NewFirstName', updatedLead.FirstName, 'FirstName should be updated');
+        System.assertEquals('NewLastName', updatedLead.LastName, 'LastName should be updated');
+        
+        // Verificando o Email
+        System.assertEquals('newemail@example.com', updatedLead.Email, 'Email should be updated');
+        
+        // Verificando se o número de telefone foi atribuído corretamente
+        System.assertEquals('1231231234', updatedLead.Phone, 'Phone number should be updated');
+        System.assertEquals('9879879876', updatedLead.MobilePhone, 'MobilePhone should be updated');
     }
-}
-
-
-
-public static void updateLeadsFromSelection(String phone, String mobilePhone, String email) {
-    List<Lead> leadsToUpdate = new List<Lead>();
-
-    for (Map<String, Object> leadData : leadsData) {
-        Id idLead = (Id) leadData.get('idLead');
-        Lead lead = repositoryLead.findLeadById(idLead);
-
-        // Atualizando os campos se o valor não for vazio ou nulo
-        if (String.isNotBlank((String) leadData.get('selectedMobilePhone'))) {
-            lead.MobilePhone = (String) leadData.get('selectedMobilePhone');
-        }
-        if (String.isNotBlank((String) leadData.get('selectedPhone'))) {
-            lead.Phone = (String) leadData.get('selectedPhone');
-        }
-        if (String.isNotBlank((String) leadData.get('selectedEmail'))) {
-            lead.Email = (String) leadData.get('selectedEmail');
-        }
-
-        leadsToUpdate.add(lead);
-    }
-
-    repositoryLead.updateLeads(leadsToUpdate);
 }
