@@ -64,3 +64,88 @@ private class LeadServiceTest {
         System.assertEquals('9879879876', updatedLead.MobilePhone, 'MobilePhone should be updated');
     }
 }
+
+
+
+
+public static void updateLeadsFromSelection(List<Map<String, Object>> leadsData, Id recordIdPage) {
+    List<Lead> leadsToUpdate = new List<Lead>();
+
+    for (Map<String, Object> leadData : leadsData) {
+        String selectedPhone = (String) leadData.get('selectedPhone');
+        String selectedEmail = (String) leadData.get('selectedEmail');
+        String selectedMobilePhone = (String) leadData.get('selectedMobilePhone');
+        Id idLead = (Id) leadData.get('idLead');
+        
+        Lead lead = repositoryLead.findLeadById(idLead);
+
+        // Verifica se os valores não são nulos ou vazios (nem apenas espaços em branco)
+        if (!String.isBlank(selectedMobilePhone)) {
+            lead.MobilePhone = selectedMobilePhone;
+        }
+
+        if (!String.isBlank(selectedPhone)) {
+            lead.Phone = selectedPhone;
+        }
+
+        if (!String.isBlank(selectedEmail)) {
+            lead.Email = selectedEmail;
+        }
+
+        leadsToUpdate.add(lead);
+    }
+
+    // Atualiza os leads
+    repositoryLead.updateLeads(leadsToUpdate);
+}
+
+
+
+@isTest
+private class UpdateLeadsFromSelectionTest {
+
+    @isTest
+    static void testUpdateLeadsFromSelection() {
+        // 1. Preparar dados: Criar Leads de teste
+        Lead lead1 = new Lead(LastName = 'Test1', Company = 'TestCompany', Phone = '123456789', Email = 'test1@example.com', MobilePhone = '987654321');
+        Lead lead2 = new Lead(LastName = 'Test2', Company = 'TestCompany', Phone = '987654321', Email = 'test2@example.com', MobilePhone = '123456789');
+        
+        insert new List<Lead>{lead1, lead2};
+
+        // 2. Preparar dados de entrada para o método
+        List<Map<String, Object>> leadsData = new List<Map<String, Object>>();
+        
+        Map<String, Object> leadData1 = new Map<String, Object>();
+        leadData1.put('idLead', lead1.Id);
+        leadData1.put('selectedPhone', '111222333');
+        leadData1.put('selectedEmail', 'updated1@example.com');
+        leadData1.put('selectedMobilePhone', '333222111');
+        
+        Map<String, Object> leadData2 = new Map<String, Object>();
+        leadData2.put('idLead', lead2.Id);
+        leadData2.put('selectedPhone', '444555666');
+        leadData2.put('selectedEmail', 'updated2@example.com');
+        leadData2.put('selectedMobilePhone', '666555444');
+        
+        leadsData.add(leadData1);
+        leadsData.add(leadData2);
+
+        // 3. Chamar o método
+        Test.startTest();
+        updateLeadsFromSelection(leadsData, null); // Passa leadsData para o método
+        Test.stopTest();
+        
+        // 4. Validar os resultados: verificar se os dados dos leads foram atualizados
+        Lead updatedLead1 = [SELECT Phone, Email, MobilePhone FROM Lead WHERE Id = :lead1.Id LIMIT 1];
+        Lead updatedLead2 = [SELECT Phone, Email, MobilePhone FROM Lead WHERE Id = :lead2.Id LIMIT 1];
+        
+        // Verificar se os dados foram atualizados corretamente
+        System.assertEquals('111222333', updatedLead1.Phone);
+        System.assertEquals('updated1@example.com', updatedLead1.Email);
+        System.assertEquals('333222111', updatedLead1.MobilePhone);
+        
+        System.assertEquals('444555666', updatedLead2.Phone);
+        System.assertEquals('updated2@example.com', updatedLead2.Email);
+        System.assertEquals('666555444', updatedLead2.MobilePhone);
+    }
+}
