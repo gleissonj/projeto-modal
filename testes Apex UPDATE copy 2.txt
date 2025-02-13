@@ -38,3 +38,29 @@ private class FS1_ContactSocioControllerTest {
         System.assertEquals(0, leadToFrontChoice2[0].mobilePhones.size(), 'A lista de telefones móveis deveria continuar vazia');
     }
 }
+
+
+
+public static void updateLeadsFromSelection(String phone, String mobilePhone, String email) {
+    List<Lead> leadsToUpdate = new List<Lead>();
+
+    for (Map<String, Object> leadData : leadsData) {
+        Id idLead = (Id) leadData.get('idLead');
+        Lead lead = repositoryLead.findLeadById(idLead);
+
+        // Atualizando os campos se o valor não for vazio ou nulo
+        if (String.isNotBlank((String) leadData.get('selectedMobilePhone'))) {
+            lead.MobilePhone = (String) leadData.get('selectedMobilePhone');
+        }
+        if (String.isNotBlank((String) leadData.get('selectedPhone'))) {
+            lead.Phone = (String) leadData.get('selectedPhone');
+        }
+        if (String.isNotBlank((String) leadData.get('selectedEmail'))) {
+            lead.Email = (String) leadData.get('selectedEmail');
+        }
+
+        leadsToUpdate.add(lead);
+    }
+
+    repositoryLead.updateLeads(leadsToUpdate);
+}
