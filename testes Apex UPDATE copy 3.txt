@@ -17,13 +17,17 @@ private class ProcessLeadsTest {
 
         // Preparando os dados de leads
         List<ContactResponse> leads = new List<ContactResponse>();
+        
+        // Criando ContactResponse com listas vazias de telefone e email
         ContactResponse contact = new ContactResponse(
             nome = 'John Doe',
             cpf = '12345678900', // CPF válido para o teste
-            telefone = '',
-            celular = '',
-            email = ''
+            telefones = new List<Telephone>(), // Lista vazia de telefones
+            emails = new List<Email>(), // Lista vazia de emails
+            optOut = new List<OptOut>(),
+            optOutTelefone = null
         );
+        
         leads.add(contact);
 
         // Mapa de leads existentes simulando a busca de um lead existente
@@ -62,13 +66,38 @@ private class ProcessLeadsTest {
 
         // Preparando os dados de leads
         List<ContactResponse> leads = new List<ContactResponse>();
+        
+        // Criando ContactResponse com listas preenchidas de telefone e email
         ContactResponse contact = new ContactResponse(
             nome = 'Jane Smith',
             cpf = '98765432100', // CPF válido para o teste
-            telefone = '123456789',
-            celular = '',
-            email = 'jane.smith@example.com'
+            telefones = new List<Telephone>{
+                new Telephone(
+                    id_telefone = '1', 
+                    valor_dado_cadastral = new TelephoneRegistrationData(
+                        principal = 'true',
+                        tipo = 'mobile',
+                        ddi = '55',
+                        ddd = '11',
+                        numero = '123456789',
+                        ramal = null
+                    )
+                )
+            }, // Lista com um telefone
+            emails = new List<Email>{
+                new Email(
+                    id_email = '1',
+                    valor_dado_cadastral = new EmailRegistrationData(
+                        principal = 'true',
+                        email = 'jane.smith@example.com',
+                        data_atualizacao = '2025-02-13'
+                    )
+                )
+            }, // Lista com um email
+            optOut = new List<OptOut>(),
+            optOutTelefone = null
         );
+        
         leads.add(contact);
 
         // Mapa de leads existentes simulando a busca de um lead existente
