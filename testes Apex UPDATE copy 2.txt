@@ -34,3 +34,46 @@ private class FS1_ContactSocioControllerTest {
         System.assertEquals('9876543210', updatedLead.Phone, 'O telefone deveria ser atualizado para "9876543210"');
     }
 }
+
+
+
+
+
+
+@isTest
+private class FS1_ContactSocioControllerTest {
+
+    @isTest
+    static void testCreateNewLeadToUpdateCPF() {
+        // Criar um Lead de teste com valores iniciais
+        Lead testLead = new Lead(FirstName = 'OldFirstName', LastName = 'OldLastName', Email = 'oldemail@example.com');
+        insert testLead;  // Inserir no banco de dados de teste
+
+        // Criando uma instância de ContactResponse para passar ao método
+        ContactResponse newLead = new ContactResponse();
+        newLead.nome = 'John Doe';
+        
+        // Criando o Email e associando ao objeto ContactResponse
+        Email newEmail = new Email();
+        newEmail.id_email = '1';
+        newEmail.valor_dado_cadastral = new EmailRegistrationData();
+        newEmail.valor_dado_cadastral.email = 'email@example.com';
+        newLead.emails = new List<Email>{ newEmail };
+        
+        // Criando o Telephone e associando ao objeto ContactResponse
+        Telephone newPhone = new Telephone();
+        newPhone.id_telefone = '1';
+        newPhone.valor_dado_cadastral = new TelephoneRegistrationData();
+        newPhone.valor_dado_cadastral.numero = '9876543210';
+        newLead.telefones = new List<Telephone>{ newPhone };
+
+        // Chamar o método que queremos testar
+        Lead updatedLead = LeadService.createNewLeadToUpdateCPF(newLead, testLead.Id);
+
+        // Verificar se o Lead foi atualizado corretamente
+        System.assertEquals('John', updatedLead.FirstName, 'O FirstName deveria ser atualizado para "John"');
+        System.assertEquals('Doe', updatedLead.LastName, 'O LastName deveria ser atualizado para "Doe"');
+        System.assertEquals('email@example.com', updatedLead.Email, 'O Email deveria ser atualizado para "email@example.com"');
+        System.assertEquals('9876543210', updatedLead.Phone, 'O telefone deveria ser atualizado para "9876543210"');
+    }
+}
