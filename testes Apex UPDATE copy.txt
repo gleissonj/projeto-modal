@@ -2,7 +2,7 @@
  * @description       :
  * @author            : ChangeMeIn@UserSettingsUnder.SFDoc
  * @group             :
- * @last modified on  : 02-12-2025
+ * @last modified on  : 02-13-2025
  * @last modified by  : ChangeMeIn@UserSettingsUnder.SFDoc
  **/
 public with sharing class ContactController {
@@ -177,15 +177,15 @@ public static void ensureLeadToFrontChoiceIsNotEmpty(List<ContactUpdateCompariso
     }
 }
 
-public static Lead createNewLeadToUpdateCPF(FS1_ContactSocioResponse newLead, Id idLead){
+public static Lead createNewLeadToUpdateCPF(FS1_ContactSocioResponse newLead, Lead leadCurrent){
     Map<String, String> nameParts = splitName(newLead.nome);
-    Lead leadToUpdate = repositoryLead.findLeadById(idLead);
-    leadToUpdate.FirstName = nameParts.get('firstName');
-    leadToUpdate.LastName = nameParts.get('lastName');
-    leadToUpdate.Email = newLead.emails.size() > 0 ? newLead.emails[0].valor_dado_cadastral?.email : '';
-    assignPhoneNumbers(leadToUpdate, newLead.telefones, newLead.optOutTelefone);
+    
+    leadCurrent.FirstName = nameParts.get('firstName');
+    leadCurrent.LastName = nameParts.get('lastName');
+    leadCurrent.Email = newLead.emails.size() > 0 ? newLead.emails[0].valor_dado_cadastral?.email : '';
+    assignPhoneNumbers(leadCurrent, newLead.telefones, newLead.optOutTelefone);
 
-    return leadToUpdate;
+    return leadCurrent;
 }
 
 // Novo método para atualizar os campos
@@ -264,4 +264,60 @@ public static void updateExistingLeads(List<Lead> existingLeadsUpdate){
     }
 }
 
+}
+
+
+
+
+@isTest
+private class LeadServiceTest {
+    
+    @isTest
+    static void testUpdateLeadsFromSelection() {
+        
+        // 1. Criar dados de Lead de teste
+        Lead lead1 = new Lead(FirstName = 'John', LastName = 'Doe', Phone = '1234567890', MobilePhone = '0987654321', Email = 'john.doe@example.com');
+        Lead lead2 = new Lead(FirstName = 'Jane', LastName = 'Doe', Phone = '2234567890', MobilePhone = '1987654321', Email = 'jane.doe@example.com');
+        
+        insert new List<Lead>{ lead1, lead2 };  // Inserir no banco de dados para referência
+
+        // 2. Criar dados simulados para leadsData
+        List<Map<String, Object>> leadsData = new List<Map<String, Object>>();
+        
+        Map<String, Object> leadData1 = new Map<String, Object>();
+        leadData1.put('idLead', lead1.Id);
+        leadData1.put('selectedPhone', '1111111111');
+        leadData1.put('selectedMobilePhone', '2222222222');
+        leadData1.put('selectedEmail', 'new.email1@example.com');
+        
+        Map<String, Object> leadData2 = new Map<String, Object>();
+        leadData2.put('idLead', lead2.Id);
+        leadData2.put('selectedPhone', '3333333333');
+        leadData2.put('selectedMobilePhone', '4444444444');
+        leadData2.put('selectedEmail', 'new.email2@example.com');
+        
+        leadsData.add(leadData1);
+        leadsData.add(leadData2);
+
+        // 3. Simular a chamada do método que está sendo testado
+        Test.startTest();
+        
+        // Chamando o método a ser testado
+        LeadService.updateLeadsFromSelection('selectedPhone', 'selectedMobilePhone', 'selectedEmail');
+        
+        Test.stopTest();
+        
+        // 4. Verificar se os campos dos Leads foram atualizados corretamente
+        Lead updatedLead1 = [SELECT Phone, MobilePhone, Email FROM Lead WHERE Id = :lead1.Id];
+        Lead updatedLead2 = [SELECT Phone, MobilePhone, Email FROM Lead WHERE Id = :lead2.Id];
+        
+        // Verificando se o número de telefone foi atualizado corretamente
+        System.assertEquals('1111111111', updatedLead1.Phone, 'Phone number for lead1 should be updated');
+        System.assertEquals('2222222222', updatedLead1.MobilePhone, 'MobilePhone for lead1 should be updated');
+        System.assertEquals('new.email1@example.com', updatedLead1.Email, 'Email for lead1 should be updated');
+        
+        System.assertEquals('3333333333', updatedLead2.Phone, 'Phone number for lead2 should be updated');
+        System.assertEquals('4444444444', updatedLead2.MobilePhone, 'MobilePhone for lead2 should be updated');
+        System.assertEquals('new.email2@example.com', updatedLead2.Email, 'Email for lead2 should be updated');
+    }
 }
