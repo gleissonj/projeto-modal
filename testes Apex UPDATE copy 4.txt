@@ -1,0 +1,50 @@
+public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
+    Lead contactLead = new Lead();
+    assignPhoneNumbers(contactLead, newLead.telefones, newLead.optOutTelefone);
+    
+    Set<String> phonesCurrent = new Set<String>{leadCurrent.Phone};
+    Set<String> emailsCurrent = new Set<String>{leadCurrent.Email};
+    Set<String> mobilePhonesCurrent = new Set<String>{leadCurrent.MobilePhone};
+
+    // Função para comparar e adicionar valores no respostaContato
+    // Esta função pode ser reutilizada para telefone, mobilePhone e email
+    updateContactField(respostaContato, phonesCurrent, contactLead.Phone, leadCurrent.Phone, 'Telefone');
+    updateContactField(respostaContato, mobilePhonesCurrent, contactLead.MobilePhone, leadCurrent.MobilePhone, 'MobilePhone');
+    
+    // Verifica e atualiza o email, caso o novo valor seja fornecido
+    updateEmail(respostaContato, emailsCurrent, newLead.emails, leadCurrent.Email);
+
+    // Verifica se não há novos dados e limpa os campos correspondentes
+    clearEmptyFields(respostaContato);
+}
+
+// Função auxiliar para atualizar os campos (telefone, mobilePhone, email)
+private static void updateContactField(ContactUpdateComparison respostaContato, Set<String> currentSet, String newValue, String currentValue, String fieldType) {
+    if (newValue != null && !currentSet.contains(newValue)) {
+        respostaContato.addField(currentValue, 'Atual', fieldType);
+        respostaContato.addField(newValue, 'Novo', fieldType);
+    } else if (newValue != null) {
+        respostaContato.addField(newValue, 'Atual', fieldType);
+    }
+}
+
+// Função específica para atualizar o email
+private static void updateEmail(ContactUpdateComparison respostaContato, Set<String> emailsCurrent, List<Email> newEmails, String currentEmail) {
+    // Se houver um novo email
+    if (newEmails != null && !newEmails.isEmpty()) {
+        String newEmail = newEmails[0].valor_dado_cadastral.email;
+        updateContactField(respostaContato, emailsCurrent, newEmail, currentEmail, 'Email');
+    } else if (!emailsCurrent.isEmpty()) {
+        // Se não houver novo email, mas o campo atual não estiver vazio
+        respostaContato.addEmail(currentEmail, 'Atual');
+    }
+}
+
+// Função para limpar campos vazios, caso não haja novos dados
+private static void clearEmptyFields(ContactUpdateComparison respostaContato) {
+    if (!hasNovoType(respostaContato.phones) && !hasNovoType(respostaContato.mobilePhones) && !hasNovoType(respostaContato.emails)) {
+        respostaContato.Phones = new List<Fs1_ContactUpdateInfo>();
+        respostaContato.Emails = new List<Fs1_ContactUpdateInfo>();
+        respostaContato.MobilePhones = new List<Fs1_ContactUpdateInfo>();
+    }
+}
