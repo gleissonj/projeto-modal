@@ -1,0 +1,93 @@
+@isTest
+public class ContactUpdateFieldTest {
+
+    @isTest
+    static void testUpdateContactField_NewValue_NotInCurrentSet() {
+        // Create mock current set and values
+        Set<String> currentSet = new Set<String>{'1234567890', '0987654321'};
+        String newValue = '1122334455';
+        String currentValue = '1234567890';
+        String fieldType = 'Phone';
+
+        // Create mock ContactUpdateComparison
+        ContactUpdateComparison respostaContato = new ContactUpdateComparison();
+
+        // Call the method under test
+        Test.startTest();
+        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        Test.stopTest();
+
+        // Assert that the addField method was called for both 'Atual' and 'Novo'
+        System.assertEquals(respostaContato.fields.size(), 2);
+        System.assertEquals(respostaContato.fields[0].oldValue, '1234567890');
+        System.assertEquals(respostaContato.fields[0].newValue, 'Atual');
+        System.assertEquals(respostaContato.fields[1].oldValue, '1122334455');
+        System.assertEquals(respostaContato.fields[1].newValue, 'Novo');
+    }
+
+    @isTest
+    static void testUpdateContactField_NewValue_InCurrentSet() {
+        // Create mock current set and values
+        Set<String> currentSet = new Set<String>{'1234567890', '0987654321'};
+        String newValue = '0987654321';
+        String currentValue = '1234567890';
+        String fieldType = 'Phone';
+
+        // Create mock ContactUpdateComparison
+        ContactUpdateComparison respostaContato = new ContactUpdateComparison();
+
+        // Call the method under test
+        Test.startTest();
+        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        Test.stopTest();
+
+        // Assert that the addField method was called only for 'Atual' with the new value
+        System.assertEquals(respostaContato.fields.size(), 1);
+        System.assertEquals(respostaContato.fields[0].oldValue, '0987654321');
+        System.assertEquals(respostaContato.fields[0].newValue, 'Atual');
+    }
+
+    @isTest
+    static void testUpdateContactField_NoNewValue() {
+        // Create mock current set and values
+        Set<String> currentSet = new Set<String>{'1234567890', '0987654321'};
+        String newValue = null; // No new value
+        String currentValue = '1234567890';
+        String fieldType = 'Phone';
+
+        // Create mock ContactUpdateComparison
+        ContactUpdateComparison respostaContato = new ContactUpdateComparison();
+
+        // Call the method under test
+        Test.startTest();
+        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        Test.stopTest();
+
+        // Assert that no fields were added since there was no new value
+        System.assertEquals(respostaContato.fields.size(), 0);
+    }
+    
+    @isTest
+    static void testUpdateContactField_EmptyCurrentSet() {
+        // Test when the current set is empty
+        Set<String> currentSet = new Set<String>();
+        String newValue = '1122334455';
+        String currentValue = '1234567890';
+        String fieldType = 'Phone';
+
+        // Create mock ContactUpdateComparison
+        ContactUpdateComparison respostaContato = new ContactUpdateComparison();
+
+        // Call the method under test
+        Test.startTest();
+        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        Test.stopTest();
+
+        // Assert that both 'Atual' and 'Novo' values are added since the current set was empty
+        System.assertEquals(respostaContato.fields.size(), 2);
+        System.assertEquals(respostaContato.fields[0].oldValue, '1234567890');
+        System.assertEquals(respostaContato.fields[0].newValue, 'Atual');
+        System.assertEquals(respostaContato.fields[1].oldValue, '1122334455');
+        System.assertEquals(respostaContato.fields[1].newValue, 'Novo');
+    }
+}
