@@ -1,67 +1,17 @@
-@isTest
-public class ContactUpdateComparisonTest {
+public static Map<String, String> splitName(String fullName) {
+    Map<String, String> nameParts = new Map<String, String>();
 
-    @isTest
-    static void testAddField_Telefone() {
-        // Create a mock ContactUpdateComparison
-        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
-
-        // Call addField to add a phone number
-        Test.startTest();
-        contato.addField('1234567890', 'Atual', 'Telefone');
-        Test.stopTest();
-
-        // Assert that the phone number was added to the Phones list
-        System.assertEquals(contato.phones.size(), 1);
-        System.assertEquals(contato.phones[0].value, '1234567890');
-        System.assertEquals(contato.phones[0].type, 'Atual');
+    // If fullName is empty, return empty firstName and lastName
+    if (String.isEmpty(fullName)) {
+        return new Map<String, String>{'firstName' => '', 'lastName' => ''};
     }
 
-    @isTest
-    static void testAddField_Email() {
-        // Create a mock ContactUpdateComparison
-        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
+    // Split the full name into parts
+    List<String> nameArray = fullName.split(' ');
 
-        // Call addField to add an email
-        Test.startTest();
-        contato.addField('test@example.com', 'Atual', 'Email');
-        Test.stopTest();
+    // Assign firstName as the first part, and lastName as the rest
+    nameParts.put('firstName', nameArray[0]);
+    nameParts.put('lastName', nameArray.size() > 1 ? String.join(nameArray.subList(1, nameArray.size()), ' ') : '');
 
-        // Assert that the email was added to the Emails list
-        System.assertEquals(contato.emails.size(), 1);
-        System.assertEquals(contato.emails[0].value, 'test@example.com');
-        System.assertEquals(contato.emails[0].type, 'Atual');
-    }
-
-    @isTest
-    static void testAddField_MobilePhone() {
-        // Create a mock ContactUpdateComparison
-        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
-
-        // Call addField to add a mobile phone number
-        Test.startTest();
-        contato.addField('0987654321', 'Atual', 'MobilePhone');
-        Test.stopTest();
-
-        // Assert that the mobile phone number was added to the MobilePhones list
-        System.assertEquals(contato.mobilePhones.size(), 1);
-        System.assertEquals(contato.mobilePhones[0].value, '0987654321');
-        System.assertEquals(contato.mobilePhones[0].type, 'Atual');
-    }
-
-    @isTest
-    static void testAddField_InvalidFieldType() {
-        // Create a mock ContactUpdateComparison
-        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
-
-        // Call addField with an invalid fieldType
-        Test.startTest();
-        contato.addField('InvalidTypeValue', 'Atual', 'InvalidField');
-        Test.stopTest();
-
-        // Assert that no values were added to any list
-        System.assertEquals(contato.phones.size(), 0);
-        System.assertEquals(contato.emails.size(), 0);
-        System.assertEquals(contato.mobilePhones.size(), 0);
-    }
+    return nameParts;
 }
