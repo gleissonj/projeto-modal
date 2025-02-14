@@ -1,15 +1,15 @@
 public static Map<String, String> splitName(String fullName) {
     Map<String, String> nameParts = new Map<String, String>();
 
-    // If fullName is empty, return empty firstName and lastName
+    // If fullName is empty, return both firstName and lastName as empty strings
     if (String.isEmpty(fullName)) {
         return new Map<String, String>{'firstName' => '', 'lastName' => ''};
     }
 
-    // Split the full name into parts
+    // Split the full name into parts (words)
     List<String> nameArray = fullName.split(' ');
 
-    // Assign firstName as the first part, and lastName as the rest
+    // Assign firstName as the first word, and lastName as the rest (if any)
     nameParts.put('firstName', nameArray[0]);
     nameParts.put('lastName', nameArray.size() > 1 ? String.join(nameArray.subList(1, nameArray.size()), ' ') : '');
 
