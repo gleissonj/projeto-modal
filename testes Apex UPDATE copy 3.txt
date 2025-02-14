@@ -1,120 +1,39 @@
-@isTest
-private class ProcessLeadsTest {
-
-    @isTest
-    static void testProcessLeads_AllFieldsBlank() {
-        // Preparando dados de teste
-        Lead lead1 = new Lead(
-            FirstName = 'John',
-            LastName = 'Doe',
-            Prospect__c = 'someRecordId',  // use um Id válido para o campo Prospect__c
-            Phone = '',
-            MobilePhone = '',
-            Email = ''
-        );
-        
-        insert lead1;
-
-        // Preparando os dados de leads
-        List<ContactResponse> leads = new List<ContactResponse>();
-        
-        // Criando ContactResponse com listas vazias de telefone e email
-        ContactResponse contact = new ContactResponse(
-            nome = 'John Doe',
-            cpf = '12345678900', // CPF válido para o teste
-            telefones = new List<Telephone>(), // Lista vazia de telefones
-            emails = new List<Email>(), // Lista vazia de emails
-            optOut = new List<OptOut>(),
-            optOutTelefone = null
-        );
-        
-        leads.add(contact);
-
-        // Mapa de leads existentes simulando a busca de um lead existente
-        Map<String, Lead> mapLeadExisting = new Map<String, Lead>();
-        mapLeadExisting.put('12345678900', lead1);
-
-        // Listas para armazenar novos leads ou atualizações
-        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
-        List<Lead> newLeadsToInsert = new List<Lead>();
-        List<Lead> newLeadsUpdate = new List<Lead>();
-
-        // Simulando a execução do método processLeads
-        Test.startTest();
-        MyLeadProcessor.processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert, newLeadsUpdate, 'someRecordId');
-        Test.stopTest();
-
-        // Verificando se o lead foi atualizado corretamente
-        System.assertEquals(1, newLeadsUpdate.size(), 'Esperava-se 1 lead para ser atualizado.');
-        Lead updatedLead = newLeadsUpdate[0];
-        System.assertNotEquals(updatedLead, null, 'Lead atualizado não deve ser nulo.');
-    }
+public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
+    Lead contactLead = new Lead();
+    assignPhoneNumbers(contactLead, newLead.telefones, newLead.optOutTelefone);
     
-    @isTest
-    static void testProcessLeads_FieldsNotBlank() {
-        // Preparando dados de teste
-        Lead lead2 = new Lead(
-            FirstName = 'Jane',
-            LastName = 'Smith',
-            Prospect__c = 'someRecordId',  // use um Id válido para o campo Prospect__c
-            Phone = '123456789',
-            MobilePhone = '',
-            Email = 'jane.smith@example.com'
-        );
-        
-        insert lead2;
+    Set<String> phonesCurrent = new Set<String>{leadCurrent.Phone};
+    Set<String> emailsCurrent = new Set<String>{leadCurrent.Email};
+    Set<String> mobilePhonesCurrent = new Set<String>{leadCurrent.MobilePhone};
 
-        // Preparando os dados de leads
-        List<ContactResponse> leads = new List<ContactResponse>();
-        
-        // Criando ContactResponse com listas preenchidas de telefone e email
-        ContactResponse contact = new ContactResponse(
-            nome = 'Jane Smith',
-            cpf = '98765432100', // CPF válido para o teste
-            telefones = new List<Telephone>{
-                new Telephone(
-                    id_telefone = '1', 
-                    valor_dado_cadastral = new TelephoneRegistrationData(
-                        principal = 'true',
-                        tipo = 'mobile',
-                        ddi = '55',
-                        ddd = '11',
-                        numero = '123456789',
-                        ramal = null
-                    )
-                )
-            }, // Lista com um telefone
-            emails = new List<Email>{
-                new Email(
-                    id_email = '1',
-                    valor_dado_cadastral = new EmailRegistrationData(
-                        principal = 'true',
-                        email = 'jane.smith@example.com',
-                        data_atualizacao = '2025-02-13'
-                    )
-                )
-            }, // Lista com um email
-            optOut = new List<OptOut>(),
-            optOutTelefone = null
-        );
-        
-        leads.add(contact);
+    // Função para comparar e adicionar valores no respostaContato
+    // Esta função pode ser reutilizada para telefone, mobilePhone e email
+    updateContactField(respostaContato, phonesCurrent, contactLead.Phone, leadCurrent.Phone, 'Telefone');
+    updateContactField(respostaContato, mobilePhonesCurrent, contactLead.MobilePhone, leadCurrent.MobilePhone, 'MobilePhone');
+    
+    if (newLead.emails != null && !newLead.emails.isEmpty()) {
+        String newEmail = newLead.emails[0].valor_dado_cadastral.email;
+        updateContactField(respostaContato, emailsCurrent, newEmail, leadCurrent.Email, 'Email');
+    } else if (!emailsCurrent.isEmpty()) {
+        respostaContato.addEmail(leadCurrent.Email, 'Atual');
+    }
 
-        // Mapa de leads existentes simulando a busca de um lead existente
-        Map<String, Lead> mapLeadExisting = new Map<String, Lead>();
-        mapLeadExisting.put('98765432100', lead2);
+    // Verifica se não há novos dados e limpa os campos correspondentes
+    if (!hasNovoType(respostaContato.phones) && !hasNovoType(respostaContato.mobilePhones) && !hasNovoType(respostaContato.emails)) {
+        respostaContato.Phones = new List<Fs1_ContactUpdateInfo>();
+        respostaContato.Emails = new List<Fs1_ContactUpdateInfo>();
+        respostaContato.MobilePhones = new List<Fs1_ContactUpdateInfo>();
+    }
+}
 
-        // Listas para armazenar novos leads ou atualizações
-        List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
-        List<Lead> newLeadsToInsert = new List<Lead>();
-        List<Lead> newLeadsUpdate = new List<Lead>();
-
-        // Simulando a execução do método processLeads
-        Test.startTest();
-        MyLeadProcessor.processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert, newLeadsUpdate, 'someRecordId');
-        Test.stopTest();
-
-        // Verificando se o lead não foi atualizado
-        System.assertEquals(0, newLeadsUpdate.size(), 'Não deveria haver leads para atualização.');
+// Função auxiliar para atualizar os campos (telefone, mobilePhone, email)
+private static void updateContactField(ContactUpdateComparison respostaContato, Set<String> currentSet, String newValue, String currentValue, String fieldType) {
+    if (newValue != null) {
+        if (!currentSet.contains(newValue)) {
+            respostaContato.addField(currentValue, 'Atual', fieldType);
+            respostaContato.addField(newValue, 'Novo', fieldType);
+        } else {
+            respostaContato.addField(newValue, 'Atual', fieldType);
+        }
     }
 }
