@@ -37,3 +37,27 @@ private static void updateContactField(ContactUpdateComparison respostaContato, 
         }
     }
 }
+
+
+
+public class ContactUpdateService {
+
+    // Método para adicionar dados nas listas de atualização
+    public static void addFieldToComparison(FS1ContactUpdateComparison respostaContato, String value, String type, String fieldType) {
+        Fs1_ContactUpdateInfo updateInfo = new Fs1_ContactUpdateInfo(value, type);
+        
+        switch (fieldType) {
+            case 'Telefone':
+                respostaContato.Phones.add(updateInfo);
+                break;
+            case 'Email':
+                respostaContato.Emails.add(updateInfo);
+                break;
+            case 'MobilePhone':
+                respostaContato.MobilePhones.add(updateInfo);
+                break;
+            default:
+                System.debug('Campo desconhecido: ' + fieldType);
+        }
+    }
+}
