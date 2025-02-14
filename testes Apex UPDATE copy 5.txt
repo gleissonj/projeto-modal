@@ -1,93 +1,67 @@
 @isTest
-public class ContactUpdateFieldTest {
+public class ContactUpdateComparisonTest {
 
     @isTest
-    static void testUpdateContactField_NewValue_NotInCurrentSet() {
-        // Create mock current set and values
-        Set<String> currentSet = new Set<String>{'1234567890', '0987654321'};
-        String newValue = '1122334455';
-        String currentValue = '1234567890';
-        String fieldType = 'Telefone';
+    static void testAddField_Telefone() {
+        // Create a mock ContactUpdateComparison
+        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
 
-        // Create mock ContactUpdateComparison
-        ContactUpdateComparison respostaContato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
-
-        // Call the method under test
+        // Call addField to add a phone number
         Test.startTest();
-        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        contato.addField('1234567890', 'Atual', 'Telefone');
         Test.stopTest();
 
-        // Assert that the addField method was called for both 'Atual' and 'Novo' (Phone)
-        System.assertEquals(respostaContato.phones.size(), 2);  // Should add two phones
-        System.assertEquals(respostaContato.phones[0].value, '1234567890');  // 'Atual'
-        System.assertEquals(respostaContato.phones[0].type, 'Atual');
-        System.assertEquals(respostaContato.phones[1].value, '1122334455');  // 'Novo'
-        System.assertEquals(respostaContato.phones[1].type, 'Novo');
+        // Assert that the phone number was added to the Phones list
+        System.assertEquals(contato.phones.size(), 1);
+        System.assertEquals(contato.phones[0].value, '1234567890');
+        System.assertEquals(contato.phones[0].type, 'Atual');
     }
 
     @isTest
-    static void testUpdateContactField_NewValue_InCurrentSet() {
-        // Create mock current set and values
-        Set<String> currentSet = new Set<String>{'1234567890', '0987654321'};
-        String newValue = '0987654321';
-        String currentValue = '1234567890';
-        String fieldType = 'Telefone';
+    static void testAddField_Email() {
+        // Create a mock ContactUpdateComparison
+        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
 
-        // Create mock ContactUpdateComparison
-        ContactUpdateComparison respostaContato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
-
-        // Call the method under test
+        // Call addField to add an email
         Test.startTest();
-        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        contato.addField('test@example.com', 'Atual', 'Email');
         Test.stopTest();
 
-        // Assert that only one phone value is added as 'Atual'
-        System.assertEquals(respostaContato.phones.size(), 1);  // Should add only one phone
-        System.assertEquals(respostaContato.phones[0].value, '0987654321');  // 'Atual'
-        System.assertEquals(respostaContato.phones[0].type, 'Atual');
+        // Assert that the email was added to the Emails list
+        System.assertEquals(contato.emails.size(), 1);
+        System.assertEquals(contato.emails[0].value, 'test@example.com');
+        System.assertEquals(contato.emails[0].type, 'Atual');
     }
 
     @isTest
-    static void testUpdateContactField_NoNewValue() {
-        // Create mock current set and values
-        Set<String> currentSet = new Set<String>{'1234567890', '0987654321'};
-        String newValue = null; // No new value
-        String currentValue = '1234567890';
-        String fieldType = 'Telefone';
+    static void testAddField_MobilePhone() {
+        // Create a mock ContactUpdateComparison
+        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
 
-        // Create mock ContactUpdateComparison
-        ContactUpdateComparison respostaContato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
-
-        // Call the method under test
+        // Call addField to add a mobile phone number
         Test.startTest();
-        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        contato.addField('0987654321', 'Atual', 'MobilePhone');
         Test.stopTest();
 
-        // Assert that no phone was added since there was no new value
-        System.assertEquals(respostaContato.phones.size(), 0);  // Should add nothing
+        // Assert that the mobile phone number was added to the MobilePhones list
+        System.assertEquals(contato.mobilePhones.size(), 1);
+        System.assertEquals(contato.mobilePhones[0].value, '0987654321');
+        System.assertEquals(contato.mobilePhones[0].type, 'Atual');
     }
-    
+
     @isTest
-    static void testUpdateContactField_EmptyCurrentSet() {
-        // Test when the current set is empty
-        Set<String> currentSet = new Set<String>();
-        String newValue = '1122334455';
-        String currentValue = '1234567890';
-        String fieldType = 'Telefone';
+    static void testAddField_InvalidFieldType() {
+        // Create a mock ContactUpdateComparison
+        ContactUpdateComparison contato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
 
-        // Create mock ContactUpdateComparison
-        ContactUpdateComparison respostaContato = new ContactUpdateComparison('Test Name', '12345678900', 'Lead123', new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>(), new List<ContactUpdateInfo>());
-
-        // Call the method under test
+        // Call addField with an invalid fieldType
         Test.startTest();
-        YourClassName.updateContactField(respostaContato, currentSet, newValue, currentValue, fieldType);
+        contato.addField('InvalidTypeValue', 'Atual', 'InvalidField');
         Test.stopTest();
 
-        // Assert that both 'Atual' and 'Novo' values are added since the current set was empty
-        System.assertEquals(respostaContato.phones.size(), 2);  // Should add two phones
-        System.assertEquals(respostaContato.phones[0].value, '1234567890');  // 'Atual'
-        System.assertEquals(respostaContato.phones[0].type, 'Atual');
-        System.assertEquals(respostaContato.phones[1].value, '1122334455');  // 'Novo'
-        System.assertEquals(respostaContato.phones[1].type, 'Novo');
+        // Assert that no values were added to any list
+        System.assertEquals(contato.phones.size(), 0);
+        System.assertEquals(contato.emails.size(), 0);
+        System.assertEquals(contato.mobilePhones.size(), 0);
     }
 }
