@@ -48,3 +48,37 @@ private static void clearEmptyFields(ContactUpdateComparison respostaContato) {
         respostaContato.MobilePhones = new List<Fs1_ContactUpdateInfo>();
     }
 }
+
+
+
+public class ContactUpdateComparison {
+    public List<Fs1_ContactUpdateInfo> Phones { get; set; }
+    public List<Fs1_ContactUpdateInfo> Emails { get; set; }
+    public List<Fs1_ContactUpdateInfo> MobilePhones { get; set; }
+
+    // Construtor da classe, inicializando as listas
+    public ContactUpdateComparison() {
+        Phones = new List<Fs1_ContactUpdateInfo>();
+        Emails = new List<Fs1_ContactUpdateInfo>();
+        MobilePhones = new List<Fs1_ContactUpdateInfo>();
+    }
+
+    // Método addField - Adiciona um novo campo à lista apropriada
+    public void addField(String value, String type, String fieldType) {
+        // Cria um novo objeto Fs1_ContactUpdateInfo
+        Fs1_ContactUpdateInfo updateInfo = new Fs1_ContactUpdateInfo(value, type);
+
+        // Adiciona o objeto à lista de acordo com o tipo de campo
+        if (fieldType == 'Telefone') {
+            Phones.add(updateInfo);
+        } else if (fieldType == 'Email') {
+            Emails.add(updateInfo);
+        } else if (fieldType == 'MobilePhone') {
+            MobilePhones.add(updateInfo);
+        } else {
+            System.debug('Tipo de campo não reconhecido: ' + fieldType);
+        }
+    }
+
+    // Outras funções auxiliares podem ser adicionadas aqui, caso necessário
+}
