@@ -82,3 +82,46 @@ public class ContactUpdateComparison {
 
     // Outras funções auxiliares podem ser adicionadas aqui, caso necessário
 }
+
+
+
+
+public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
+    Lead contactLead = new Lead();
+    assignPhoneNumbers(contactLead, newLead.telefones, newLead.optOutTelefone);
+    
+    Set<String> phonesCurrent = new Set<String>{leadCurrent.Phone};
+    Set<String> emailsCurrent = new Set<String>{leadCurrent.Email};
+    Set<String> mobilePhonesCurrent = new Set<String>{leadCurrent.MobilePhone};
+
+    // Função para comparar e adicionar valores no respostaContato
+    // Esta função pode ser reutilizada para telefone, mobilePhone e email
+    updateContactField(respostaContato, phonesCurrent, contactLead.Phone, leadCurrent.Phone, 'Telefone');
+    updateContactField(respostaContato, mobilePhonesCurrent, contactLead.MobilePhone, leadCurrent.MobilePhone, 'MobilePhone');
+    
+    if (newLead.emails != null && !newLead.emails.isEmpty()) {
+        String newEmail = newLead.emails[0].valor_dado_cadastral.email;
+        updateContactField(respostaContato, emailsCurrent, newEmail, leadCurrent.Email, 'Email');
+    } else if (!emailsCurrent.isEmpty()) {
+        respostaContato.addEmail(leadCurrent.Email, 'Atual');
+    }
+
+    // Verifica se não há novos dados e limpa os campos correspondentes
+    if (!hasNovoType(respostaContato.phones) && !hasNovoType(respostaContato.mobilePhones) && !hasNovoType(respostaContato.emails)) {
+        respostaContato.Phones = new List<Fs1_ContactUpdateInfo>();
+        respostaContato.Emails = new List<Fs1_ContactUpdateInfo>();
+        respostaContato.MobilePhones = new List<Fs1_ContactUpdateInfo>();
+    }
+}
+
+// Função auxiliar para atualizar os campos (telefone, mobilePhone, email)
+private static void updateContactField(ContactUpdateComparison respostaContato, Set<String> currentSet, String newValue, String currentValue, String fieldType) {
+    if (newValue != null) {
+        if (!currentSet.contains(newValue)) {
+            respostaContato.addField(currentValue, 'Atual', fieldType);
+            respostaContato.addField(newValue, 'Novo', fieldType);
+        } else {
+            respostaContato.addField(newValue, 'Atual', fieldType);
+        }
+    }
+}
