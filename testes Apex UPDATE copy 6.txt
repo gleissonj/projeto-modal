@@ -1,0 +1,32 @@
+public class MultipartFileUploader {
+
+    public void sendFile() {
+        // Caminho para o arquivo armazenado no Salesforce (aqui usando ContentVersion para exemplo)
+        String fileName = 'teste.pdf';
+        Blob fileContent = [SELECT VersionData FROM ContentVersion WHERE Title = :fileName LIMIT 1].VersionData;
+        
+        // Montar o boundary único para separar as partes do multipart/form-data
+        String boundary = '----WebKitFormBoundaryCqops';
+
+        // Montando o corpo da requisição
+        String body = '--' + boundary + '\r\n';
+        body += 'Content-Disposition: form-data; name="arquivo"; filename="' + fileName + '"\r\n';
+        body += 'Content-Type: application-pdf\r\n\r\n';  // Content-Type do arquivo
+        body += EncodingUtil.urlEncode(fileContent.toString(), 'UTF-8') + '\r\n';  // O conteúdo do arquivo em base64
+        body += '--' + boundary + '--';
+
+        // Configurar a requisição HTTP
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('http://localhost:8081/upload');  // URL do endpoint do MuleSoft
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
+        req.setBodyAsBlob(Blob.valueOf(body)); // Convertendo o corpo em Blob
+       
+        // Enviar a requisição
+        Http http = new Http();
+        HttpResponse res = http.send(req);
+
+        // Log da resposta
+        System.debug(res.getBody());
+    }
+}
