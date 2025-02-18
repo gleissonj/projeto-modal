@@ -30,3 +30,55 @@ public class MultipartFileUploader {
         System.debug(res.getBody());
     }
 }
+//////////////////////////////////
+
+
+
+public class JX1_documentformbuilder {
+    private final static String Boundary = '-----JX1';
+    
+    public static String getContentType() {
+        return 'multipart/form-data; charset=UTF-8; boundary=' + Boundary;
+    }
+
+    public static Blob CreateMultipartFormDataBody(JX1_FIle file) {
+        Map<String, String> mapKeysValues = new Map<String, String>();
+
+        // Preenche a map com informações adicionais
+        mapKeysValues.put('sha256', file.sha256);
+        mapKeysValues.put('idArquivo', file.idArquivo);
+        mapKeysValues.put('idConteudo', file.idConteudo);
+        
+        // Criar a parte multipart com os dados do arquivo e outros parâmetros
+        String multipartAttributes = '';
+        if (mapKeysValues != null) {
+            for (String keyValue : mapKeysValues.keySet()) {
+                multipartAttributes += '--' + Boundary + '\r\n';
+                multipartAttributes += 'Content-Disposition: form-data; name="' + keyValue + '"\r\n\r\n';
+                multipartAttributes += mapKeysValues.get(keyValue) + '\r\n';
+            }
+        }
+
+        // O arquivo já está em formato Blob, então não é necessário usar base64
+        Blob blobFile = file.arquivo;  // Arquivo como Blob, não base64
+
+        // Corpo da requisição com o arquivo binário
+        String body = '--' + Boundary + '\r\n' +
+                      'Content-Disposition: form-data; name="arquivo"; filename="teste.pdf"\r\n' +  // Nome do arquivo e tipo
+                      'Content-Type: application/pdf\r\n\r\n';  // Tipo MIME do arquivo, pode ser "application/pdf" ou outro conforme o tipo do arquivo
+
+        // Adicionando o arquivo binário diretamente no corpo da requisição
+        body += EncodingUtil.urlEncode(blobFile.toString(), 'UTF-8');  // Convertendo para String para enviar no corpo, embora Blob seja binário
+
+        // Adicionando os outros dados do arquivo no formato multipart
+        body += '\r\n' + multipartAttributes;
+        
+        // Fechando o boundary
+        body += '--' + Boundary + '--';
+
+        // Convertendo o corpo para Blob antes de enviar
+        Blob bodyAsBlob = Blob.valueOf(body);  // Aqui a string é convertida em Blob
+
+        return bodyAsBlob;
+    }
+}
