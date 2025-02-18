@@ -82,3 +82,12 @@ public class JX1_documentformbuilder {
         return bodyAsBlob;
     }
 }
+
+
+
+
+%dw 2.0
+output application/json
+var myData = "cGFyYWdyYXBo" // Exemplo de conteúdo Base64 (que corresponde a "paragragh")
+---
+if (myData matches /^[A-Za-z0-9+/=]+$/) "É Base64" else "Não é Base64"
