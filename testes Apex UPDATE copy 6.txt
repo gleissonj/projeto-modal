@@ -14,3 +14,34 @@ Insomnia: Faz a conversão para blob e monta automaticamente o corpo da requisi�
 Apex: Você precisa manualmente converter os arquivos para o formato binário (Blob), montar o corpo da requisição multipart/form-data e definir os cabeçalhos corretamente.
 
 Ambas as abordagens (Insomnia e Apex) envolvem o envio de dados binários em uma requisição HTTP, mas o Insomnia facilita o processo para o desenvolvedor, enquanto no Apex você tem mais controle, mas também mais complexidade na construção da requisição.
+
+
+
+
+// Função para ler o conteúdo binário de um arquivo PDF
+function readPDFFile(file) {
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    // O conteúdo binário do PDF está em e.target.result
+    const binaryContent = e.target.result;
+
+    // Converte o ArrayBuffer em uma string (pode ser binário, então isso é apenas para visualização)
+    const pdfString = new TextDecoder().decode(binaryContent);
+
+    // Agora o pdfString contém o conteúdo do PDF em formato textual
+    console.log(pdfString);
+  };
+
+  // Ler o arquivo PDF como ArrayBuffer
+  reader.readAsArrayBuffer(file);
+}
+
+// Supondo que você tenha um input de arquivo para pegar o PDF
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', function() {
+  const file = fileInput.files[0];
+  if (file) {
+    readPDFFile(file);
+  }
+});
