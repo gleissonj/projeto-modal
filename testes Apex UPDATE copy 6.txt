@@ -52,7 +52,11 @@ fileInput.addEventListener('change', function() {
 output application/json
 var minhaString = "U29mdHdhcmUgRXhwbGFpbmVk"
 fun isBase64(str) =
-  (str matches /^[A-Za-z0-9+/=]+$/) and (str size mod 4 == 0)
+  try
+    base64Decode(str)
+    true
+  catch e
+    false
 ---
 {
   isBase64: isBase64(minhaString)
