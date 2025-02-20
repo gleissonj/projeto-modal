@@ -47,17 +47,12 @@ fileInput.addEventListener('change', function() {
 });
 
 
-
 %dw 2.0
 output application/json
-var minhaString = "U29mdHdhcmUgRXhwbGFpbmVk"
-fun isBase64(str) =
-  try
-    base64Decode(str)
-    true
-  catch e
-    false
+var multipart = read(payload, "multipart/form-data")
 ---
 {
-  isBase64: isBase64(minhaString)
+  idArquivo: multipart.parts.idArquivo[0],  // Extrai o valor de idArquivo
+  idConteudo: multipart.parts.idConteudo[0],  // Extrai o valor de idConteudo
+  arquivo: multipart.parts.arquivo[0]  // Extrai o conteúdo binário do arquivo (PDF)
 }
