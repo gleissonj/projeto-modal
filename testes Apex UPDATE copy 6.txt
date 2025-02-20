@@ -45,3 +45,15 @@ fileInput.addEventListener('change', function() {
     readPDFFile(file);
   }
 });
+
+
+
+%dw 2.0
+output application/json
+var minhaString = "U29mdHdhcmUgRXhwbGFpbmVk"
+fun isBase64(str) =
+  (str matches /^[A-Za-z0-9+/=]+$/) and (str size mod 4 == 0)
+---
+{
+  isBase64: isBase64(minhaString)
+}
