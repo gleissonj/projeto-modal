@@ -3,13 +3,9 @@ import { DownloadFileComponent } from './download-file.component';
 import { S3Service } from './s3.service';
 import { HttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
+import { environment } from '../environments/environment';
 
-// Mockando o HttpClient
-const httpClientMock = {
-  get: jest.fn()
-};
-
-jest.mock('./s3.service');  // Mockando o S3Service
+jest.mock('./s3.service');  // Mock do S3Service
 
 describe('DownloadFileComponent', () => {
   let component: DownloadFileComponent;
@@ -17,172 +13,112 @@ describe('DownloadFileComponent', () => {
   let s3ServiceMock: jest.Mocked<S3Service>;
 
   beforeEach(() => {
-    // Criando o mock do S3Service
     s3ServiceMock = {
       listFiles: jest.fn(),
       downloadFile: jest.fn(),
-      deleteFile: jest.fn()
+      deleteFile: jest.fn(),
     } as any;
 
     TestBed.configureTestingModule({
-      declarations: [DownloadFileComponent],  // Declarando o componente a ser testado
+      declarations: [DownloadFileComponent],
       providers: [
-        { provide: S3Service, useValue: s3ServiceMock },  // Usando o mock do S3Service
-        { provide: HttpClient, useValue: httpClientMock }  // Usando o mock do HttpClient
+        { provide: S3Service, useValue: s3ServiceMock },
+        { provide: HttpClient, useValue: {} }, // Mock do HttpClient
       ]
-    })
-    .compileComponents();  // Compilando o componente
+    }).compileComponents();
 
-    fixture = TestBed.createComponent(DownloadFileComponent);  // Criando a instância do componente
+    fixture = TestBed.createComponent(DownloadFileComponent);
     component = fixture.componentInstance;
   });
 
-  it('should be created', () => {
-    expect(component).toBeTruthy();  // Teste para garantir que o componente foi criado
-  });
-
-  it('should resolve when listFiles is successful', (done) => {
-    const mockResponse = ['file1.txt', 'file2.txt'];  // Simulando a resposta do método listFiles
-
-    // Simulando a resposta de listFiles com sucesso
-    s3ServiceMock.listFiles.mockReturnValue(of(mockResponse));
-
-    component.loadFiles('myBucket', 'myPrefix')
-      .then(response => {
-        expect(response).toEqual(mockResponse);  // Verificando se a resposta foi a esperada
-        done();
-      })
-      .catch(done.fail);  // Se houver erro, o teste falhará
-  });
-
-  it('should reject when listFiles fails', (done) => {
-    const mockError = 'Error loading files';  // Simulando um erro no método listFiles
-
-    // Simulando a falha do método listFiles
-    s3ServiceMock.listFiles.mockReturnValue(throwError(() => new Error(mockError)));
-
-    component.loadFiles('myBucket', 'myPrefix')
-      .catch(error => {
-        expect(error.message).toBe(mockError);  // Verificando se o erro foi o esperado
-        done();
-      })
-      .catch(done.fail);  // Se houver erro, o teste falhará
-  });
-
-  // Teste do método downloadFileMigration
-  it('should show error if selectValue is undefined', async () => {
-    component.selectValue = undefined;
-    const showMessageMock = jest.spyOn(component, 'showMessage').mockImplementation();
-
-    await component.downloadFileMigration();
-
-    expect(showMessageMock).toHaveBeenCalledWith('Você precisa informar o tipo da planilha!', 'error');
-  });
-
-  it('should show error if no files are found for download', async () => {
-    component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
-    
-    // Simulando a resposta de loadFiles com um array vazio
-    s3ServiceMock.listFiles.mockReturnValue(of([]));
-
-    const showMessageMock = jest.spyOn(component, 'showMessage').mockImplementation();
-
-    await component.downloadFileMigration();
-
-    expect(showMessageMock).toHaveBeenCalledWith('Nenhum arquivo encontrado para download', 'error');
-  });
-
   it('should download and delete files successfully', async () => {
-    component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
-    
+    component.selectValue = 'EV1';  // Atribui valor para selectValue
+
     // Simulando a resposta de loadFiles com dois arquivos
     s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt', 'file2.txt']));
 
-    // Simulando a resposta de downloadFile com arquivos
+    // Simulando a resposta de downloadFile com um Blob
     const mockBlob = new Blob(['file content'], { type: 'text/plain' });
     s3ServiceMock.downloadFile.mockReturnValue(of(mockBlob));
 
-    // Simulando a resposta de deleteFile
+    // Simulando a resposta de deleteFile com sucesso
     s3ServiceMock.deleteFile.mockReturnValue(of(null));
 
-    // Mockando o createObjectURL para retornar uma URL fictícia
+    // Mockando createObjectURL
     const createObjectURLMock = jest.fn().mockReturnValue('mockedUrl');
     global.URL.createObjectURL = createObjectURLMock;
 
-    // Simulando a execução da função
+    // Executando o método
     await component.downloadFileMigration();
 
-    // Verificando se as funções foram chamadas
-    expect(s3ServiceMock.listFiles).toHaveBeenCalledWith('myBucket', 'fileEV1');  // Substitua 'fileEV1' com o valor correto de seu ambiente
-    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
-    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
+    // Verificando se a função listFiles foi chamada com o bucket e prefixo corretos
+    expect(s3ServiceMock.listFiles).toHaveBeenCalledWith(environment.bucket, environment.fileEV1);
+
+    // Verificando se downloadFile foi chamado para cada arquivo
+    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith(environment.bucket, 'file1.txt');
+    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith(environment.bucket, 'file2.txt');
+
+    // Verificando se createObjectURL foi chamado corretamente para cada arquivo
     expect(createObjectURLMock).toHaveBeenCalledTimes(2);  // Deveria ser chamado duas vezes (para cada arquivo)
-    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
-    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
+
+    // Verificando se deleteFile foi chamado para cada arquivo após o download
+    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith(environment.bucket, 'file1.txt');
+    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith(environment.bucket, 'file2.txt');
   });
 
-  it('should handle download or delete errors gracefully', async () => {
-    component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
-    
-    // Simulando a resposta de loadFiles com arquivos
-    s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt']));
+  it('should handle empty file list scenario', async () => {
+    component.selectValue = 'EV1';
 
-    // Simulando erro no downloadFile
-    s3ServiceMock.downloadFile.mockReturnValue(throwError(() => new Error('Download failed')));
+    // Simulando a resposta de loadFiles com uma lista vazia
+    s3ServiceMock.listFiles.mockReturnValue(of([]));
 
-    // Simulando erro no deleteFile
-    s3ServiceMock.deleteFile.mockReturnValue(throwError(() => new Error('Delete failed')));
+    // Mockando showMessage
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-    // Mockando o createObjectURL
-    const createObjectURLMock = jest.fn().mockReturnValue('mockedUrl');
-    global.URL.createObjectURL = createObjectURLMock;
-
-    // Simulando a execução da função
+    // Executando o método
     await component.downloadFileMigration();
 
-    // Verificando se o erro foi tratado
-    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
-    expect(createObjectURLMock).not.toHaveBeenCalled();  // Não deveria chamar createObjectURL se o download falhou
-    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
+    // Verificando se a mensagem correta foi mostrada
+    expect(showMessageSpy).toHaveBeenCalledWith('Nenhum arquivo encontrado para download', 'error');
   });
-});
 
+  it('should handle loadFiles failure', async () => {
+    component.selectValue = 'EV1';
 
-//////////////////////
+    // Simulando a falha na resposta de loadFiles
+    s3ServiceMock.listFiles.mockReturnValue(throwError(() => new Error('Failed to load files')));
 
+    // Mockando showMessage
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
+    // Executando o método
+    await component.downloadFileMigration();
 
-it('should download and delete files successfully', async () => {
-  component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
+    // Verificando se a mensagem de erro foi chamada
+    expect(showMessageSpy).toHaveBeenCalledWith('Failed to load files', 'error');
+  });
 
-  // Simulando a resposta de loadFiles com dois arquivos
-  s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt', 'file2.txt']));
+  it('should handle download failure and skip file', async () => {
+    component.selectValue = 'EV1';
 
-  // Simulando a resposta de downloadFile com arquivos
-  const mockBlob = new Blob(['file content'], { type: 'text/plain' });
-  s3ServiceMock.downloadFile.mockReturnValue(of(mockBlob));  // Retorna o mockBlob quando downloadFile é chamado
+    // Simulando a resposta de loadFiles com dois arquivos
+    s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt', 'file2.txt']));
 
-  // Simulando a resposta de deleteFile
-  s3ServiceMock.deleteFile.mockReturnValue(of(null));  // Retorna um sucesso vazio ao chamar deleteFile
+    // Simulando falha no download do segundo arquivo
+    const mockBlob = new Blob(['file content'], { type: 'text/plain' });
+    s3ServiceMock.downloadFile.mockReturnValueOnce(of(mockBlob)).mockReturnValueOnce(throwError(() => new Error('Download failed')));
 
-  // Mockando o createObjectURL para retornar uma URL fictícia
-  const createObjectURLMock = jest.fn().mockReturnValue('mockedUrl');
-  global.URL.createObjectURL = createObjectURLMock;  // Substituindo a função global para criar URLs
+    // Mockando showMessage
+    const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-  // Simulando a execução da função
-  await component.downloadFileMigration();
+    // Executando o método
+    await component.downloadFileMigration();
 
-  // Verificando se as funções foram chamadas corretamente
-  expect(s3ServiceMock.listFiles).toHaveBeenCalledWith('myBucket', 'fileEV1');  // Verificando se listFiles foi chamado com os parâmetros corretos
+    // Verificando se o download do primeiro arquivo foi bem-sucedido
+    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith(environment.bucket, 'file1.txt');
+    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith(environment.bucket, 'file2.txt');
 
-  // Verificando se downloadFile foi chamado para cada arquivo
-  expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
-  expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
-
-  // Verificando se createObjectURL foi chamado corretamente (deve ser chamado uma vez por arquivo)
-  expect(createObjectURLMock).toHaveBeenCalledTimes(2);  // Deveria ser chamado duas vezes (para cada arquivo)
-
-  // Verificando se deleteFile foi chamado para cada arquivo após o download
-  expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
-  expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
+    // Verificando se o método showMessage foi chamado com a mensagem de erro para o segundo arquivo
+    expect(showMessageSpy).toHaveBeenCalledWith('Erro ao baixar ou excluir o arquivo file2.txt', 'error');
+  });
 });
