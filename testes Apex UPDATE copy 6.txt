@@ -1,58 +1,65 @@
-Como funciona o Insomnia:
-Carregar o arquivo: Quando você seleciona um arquivo no Insomnia para enviar, ele converte o arquivo em um blob (um grande bloco de dados binários) internamente. Isso significa que o arquivo não é tratado como texto, mas como dados puros.
+import { Component } from '@angular/core';
+import { S3Service } from './s3.service';
 
-Montagem do corpo da requisição: O Insomnia monta automaticamente o corpo da requisição com o arquivo convertido em um blob e define os cabeçalhos apropriados, como Content-Type: multipart/form-data e o boundary necessário para a separação dos campos.
+@Component({
+  selector: 'app-download',
+  templateUrl: './download.component.html',
+  styleUrls: ['./download.component.css']
+})
+export class DownloadComponent {
+  bucketName: string = 'seu-bucket'; // Substitua com o nome do seu bucket
+  files: string[] = [];
 
-Envio da requisição: O corpo da requisição é enviado para o servidor com o arquivo binário (como um blob) incluído, juntamente com os outros campos de texto, como o idArquivo.
+  constructor(private s3Service: S3Service) {}
 
-No Apex:
-Quando você faz isso manualmente em Apex, o processo é mais explícito. Você precisa preparar os dados binários (no caso, o PDF) e construir o corpo da requisição com a codificação e os cabeçalhos apropriados. O Apex não realiza essa conversão de maneira automática, como o Insomnia, então você precisa se preocupar em construir corretamente o corpo da requisição multipart/form-data e garantir que o arquivo binário seja incluído corretamente no formato adequado.
-
-Comparando com o Apex:
-Insomnia: Faz a conversão para blob e monta automaticamente o corpo da requisição para você. Você só precisa fornecer os dados de entrada (arquivo, parâmetros) e ele cuida do resto.
-
-Apex: Você precisa manualmente converter os arquivos para o formato binário (Blob), montar o corpo da requisição multipart/form-data e definir os cabeçalhos corretamente.
-
-Ambas as abordagens (Insomnia e Apex) envolvem o envio de dados binários em uma requisição HTTP, mas o Insomnia facilita o processo para o desenvolvedor, enquanto no Apex você tem mais controle, mas também mais complexidade na construção da requisição.
-
-
-
-
-// Função para ler o conteúdo binário de um arquivo PDF
-function readPDFFile(file) {
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    // O conteúdo binário do PDF está em e.target.result
-    const binaryContent = e.target.result;
-
-    // Converte o ArrayBuffer em uma string (pode ser binário, então isso é apenas para visualização)
-    const pdfString = new TextDecoder().decode(binaryContent);
-
-    // Agora o pdfString contém o conteúdo do PDF em formato textual
-    console.log(pdfString);
-  };
-
-  // Ler o arquivo PDF como ArrayBuffer
-  reader.readAsArrayBuffer(file);
-}
-
-// Supondo que você tenha um input de arquivo para pegar o PDF
-const fileInput = document.getElementById('fileInput');
-fileInput.addEventListener('change', function() {
-  const file = fileInput.files[0];
-  if (file) {
-    readPDFFile(file);
+  ngOnInit() {
+    // Quando o componente for carregado, lista os arquivos no bucket
+    this.loadFiles();
   }
-});
 
+  // Carrega a lista de arquivos do bucket
+  loadFiles() {
+    this.s3Service.listFiles(this.bucketName).subscribe(
+      (files) => {
+        this.files = files;
+      },
+      (error) => {
+        console.error('Erro ao listar arquivos', error);
+      }
+    );
+  }
 
-%dw 2.0
-output application/json
-var multipart = read(payload, "multipart/form-data")
----
-{
-  idArquivo: multipart.parts.idArquivo[0],  // Extrai o valor de idArquivo
-  idConteudo: multipart.parts.idConteudo[0],  // Extrai o valor de idConteudo
-  arquivo: multipart.parts.arquivo[0]  // Extrai o conteúdo binário do arquivo (PDF)
+  // Baixa o arquivo selecionado
+  download(fileName: string) {
+    this.s3Service.downloadFile(this.bucketName, fileName).subscribe(
+      (response) => {
+        // Cria um link de download usando a URL temporária fornecida pelo backend
+        const link = document.createElement('a');
+        link.href = response.url;
+        link.download = fileName;
+        link.click();
+      },
+      (error) => {
+        console.error('Erro ao baixar arquivo', error);
+      }
+    );
+  }
+
+  // Baixar todos os arquivos
+  downloadAll() {
+    // Itera sobre a lista de arquivos e baixa cada um
+    this.files.forEach(fileName => {
+      this.s3Service.downloadFile(this.bucketName, fileName).subscribe(
+        (response) => {
+          const link = document.createElement('a');
+          link.href = response.url;
+          link.download = fileName;
+          link.click();
+        },
+        (error) => {
+          console.error(`Erro ao baixar o arquivo ${fileName}`, error);
+        }
+      );
+    });
+  }
 }
