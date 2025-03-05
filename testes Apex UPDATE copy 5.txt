@@ -19,7 +19,9 @@ describe('DownloadFileComponent', () => {
   beforeEach(() => {
     // Criando o mock do S3Service
     s3ServiceMock = {
-      listFiles: jest.fn()
+      listFiles: jest.fn(),
+      downloadFile: jest.fn(),
+      deleteFile: jest.fn()
     } as any;
 
     TestBed.configureTestingModule({
@@ -65,5 +67,82 @@ describe('DownloadFileComponent', () => {
         done();
       })
       .catch(done.fail);  // Se houver erro, o teste falhará
+  });
+
+  // Teste do método downloadFileMigration
+  it('should show error if selectValue is undefined', async () => {
+    component.selectValue = undefined;
+    const showMessageMock = jest.spyOn(component, 'showMessage').mockImplementation();
+
+    await component.downloadFileMigration();
+
+    expect(showMessageMock).toHaveBeenCalledWith('Você precisa informar o tipo da planilha!', 'error');
+  });
+
+  it('should show error if no files are found for download', async () => {
+    component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
+    
+    // Simulando a resposta de loadFiles com um array vazio
+    s3ServiceMock.listFiles.mockReturnValue(of([]));
+
+    const showMessageMock = jest.spyOn(component, 'showMessage').mockImplementation();
+
+    await component.downloadFileMigration();
+
+    expect(showMessageMock).toHaveBeenCalledWith('Nenhum arquivo encontrado para download', 'error');
+  });
+
+  it('should download and delete files successfully', async () => {
+    component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
+    
+    // Simulando a resposta de loadFiles com dois arquivos
+    s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt', 'file2.txt']));
+
+    // Simulando a resposta de downloadFile com arquivos
+    const mockBlob = new Blob(['file content'], { type: 'text/plain' });
+    s3ServiceMock.downloadFile.mockReturnValue(of(mockBlob));
+
+    // Simulando a resposta de deleteFile
+    s3ServiceMock.deleteFile.mockReturnValue(of(null));
+
+    // Mockando o createObjectURL para retornar uma URL fictícia
+    const createObjectURLMock = jest.fn().mockReturnValue('mockedUrl');
+    global.URL.createObjectURL = createObjectURLMock;
+
+    // Simulando a execução da função
+    await component.downloadFileMigration();
+
+    // Verificando se as funções foram chamadas
+    expect(s3ServiceMock.listFiles).toHaveBeenCalledWith('myBucket', 'fileEV1');  // Substitua 'fileEV1' com o valor correto de seu ambiente
+    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
+    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
+    expect(createObjectURLMock).toHaveBeenCalledTimes(2);  // Deveria ser chamado duas vezes (para cada arquivo)
+    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
+    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
+  });
+
+  it('should handle download or delete errors gracefully', async () => {
+    component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
+    
+    // Simulando a resposta de loadFiles com arquivos
+    s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt']));
+
+    // Simulando erro no downloadFile
+    s3ServiceMock.downloadFile.mockReturnValue(throwError(() => new Error('Download failed')));
+
+    // Simulando erro no deleteFile
+    s3ServiceMock.deleteFile.mockReturnValue(throwError(() => new Error('Delete failed')));
+
+    // Mockando o createObjectURL
+    const createObjectURLMock = jest.fn().mockReturnValue('mockedUrl');
+    global.URL.createObjectURL = createObjectURLMock;
+
+    // Simulando a execução da função
+    await component.downloadFileMigration();
+
+    // Verificando se o erro foi tratado
+    expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
+    expect(createObjectURLMock).not.toHaveBeenCalled();  // Não deveria chamar createObjectURL se o download falhou
+    expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
   });
 });
