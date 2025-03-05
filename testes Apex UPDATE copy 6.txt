@@ -7,33 +7,67 @@ import { S3Service } from './s3.service';
   styleUrls: ['./download.component.css']
 })
 export class DownloadComponent {
-  bucketName: string = 'seu-bucket'; // Substitua com o nome do seu bucket
-  files: string[] = [];
+  bucketName: string = '';  // Nome do bucket
+  files: string[] = [];     // Lista de arquivos
 
   constructor(private s3Service: S3Service) {}
 
   ngOnInit() {
-    // Quando o componente for carregado, lista os arquivos no bucket
-    this.loadFiles();
+    // Inicializa o bucket (se necessário)
+    this.bucketName = 'bucketX';  // Definindo "bucketX" como o padrão
   }
 
-  // Carrega a lista de arquivos do bucket
-  loadFiles() {
-    this.s3Service.listFiles(this.bucketName).subscribe(
-      (files) => {
-        this.files = files;
-      },
-      (error) => {
-        console.error('Erro ao listar arquivos', error);
+  // Atualiza o método para retornar uma Promise
+  loadFiles(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.bucketName) {
+        this.s3Service.listFiles(this.bucketName).subscribe(
+          (files) => {
+            this.files = files;
+            resolve();  // Resolve quando os arquivos são carregados
+          },
+          (error) => {
+            console.error('Erro ao listar arquivos', error);
+            reject(error);  // Reject em caso de erro
+          }
+        );
+      } else {
+        reject('Bucket não definido');
       }
-    );
+    });
   }
 
-  // Baixa o arquivo selecionado
+  // Método para baixar todos os arquivos
+  async downloadFileMigration() {
+    try {
+      if (this.bucketName) {
+        // Espera carregar os arquivos antes de continuar
+        await this.loadFiles();  // Espera até que a Promise de loadFiles seja resolvida
+
+        // Agora, faz o download de todos os arquivos
+        this.files.forEach(fileName => {
+          this.s3Service.downloadFile(this.bucketName, fileName).subscribe(
+            (response) => {
+              const link = document.createElement('a');
+              link.href = response.url;
+              link.download = fileName;
+              link.click();
+            },
+            (error) => {
+              console.error(`Erro ao baixar o arquivo ${fileName}`, error);
+            }
+          );
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar os arquivos', error);
+    }
+  }
+
+  // Baixa o arquivo individualmente
   download(fileName: string) {
     this.s3Service.downloadFile(this.bucketName, fileName).subscribe(
       (response) => {
-        // Cria um link de download usando a URL temporária fornecida pelo backend
         const link = document.createElement('a');
         link.href = response.url;
         link.download = fileName;
@@ -43,23 +77,5 @@ export class DownloadComponent {
         console.error('Erro ao baixar arquivo', error);
       }
     );
-  }
-
-  // Baixar todos os arquivos
-  downloadAll() {
-    // Itera sobre a lista de arquivos e baixa cada um
-    this.files.forEach(fileName => {
-      this.s3Service.downloadFile(this.bucketName, fileName).subscribe(
-        (response) => {
-          const link = document.createElement('a');
-          link.href = response.url;
-          link.download = fileName;
-          link.click();
-        },
-        (error) => {
-          console.error(`Erro ao baixar o arquivo ${fileName}`, error);
-        }
-      );
-    });
   }
 }
