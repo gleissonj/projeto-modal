@@ -1,38 +1,22 @@
-async downloadFileMigration() {
-  try {
-    if (!this.bucketName) {
-      console.error('Nenhum bucket selecionado.');
-      return;
-    }
+results.forEach((response, index) => {
+  const fileName = files[index];
 
-    // Espera carregar os arquivos antes de continuar
-    await this.loadFiles();  // Espera até que a Promise de loadFiles seja resolvida
-
-    // Verifica se há arquivos na lista antes de tentar o download
-    if (!this.files || this.files.length === 0) {
-      console.log('Nenhum arquivo encontrado para download.');
-      return; // Sai da função se não houver arquivos
-    }
-
-    // Faz o download de todos os arquivos de maneira paralela (assíncrona)
-    const downloadPromises = this.files.map(fileName => 
-      this.s3Service.downloadFile(this.bucketName, fileName).toPromise()  // Converte o Observable para Promise
-    );
-
-    // Aguarda todos os downloads serem concluídos
-    const results = await Promise.all(downloadPromises);
-
-    // Criar o link de download para cada arquivo
-    results.forEach((response, index) => {
-      const fileName = this.files[index];
-      const link = document.createElement('a');
-      link.href = response.url;
-      link.download = fileName;
-      link.click();
-    });
-
-    console.log('Todos os arquivos foram baixados com sucesso!');
-  } catch (error) {
-    console.error('Erro ao carregar ou baixar arquivos', error);
+  if (response && response.url) {
+    // Se a URL é uma URL direta de um arquivo binário
+    fetch(response.url)
+      .then((res) => res.blob())  // Converte a resposta em Blob
+      .then((blob) => {
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);  // Cria um URL para o blob
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(url);  // Libera o objeto URL depois do uso
+      })
+      .catch((err) => {
+        console.error(`Erro ao baixar o arquivo ${fileName}`, err);
+      });
+  } else {
+    console.error(`URL inválida para o arquivo ${fileName}`);
   }
-}
+});
