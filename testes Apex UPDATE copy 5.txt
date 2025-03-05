@@ -1,65 +1,69 @@
-import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { FileService } from './file.service';
-import { S3Service } from './s3.service';  // Supondo que o S3Service esteja em s3.service.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DownloadFileComponent } from './download-file.component';
+import { S3Service } from './s3.service';
+import { HttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 
-describe('FileService', () => {
-  let service: FileService;
-  let s3Service: jasmine.SpyObj<S3Service>;
-  let httpMock: HttpTestingController;
+// Mockando o HttpClient
+const httpClientMock = {
+  get: jest.fn()
+};
+
+jest.mock('./s3.service');  // Mockando o S3Service
+
+describe('DownloadFileComponent', () => {
+  let component: DownloadFileComponent;
+  let fixture: ComponentFixture<DownloadFileComponent>;
+  let s3ServiceMock: jest.Mocked<S3Service>;
 
   beforeEach(() => {
-    const s3ServiceSpy = jasmine.createSpyObj('S3Service', ['listFiles']);
+    // Criando o mock do S3Service
+    s3ServiceMock = {
+      listFiles: jest.fn()
+    } as any;
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
+      declarations: [DownloadFileComponent],  // Declarando o componente a ser testado
       providers: [
-        FileService,
-        { provide: S3Service, useValue: s3ServiceSpy }
+        { provide: S3Service, useValue: s3ServiceMock },  // Usando o mock do S3Service
+        { provide: HttpClient, useValue: httpClientMock }  // Usando o mock do HttpClient
       ]
-    });
+    })
+    .compileComponents();  // Compilando o componente
 
-    service = TestBed.inject(FileService);
-    s3Service = TestBed.inject(S3Service) as jasmine.SpyObj<S3Service>;
-    httpMock = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(DownloadFileComponent);  // Criando a instância do componente
+    component = fixture.componentInstance;
   });
 
   it('should be created', () => {
-    expect(service).toBeTruthy();
+    expect(component).toBeTruthy();  // Teste para garantir que o componente foi criado
   });
 
   it('should resolve when listFiles is successful', (done) => {
-    const mockResponse = ['file1.txt', 'file2.txt'];
-    s3Service.listFiles.and.returnValue(of(mockResponse));
+    const mockResponse = ['file1.txt', 'file2.txt'];  // Simulando a resposta do método listFiles
 
-    service.loadFiles('bucketName', 'prefix').then((response) => {
-      expect(response).toEqual(mockResponse);
-      done();
-    });
+    // Simulando a resposta de listFiles com sucesso
+    s3ServiceMock.listFiles.mockReturnValue(of(mockResponse));
 
-    // Verifique se a requisição HTTP foi realizada corretamente
-    const req = httpMock.expectOne('mocked-api-url'); // Ajuste com o URL real que o S3Service utiliza
-    expect(req.request.method).toBe('GET');
-    req.flush(mockResponse);
+    component.loadFiles('myBucket', 'myPrefix')
+      .then(response => {
+        expect(response).toEqual(mockResponse);  // Verificando se a resposta foi a esperada
+        done();
+      })
+      .catch(done.fail);  // Se houver erro, o teste falhará
   });
 
   it('should reject when listFiles fails', (done) => {
-    const mockError = 'Error loading files';
-    s3Service.listFiles.and.returnValue(throwError(() => new Error(mockError)));
+    const mockError = 'Error loading files';  // Simulando um erro no método listFiles
 
-    service.loadFiles('bucketName', 'prefix').catch((error) => {
-      expect(error.message).toBe(mockError);
-      done();
-    });
+    // Simulando a falha do método listFiles
+    s3ServiceMock.listFiles.mockReturnValue(throwError(() => new Error(mockError)));
 
-    // Verifique se a requisição HTTP foi realizada corretamente
-    const req = httpMock.expectOne('mocked-api-url'); // Ajuste com o URL real que o S3Service utiliza
-    expect(req.request.method).toBe('GET');
-    req.flush(mockError, { status: 500, statusText: 'Server Error' });
-  });
-
-  afterEach(() => {
-    httpMock.verify();
+    component.loadFiles('myBucket', 'myPrefix')
+      .catch(error => {
+        expect(error.message).toBe(mockError);  // Verificando se o erro foi o esperado
+        done();
+      })
+      .catch(done.fail);  // Se houver erro, o teste falhará
   });
 });
