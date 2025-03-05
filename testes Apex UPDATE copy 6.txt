@@ -1,22 +1,59 @@
-results.forEach((response, index) => {
-  const fileName = files[index];
+async downloadFileMigration() {
+  try {
+    if (!this.bucketName) {
+      console.error('Nenhum bucket selecionado.');
+      return;
+    }
 
-  if (response && response.url) {
-    // Se a URL é uma URL direta de um arquivo binário
-    fetch(response.url)
-      .then((res) => res.blob())  // Converte a resposta em Blob
-      .then((blob) => {
+    // Espera carregar os arquivos antes de continuar
+    const response = await this.loadFiles();  // Espera até que os arquivos sejam carregados
+    const files: string[] = response.data;  // Agora 'files' é um array de strings
+
+    // Verifica se há arquivos na lista antes de tentar o download
+    if (!files || files.length === 0) {
+      console.log('Nenhum arquivo encontrado para download.');
+      return; // Sai da função se não houver arquivos
+    }
+
+    // Faz o download de todos os arquivos de maneira paralela (assíncrona)
+    const downloadPromises = files.map((filePath: string) => 
+      this.s3Service.downloadFile(this.bucketName, filePath).toPromise()  // Converte o Observable para Promise
+    );
+
+    // Aguarda todos os downloads serem concluídos
+    const results = await Promise.all(downloadPromises);
+
+    // Criar o link de download para cada arquivo utilizando createObjectURL
+    const deletePromises = files.map((filePath: string, index: number) => {
+      const fileName = filePath.split('/').pop();  // Extrai o nome do arquivo
+
+      // Verifica se o arquivo foi baixado com sucesso
+      if (results[index] && fileName) {
+        // Cria um URL para o Blob (download)
+        const url = window.URL.createObjectURL(results[index]);
+
+        // Cria o link de download e aciona o clique
         const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);  // Cria um URL para o blob
         link.href = url;
-        link.download = fileName;
+        link.download = fileName;  // Nome do arquivo que será salvo
         link.click();
-        URL.revokeObjectURL(url);  // Libera o objeto URL depois do uso
-      })
-      .catch((err) => {
-        console.error(`Erro ao baixar o arquivo ${fileName}`, err);
-      });
-  } else {
-    console.error(`URL inválida para o arquivo ${fileName}`);
+
+        // Libera o objeto URL após o uso
+        window.URL.revokeObjectURL(url);
+
+        // Chama o endpoint de exclusão do arquivo após o download
+        return this.s3Service.deleteFile(this.bucketName, filePath).toPromise();
+      } else {
+        console.error(`Erro ao baixar ou excluir o arquivo ${fileName}`);
+        return Promise.resolve();  // Se ocorrer erro, apenas resolve a promise
+      }
+    });
+
+    // Aguarda todos os arquivos serem excluídos
+    await Promise.all(deletePromises);
+
+    console.log('Todos os arquivos foram baixados e excluídos com sucesso!');
+  } catch (error) {
+    console.error('Erro ao carregar, baixar ou excluir arquivos', error);
   }
-});
+}
