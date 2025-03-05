@@ -146,3 +146,43 @@ describe('DownloadFileComponent', () => {
     expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
   });
 });
+
+
+//////////////////////
+
+
+
+it('should download and delete files successfully', async () => {
+  component.selectValue = 'EV1';  // Assume que selectValue é 'EV1'
+
+  // Simulando a resposta de loadFiles com dois arquivos
+  s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt', 'file2.txt']));
+
+  // Simulando a resposta de downloadFile com arquivos
+  const mockBlob = new Blob(['file content'], { type: 'text/plain' });
+  s3ServiceMock.downloadFile.mockReturnValue(of(mockBlob));  // Retorna o mockBlob quando downloadFile é chamado
+
+  // Simulando a resposta de deleteFile
+  s3ServiceMock.deleteFile.mockReturnValue(of(null));  // Retorna um sucesso vazio ao chamar deleteFile
+
+  // Mockando o createObjectURL para retornar uma URL fictícia
+  const createObjectURLMock = jest.fn().mockReturnValue('mockedUrl');
+  global.URL.createObjectURL = createObjectURLMock;  // Substituindo a função global para criar URLs
+
+  // Simulando a execução da função
+  await component.downloadFileMigration();
+
+  // Verificando se as funções foram chamadas corretamente
+  expect(s3ServiceMock.listFiles).toHaveBeenCalledWith('myBucket', 'fileEV1');  // Verificando se listFiles foi chamado com os parâmetros corretos
+
+  // Verificando se downloadFile foi chamado para cada arquivo
+  expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
+  expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
+
+  // Verificando se createObjectURL foi chamado corretamente (deve ser chamado uma vez por arquivo)
+  expect(createObjectURLMock).toHaveBeenCalledTimes(2);  // Deveria ser chamado duas vezes (para cada arquivo)
+
+  // Verificando se deleteFile foi chamado para cada arquivo após o download
+  expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file1.txt');
+  expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith('myBucket', 'file2.txt');
+});
