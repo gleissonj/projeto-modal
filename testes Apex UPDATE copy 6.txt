@@ -1,59 +1,156 @@
-async downloadFileMigration() {
-  try {
-    if (!this.bucketName) {
-      console.error('Nenhum bucket selecionado.');
-      return;
-    }
+Renovação de Limite - Correção de Identificador Raiz
 
-    // Espera carregar os arquivos antes de continuar
-    const response = await this.loadFiles();  // Espera até que os arquivos sejam carregados
-    const files: string[] = response.data;  // Agora 'files' é um array de strings
+Atualizar o identificador de grupo econômico para garantir dados precisos na renovação de limite.
+pq antes com esse identificador desatualizado causava dados incorretos 
 
-    // Verifica se há arquivos na lista antes de tentar o download
-    if (!files || files.length === 0) {
-      console.log('Nenhum arquivo encontrado para download.');
-      return; // Sai da função se não houver arquivos
-    }
+Com isso o trabalho começou um pouco antes, no glue, onde o Will e a Celina que trouxeram esse campo do identificador raiz
+e realizei a inclusao desse novo valor no fluxo do renovacao de limite 
 
-    // Faz o download de todos os arquivos de maneira paralela (assíncrona)
-    const downloadPromises = files.map((filePath: string) => 
-      this.s3Service.downloadFile(this.bucketName, filePath).toPromise()  // Converte o Observable para Promise
-    );
+o que com essa correção agora temos um processo de carga mais confiaveis do renovacao de limite
 
-    // Aguarda todos os downloads serem concluídos
-    const results = await Promise.all(downloadPromises);
 
-    // Criar o link de download para cada arquivo utilizando createObjectURL
-    const deletePromises = files.map((filePath: string, index: number) => {
-      const fileName = filePath.split('/').pop();  // Extrai o nome do arquivo
+Antes da alteracao (fluxo antigo)
 
-      // Verifica se o arquivo foi baixado com sucesso
-      if (results[index] && fileName) {
-        // Cria um URL para o Blob (download)
-        const url = window.URL.createObjectURL(results[index]);
+Utilizava um identificador desatualizado o que subia informações erradas
 
-        // Cria o link de download e aciona o clique
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;  // Nome do arquivo que será salvo
-        link.click();
 
-        // Libera o objeto URL após o uso
-        window.URL.revokeObjectURL(url);
+Apos a alteracao (fluxo atualizado)
 
-        // Chama o endpoint de exclusão do arquivo após o download
-        return this.s3Service.deleteFile(this.bucketName, filePath).toPromise();
-      } else {
-        console.error(`Erro ao baixar ou excluir o arquivo ${fileName}`);
-        return Promise.resolve();  // Se ocorrer erro, apenas resolve a promise
-      }
-    });
+o fluxo foi atualizado para usar o novo identeificado do grupo economico 
 
-    // Aguarda todos os arquivos serem excluídos
-    await Promise.all(deletePromises);
 
-    console.log('Todos os arquivos foram baixados e excluídos com sucesso!');
-  } catch (error) {
-    console.error('Erro ao carregar, baixar ou excluir arquivos', error);
-  }
-}
+---------------------------
+
+
+gestão de atrasos - resolução 4966
+
+Vários ajustes estavam sendo feitos ao longo do percurso entre o glue >> mulesoft e salesofrce até a gente chegar em um modelo final 
+
+A integracao sofeu varios atualizacoes até chegar a versao final 
+
+Entao foram feiras varias mudanças no mulesoft para ajustar o fluxo os campos e o fluxo de carga no objeto assets na salesforce. para garantir que os dados de assets fossem
+corretamente inseridos ou atualizados.
+
+Você pode usar setas coloridas para destacar onde as modificações ocorreram no fluxo.
+
+3. Destaque os Ajustes Feitos no MuleSoft
+Ajustes específicos no MuleSoft: Pode ser útil destacar como a integração entre o MuleSoft e o Salesforce foi ajustada. Exemplo: "Ajustes nos campos 'campo X' e 'campo Y' para garantir que os dados fossem corretamente mapeados entre os sistemas."
+Utilize ícones para representar ações, como uma chave inglesa para ajustes de configuração e uma seta para indicar fluxos de dados.
+
+
+O objetivo desta tarefa foi corrigir problemas de integração relacionados ao fluxo de dados de assets entre o MuleSoft e o sistema Salesforce.
+ Houve vários ajustes necessários ao longo do percurso, principalmente no fluxo do objeto Assets na Salesforce."
+ 
+ 
+ ----------------------------------
+ 
+ 
+prospecção Agro - multipart setar record type na carga prospect
+
+O setor Agro agora irá utilizar o mesmo processo de prospecção, mas com diferentes tipos de registros dentro do objeto Prospect. Para isso, foi necessário incluir o Record Type no fluxo de carga do prospect,
+ garantindo que os dados sejam tratados de maneira adequada."
+
+
+O fluxo de carga do prospect não estava preparado para lidar com múltiplos tipos de registros. Isso impedia que diferentes categorias de prospectos,
+ como o setor Agro, fossem gerenciados de maneira adequada.
+ 
+ Sem a utilização de Record Types, não era possível distinguir os diferentes tipos de registros dentro do objeto Prospect, o que gerava confusão no processo de prospecção.
+ 
+ Foi necessário configurar o Record Type no fluxo de carga do Prospect, permitindo a diferenciação dos tipos de registros entre os diferentes setores, como o Agro.
+ 
+ A inclusão do Record Type no fluxo garante que o sistema trate os prospectos do Agro de maneira distinta, com campos específicos e fluxos personalizados, sem impactar os demais registros.
+ 
+ o que é record type? O Record Type permite que o Salesforce gerencie diferentes tipos de registros dentro do mesmo objeto,
+ permitindo um tratamento e visualização diferentes conforme a categoria do registro.
+ 
+ 
+ (pegar print:  Exemplo de visualização: "Antes, todos os prospectos eram carregados de forma igual. Agora, com o Record Type, podemos separar e tratar prospectos do Agro de maneira distinta.")
+ 
+ -------------------------------
+ 
+ 
+ 
+ documentos no ibba
+
+No processo de integração com o DI4, desenvolvemos a API de upload e download para a troca de documentos. 
+Contudo, quando o Salesforce enviava os arquivos, eles chegavam em um formato que o IBBA não aceitava.
+ Foi necessário criar uma lógica no MuleSoft para tratar essa incompatibilidade.
+
+
+Quando o Salesforce enviava arquivos para o IBBA, os arquivos chegavam em um formato incompatível, o que causava falhas na integração e no processamento dos documentos
+
+
+O sistema não conseguia processar os arquivos corretamente, pois o formato enviado pelo Salesforce não era aceito pelo IBBA.
+
+Ação Realizada:
+"Criamos uma lógica no MuleSoft que verifica se a requisição é do Salesforce. Caso seja, o MuleSoft converte o arquivo para o formato 
+aceitável pelo IBBA, permitindo o processamento correto."
+
+"Caso a requisição não seja do Salesforce, o fluxo segue sem alterações, processando o arquivo no formato original."
+
+O MuleSoft recebe a requisição e verifica se ela vem do Salesforce. Se for o caso, o arquivo é automaticamente convertido para o formato que o IBBA aceita."
+
+Se o arquivo vem do Salesforce, ele passa pela etapa de conversão antes de ser enviado para o IBBA.
+
+Se não for do Salesforce, o arquivo segue para o IBBA sem alterações.
+
+As setas podem ser coloridas ou ter diferentes estilos para mostrar claramente os diferentes caminhos (com ou sem conversão).
+
+
+
+--------------------
+
+
+AWS atualizacao certificados
+
+Os certificados de segurança utilizados para garantir a integridade e a confidencialidade das comunicações entre os clientes e as APIs expiram anualmente.
+
+A expiração dos certificados pode causar falhas na comunicação e comprometer a segurança dos sistemas."
+
+Foi necessário atualizar os certificados na API da AWS, garantindo que a comunicação entre os clientes e as APIs permanecesse segura."
+"Além disso, para concluir o processo, precisei abrir um chamado para a atualização oficial dos certificados junto à AWS."
+
+Com a atualização dos certificados, garantimos que as comunicações seguras entre os clientes e as APIs não fossem interrompidas."
+"A segurança da plataforma foi mantida sem riscos, assegurando a conformidade com as normas de segurança e evitando potenciais falhas de comunicação."
+
+Mostre um fluxograma simples que ilustre o processo de expiração e renovação dos certificados, destacando as etapas de subir o novo certificado na API e abrir o chamado na AWS.
+
+
+Manutenção da segurança das comunicações e evitação de falhas no processo de integração com as APIs.
+
+------------------------------------
+
+
+download e exclusão de arquivos de migração
+
+
+A demanda envolvia automatizar o processo de download e exclusão de arquivos de migração para melhorar a eficiência entre as equipes. Antes, o processo era manual 
+e dependia de outra squad para baixar as planilhas.
+
+
+A geração das planilhas de migração era feita manualmente por uma outra squad. Isso exigia que, diariamente, alguém da squad responsável fosse até o sistema e baixasse o arquivo,
+ criando uma dependência e atrasos no processo."
+ 
+ 
+ Esse processo manual causava ineficiência e gerava atrasos, já que a equipe que consome os arquivos não tinha autonomia para realizar o download diretamente.
+ 
+ 
+ Foi criada uma solução automatizada para permitir que o time que consome os arquivos tenha autonomia total para baixar e excluir os arquivos de migração sem depender de outro time."
+ 
+ 
+ Agora, o time responsável pela integração pode baixar os arquivos de migração diretamente, sem precisar esperar que outro time faça essa tarefa manualmente."
+ 
+ Mostre o fluxo do processo de migração, com a explicação de como o arquivo era baixado manualmente antes e como agora o processo é automatizado para a equipe que consome os arquivos.
+ 
+ Fluxograma: Mostre claramente a diferenciação entre o processo manual e o automatizado.
+Antes: Dependência de outro time para fazer o download dos arquivos.
+Depois: O time que consome os arquivos pode baixá-los automaticamente, sem depender de outro time.
+
+"Aumento de eficiência e autonomia no processo de migração."
+Redução de dependência e ganhos de tempo para a equipe.
+ 
+ 
+ 
+
+
+
