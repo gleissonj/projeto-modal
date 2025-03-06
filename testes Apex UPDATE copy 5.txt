@@ -85,3 +85,52 @@ it('should download and delete files successfully', async () => {
   expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith(environment.bucket, 'file1.txt');
   expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith(environment.bucket, 'file2.txt');
 });
+
+
+-----------------------
+
+
+it('should download and delete files successfully', async () => {
+  component.selectValue = 'EV1';  // Atribui valor para selectValue
+
+  // Simulando a resposta de loadFiles com dois arquivos
+  s3ServiceMock.listFiles.mockReturnValue(of(['file1.txt', 'file2.txt']));
+
+  // Mockando o retorno de downloadFile com um Blob para cada arquivo
+  const mockBlob1 = new Blob(['file1 content'], { type: 'text/plain' });
+  const mockBlob2 = new Blob(['file2 content'], { type: 'text/plain' });
+  
+  // Mock de downloadFile
+  s3ServiceMock.downloadFile.mockImplementation((bucket, fileName) => {
+    if (fileName === 'file1.txt') {
+      return of(mockBlob1);
+    } else if (fileName === 'file2.txt') {
+      return of(mockBlob2);
+    }
+    return of(new Blob());  // Para outros casos, retorna um Blob vazio
+  });
+
+  // Simulando a resposta de deleteFile com sucesso
+  s3ServiceMock.deleteFile.mockReturnValue(of(null));
+
+  // Mockando createObjectURL para simular um link de download
+  const createObjectURLMock = jest.fn().mockReturnValue('mockedUrl');
+  global.URL.createObjectURL = createObjectURLMock;
+
+  // Executando o método
+  await component.downloadFileMigration();
+
+  // Verificando se a função listFiles foi chamada com o bucket e prefixo corretos
+  expect(s3ServiceMock.listFiles).toHaveBeenCalledWith(environment.bucket, environment.fileEV1);
+
+  // Verificando se downloadFile foi chamado para cada arquivo
+  expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith(environment.bucket, 'file1.txt');
+  expect(s3ServiceMock.downloadFile).toHaveBeenCalledWith(environment.bucket, 'file2.txt');
+
+  // Verificando se createObjectURL foi chamado corretamente para cada arquivo
+  expect(createObjectURLMock).toHaveBeenCalledTimes(2);  // Deveria ser chamado duas vezes (para cada arquivo)
+
+  // Verificando se deleteFile foi chamado para cada arquivo após o download
+  expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith(environment.bucket, 'file1.txt');
+  expect(s3ServiceMock.deleteFile).toHaveBeenCalledWith(environment.bucket, 'file2.txt');
+});
