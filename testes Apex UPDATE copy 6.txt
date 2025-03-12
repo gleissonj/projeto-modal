@@ -41,7 +41,22 @@ Utilize ícones para representar ações, como uma chave inglesa para ajustes de
 O objetivo desta tarefa foi corrigir problemas de integração relacionados ao fluxo de dados de assets entre o MuleSoft e o sistema Salesforce.
  Houve vários ajustes necessários ao longo do percurso, principalmente no fluxo do objeto Assets na Salesforce."
  
+ obs: Fazer timeline
  
+Caixas de Texto Explicativas:
+
+Ao lado de cada seta ou etapa, insira uma caixa de texto explicativa com um texto breve sobre o que está acontecendo naquela fase.
+Use frases curtas e objetivas, por exemplo:
+“Ajustes no MuleSoft: Correção no mapeamento de campos.”
+"Fluxo de dados entre MuleSoft e Salesforce."
+"Ajustes no Salesforce para garantir a atualização do objeto Assets."
+
+
+Use setas coloridas para conectar cada etapa. Essas setas indicarão o fluxo do processo entre as várias fases.
+Para as cores, você pode usar:
+Azul: Para indicar ajustes no MuleSoft.
+Verde: Para mostrar os ajustes no Salesforce (objeto Assets).
+Laranja: Para indicar o fluxo de dados ou integração.
  ----------------------------------
  
  
@@ -66,6 +81,15 @@ O fluxo de carga do prospect não estava preparado para lidar com múltiplos tip
  
  (pegar print:  Exemplo de visualização: "Antes, todos os prospectos eram carregados de forma igual. Agora, com o Record Type, podemos separar e tratar prospectos do Agro de maneira distinta.")
  
+
+ Ex: Diagrama de fluxo com diferentes setas para cada tipo de prospecto, como uma seta destacada para o setor Agro.
+
+ Sugestão visual: Um fluxo de dados com setas separadas para "Agro" e outros setores, mostrando como cada tipo de registro é tratado separadamente.
+
+
+ Ilustração do Salesforce: Adicione uma captura de tela ou um ícone do Salesforce, destacando a interface onde o Record Type seria configurado ou mostrado. Pode ser algo como uma tela que mostra diferentes categorias de prospectos, com uma marcação visual para "Agro" ou outros tipos de registros.
+
+ Crie ou busque uma captura de tela do Salesforce: Se você tiver acesso ao Salesforce, faça uma captura de tela mostrando a interface com diferentes tipos de prospectos (pode ser uma tela com o Record Type aplicado).
  -------------------------------
  
  
@@ -149,6 +173,20 @@ Depois: O time que consome os arquivos pode baixá-los automaticamente, sem depe
 "Aumento de eficiência e autonomia no processo de migração."
 Redução de dependência e ganhos de tempo para a equipe.
  
+
+ 1. Fluxograma do Processo de Migração
+Divida o fluxograma em duas partes: uma para o processo manual e outra para o automatizado.
+Use cores diferentes para destacar os dois processos.
+Antes (Processo Manual):
+Etapa 1: Squad responsável gera o arquivo de migração.
+Etapa 2: Squad precisa ir até o sistema para fazer o download do arquivo.
+Etapa 3: Dependência de outra squad para completar a tarefa.
+Etapa 4: Download e exclusão feitos manualmente, criando atraso e dependência.
+Depois (Processo Automatizado):
+Etapa 1: Squad responsável pela integração pode acessar automaticamente o sistema.
+Etapa 2: Autonomia para realizar o download sem depender de outro time.
+Etapa 3: Exclusão de arquivos realizada automaticamente.
+Etapa 4: A equipe consome o arquivo diretamente, sem atrasos ou dependências.
  
  
 
