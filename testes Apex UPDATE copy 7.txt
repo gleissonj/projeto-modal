@@ -5,7 +5,7 @@ onde foi preciso atualizar o identificador de grupo econômico para garantir dad
 Com isso o trabalho começou um pouco antes, no glue, onde o Will e a Celina que trouxeram esse campo do identificador raiz
 e realizei a inclusao desse novo valor no fluxo do renovacao de limite 
 
-o que com essa correção agora temos um processo de carga mais confiaveis do renovacao de limite
+o que com essa correção a gente passou a ter um processo de carga mais confiaveis do renovacao de limite
 
 
 Demanda - atrasos resolucao 4966
@@ -14,6 +14,9 @@ Vários ajustes estavam sendo feitos ao longo do percurso entre o glue >> muleso
 
 explicar desenho
 
+ficou por algum tempo esses ajustes, até a gente chegar no modelo final q temos hoje
+
+
 
 
 Demanda - Prospeccao Agro
@@ -21,9 +24,9 @@ Demanda - Prospeccao Agro
 O setor Agro agora irá utilizar o mesmo processo de prospecção, mas com diferentes tipos de registros dentro do objeto Prospect. Para isso, foi necessário incluir o Record Type no fluxo de carga do prospect,
  garantindo que os dados sejam tratados de maneira adequada."
  
- O fluxo de carga do prospect não estava preparado para lidar com múltiplos tipos de registros. Isso impedia que diferentes categorias de prospectos,
  
- Foi necessário configurar o Record Type no fluxo de carga do Prospect, permitindo a diferenciação dos tipos de registros
+ 
+ Entao Foi necessário configurar o Record Type no fluxo de integração da carga do Prospect, permitindo a diferenciação dos tipos de registros
  
  
  
@@ -40,6 +43,8 @@ O setor Agro agora irá utilizar o mesmo processo de prospecção, mas com difer
  Se o arquivo vem do Salesforce, ele passa pela etapa de conversão antes de ser enviado para o IBBA.
 
 Se não for do Salesforce, o arquivo segue para o DI4 sem alterações.
+
+Com esse tratamento a gente conseguiu realizar o upload de arquivos vindo da salesforce
 
 
 Demanda - AWS atualizacao certificados
@@ -74,12 +79,14 @@ a gente faz a verificacao se desse arquivos os grupos q tao nele possuem na sale
 
 se existir a gente atualiza o objeto account 
 
+foi feito tbm nesse fluxo o desenvolvimento de atualizacao em lote respeitando os limites de update da salesforce  
+
 entao com isso a integracao com os dados da salesforce fica mais eficiente evitando erros e garantindo que os registros fosse atualizados corretamente 
 
 
 Demanda - documentos api
 
-Durante esta sprint, fui responsável por documentar todas as integrações utilizadas pela nossa squad. A tarefa envolveu a criação de
+Durante esta sprint, fiquei responsável por documentar todas as integrações utilizadas pela nossa squad. A tarefa envolveu a criação de
  8 documentações técnicas que detalham as APIs utilizadas, seus fluxos e funcionalidades. Aproveito também para agradecer ao Fábio, 
  que forneceu o layout e as diretrizes para a documentação, o que facilitou muito o processo e me ajudou a manter a consistência e clareza nos documentos.
  
@@ -93,7 +100,8 @@ Facilitar o uso das integrações por outros times, evitando mal-entendidos e er
 Demanda - Lead | atualizacao via botao de contato para escolher qual o melhor contato, o atual ou o novo
 
 Foi necessário criar um modal para permitir que o usuário escolhesse o melhor contato de um determinado CNPJ. 
-O objetivo era garantir que o usuário tivesse a opção de selecionar entre o contato que estava retornando
+essa demanda a gente ja tinha feito ha um tempo atras
+porem agora O objetivo era garantir que o usuário tivesse a opção de selecionar entre o contato que estava retornando
  da API ou o contato que já estava previamente preenchido no sistema.
  
  
