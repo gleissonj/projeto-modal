@@ -1,0 +1,143 @@
+DEMANDA - Lead | atualizacao via botao de contato para escolher qual o melhor contato, o atual ou o novo
+
+Foi necessário criar um modal para permitir que o usuário escolhesse o melhor contato de um determinado CNPJ. 
+essa demanda a gente ja tinha feito ha um tempo atras
+porem agora O objetivo era garantir que o usuário tivesse a opção de selecionar entre o contato que estava retornando
+ da API ou o contato que já estava previamente preenchido no sistema.
+ 
+ 
+ Desafio:
+
+Criar uma interface intuitiva para que o usuário pudesse escolher facilmente o melhor contato.
+Garantir que a atualização fosse realizada de forma correta, sem sobrescrever informações importantes.
+
+Solução implementada:
+
+Modal interativo: Criamos um modal que exibe as duas opções de contato (API e preenchido), permitindo ao usuário fazer a escolha de forma simples e rápida.
+Atualização inteligente: A escolha do usuário determina qual contato será mantido, garantindo que o sistema sempre tenha o dado mais preciso e relevante.
+
+
+DEMANDA - documentos no ibba
+ 
+ No processo de integração com o DI4, desenvolvemos a API de upload e download e pesquisa de documentos. 
+ 
+ Contudo, quando o Salesforce enviava os arquivos, eles chegavam em um formato que o DI4 não aceitava.
+ 
+ Entao Foi necessário criar uma lógica no MuleSoft para tratar essa incompatibilidade.
+ 
+ O MuleSoft recebe a requisição e verifica se ela vem do Salesforce. Se for o caso, o arquivo é automaticamente convertido para o formato que o IBBA aceita."
+ 
+ Se o arquivo vem do Salesforce, ele passa pela etapa de conversão antes de ser enviado para o IBBA.
+
+Se não for do Salesforce, o arquivo segue para o DI4 sem alterações.
+
+Com esse tratamento a gente conseguiu realizar o upload de arquivos vindo da salesforce
+
+
+
+Demanda - atrasos resolucao 4966
+
+Atuei na construcao de duas peças da solucao do 4966
+a primeira é o inicio de onde tudo começa no fluxo, com a subida do arquivo de atrasos pelo portal
+entao precisei criar um card para upload 
+
+Além disso, para garantir segurança no processo, o card não poderia ficar acessível para qualquer usuário. 
+Entao realizei a criacao de um grupo de acesso, onde o usuário precisa solicitar permissão para poder realizar o upload do arquivo de atrasos.
+
+Solução implementada:
+
+Card de upload: Criação de um card intuitivo no portal para o envio de arquivos de atrasos.
+Controle de acesso: Implementação de um grupo de acesso, onde o usuário deve solicitar permissão antes de poder subir o arquivo, garantindo maior controle e segurança no processo.
+
+
+a outra peça é a integração dos dados até a salesforce
+
+Durante a integração entre o MuleSoft e o Salesforce, 
+vários ajustes foram realizados ao longo do processo, 
+de modo a garantir a precisão do fluxo de dados. 
+
+O modelo final só foi alcançado após várias iterações, com o time do mano 
+que permitiram a refinamento da solução.
+
+até a gente chegar no modelo final 
+
+{
+Nessa etapa vários ajustes foram realizados ao longo do percurso entre o glue >> mulesoft e salesofrce até a gente chegar em um modelo final 
+explicar desenho
+a gente fazia reuniao com o mano e voltava q precisaria de novas adaptacoes
+ficou por algum tempo esses ajustes, até a gente chegar no modelo final 
+}
+
+"Início da Integração"
+"Ajustes de Fluxo no MuleSoft"
+"Mapeamento de Campos"
+"Finalização da Integração e Validação no Salesforce"
+
+
+DEMANDA - Prospeccao Agro
+
+O setor Agro agora irá utilizar o mesmo processo de prospecção, mas com diferentes tipos de registros dentro do objeto Prospect.
+ Para isso, foi necessário incluir o Record Type no fluxo de carga do prospect,
+ garantindo que os dados sejam tratados de maneira adequada."
+ 
+ 
+ 
+ Entao Foi necessário configurar o Record Type no fluxo de carga do Prospect, permitindo a diferenciação dos tipos de registros
+ 
+
+DEMANDA -  Renovação de Limite - Correção de Identificador Raiz
+
+onde foi preciso atualizar o identificador de grupo econômico para garantir dados precisos na renovação de limite
+
+Com isso o trabalho começou um pouco antes, no glue, onde o Will e a Celina que trouxeram esse campo do identificador raiz
+e realizei a inclusao desse novo valor no fluxo do renovacao de limite 
+
+o que com essa correção agora temos um processo de carga mais confiaveis do renovacao de limite
+
+DEMANDA - documentacao git pages | APIS 
+ 
+ Durante esta sprint, fiquei responsável por documentar todas as integrações utilizadas pela nossa squad. A tarefa envolveu a criação de
+ 8 documentações técnicas que detalham as APIs utilizadas, seus fluxos e funcionalidades. Aproveito também para agradecer ao Fábio, 
+ que forneceu o layout e as diretrizes para a documentação, o que facilitou muito o processo e me ajudou a manter a consistência e clareza nos documentos.
+ 
+ O desafio:
+
+Criar documentações claras e concisas para 8 APIs, detalhando seus fluxos e funcionalidades.
+Garantir consistência no formato das documentações.
+Facilitar o uso das integrações por outros times, evitando mal-entendidos e erros.
+
+
+DEMANDA - AWS atualizacao certificados
+
+Os certificados de segurança utilizados para garantir a integridade das comunicações entre os clientes e as APIs
+e esses certificados expiram anualmente.
+
+Foi necessário renovar os certificados na API da AWS
+e alem disso realizar a aberturas de chamados para o time do banco que realiza a confomrmidade desse novo certificado com as normas de segurança
+
+
+
+DEMANDA - integração Prospect - visao liderança
+
+Para a integracao da prospeccao visao lideranca foi necessario Implementar dois fluxos distintos para ativação e validação. aq no mule pra atualizar o objeto account
+
+Entao a gente realiza a busca do arquivo com os dados de ativacao e validacao no s3 
+
+a gente faz a verificacao se desse arquivos os grupos q tao nele possuem na salesforce
+
+se existir a gente atualiza o objeto account 
+
+foi feito tbm nesse fluxo o desenvolvimento de atualizacao em lote respeitando os limites de update da salesforce  
+
+entao com isso a integracao com os dados da salesforce fica mais eficiente evitando erros e garantindo que os registros sejam atualizados corretamente 
+
+
+DEMANDA - download e exclusão de arquivos de migração
+
+migração é uma funcionalidade que hje ta no 360 porem é de uma squad aq do ibba 
+dar exemplo do que é migração 
+
+
+A demanda envolvia automatizar o processo de download e exclucao de arquivos de migração 
+
+ler do slide
