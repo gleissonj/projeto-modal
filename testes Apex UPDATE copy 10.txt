@@ -1,61 +1,65 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { YourComponent } from './your-component'; // ajuste o caminho conforme necessário
-import { MsalService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
-import { InteractionType, RedirectRequest } from '@azure/msal-browser';
+import { YourComponent } from './your-component'; // ajuste
+import { MsalService } from '@azure/msal-angular';
+import { of } from 'rxjs';
 
-describe('YourComponent - Método login()', () => {
+describe('YourComponent - Método setLoginDisplay()', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
 
-  // Mock do MsalService
-  const msalServiceMock = {
-    loginRedirect: jest.fn(),
-    logoutRedirect: jest.fn() // caso use em outros métodos
+  const mockAccount = {
+    username: 'user@test.com',
+    idTokenClaims: {
+      employeeid: '12345'
+    }
   };
 
-  // Configuração completa e tipada do MSAL_GUARD_CONFIG
-  const guardConfig: MsalGuardConfiguration = {
-    interactionType: InteractionType.Redirect,
-    authRequest: {
-      scopes: ['user.read'],
-      extraQueryParameters: { prompt: 'select_account' }
-    }
+  const msalServiceMock = {
+    instance: {
+      getAllAccounts: jest.fn(),
+    },
+    acquireTokenSilent: jest.fn()
   };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [YourComponent],
       providers: [
-        { provide: MsalService, useValue: msalServiceMock },
-        { provide: MSAL_GUARD_CONFIG, useValue: guardConfig }
+        { provide: MsalService, useValue: msalServiceMock }
       ]
     });
 
     fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
+
+    // Spy no localStorage
+    jest.spyOn(window.localStorage.__proto__, 'setItem');
+    jest.spyOn(window.localStorage.__proto__, 'clear');
+    jest.spyOn(component, 'login'); // caso vá testar chamada ao login()
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('deve chamar loginRedirect com authRequest quando definido', () => {
-    component.login();
+  it('deve limpar o localStorage e chamar login quando não há contas', () => {
+    msalServiceMock.instance.getAllAccounts.mockReturnValue([]);
 
-    expect(msalServiceMock.loginRedirect).toHaveBeenCalledWith(
-      expect.objectContaining({
-        scopes: ['user.read'],
-        extraQueryParameters: { prompt: 'select_account' }
-      })
-    );
+    component.setLoginDisplay();
+
+    expect(localStorage.clear).toHaveBeenCalled();
+    expect(component.login).toHaveBeenCalled();
+    expect(component.loginDisplay).toBe(false);
   });
 
-  it('deve chamar loginRedirect sem parâmetros quando authRequest não está definido', () => {
-    // Simula authRequest undefined
-    component.msalGuardConfig.authRequest = undefined;
+  it('deve definir loginDisplay, salvar userLog e token quando há conta', () => {
+    msalServiceMock.instance.getAllAccounts.mockReturnValue([mockAccount]);
+    msalServiceMock.acquireTokenSilent.mockReturnValue(of({ idToken: 'fake-token' }));
 
-    component.login();
+    component.setLoginDisplay();
 
-    expect(msalServiceMock.loginRedirect).toHaveBeenCalledWith();
+    expect(component.loginDisplay).toBe(true);
+    expect(localStorage.setItem).toHaveBeenCalledWith('userLog', JSON.stringify('12345'));
+    expect(localStorage.setItem).toHaveBeenCalledWith('token', 'fake-token');
   });
 });
