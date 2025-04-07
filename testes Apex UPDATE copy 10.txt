@@ -8,7 +8,29 @@ describe('YourComponent', () => {
   let fixture: ComponentFixture<YourComponent>;
   let multipartUploadServiceMock: any;
 
+  // Mock manual do localStorage
+  const localStorageMock = (() => {
+    let store: Record<string, string> = {};
+
+    return {
+      getItem: (key: string) => store[key] || null,
+      setItem: (key: string, value: string) => { store[key] = value; },
+      removeItem: (key: string) => { delete store[key]; },
+      clear: () => { store = {}; },
+    };
+  })();
+
+  beforeAll(() => {
+    // Sobrescreve o localStorage do navegador com nosso mock
+    Object.defineProperty(window, 'localStorage', {
+      value: localStorageMock,
+    });
+  });
+
   beforeEach(() => {
+    // Prepara o conteúdo do "localStorage"
+    window.localStorage.setItem('gruposAcessos', JSON.stringify(['admin']));
+
     multipartUploadServiceMock = {
       responseWithSuccessOrError$: of({ message: 'Erro ao processar' }),
     };
@@ -23,74 +45,33 @@ describe('YourComponent', () => {
     fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
 
-    // Espiando os métodos
+    // Espiando métodos do componente
     jest.spyOn(component, 'verificaAutorizacao');
     jest.spyOn(component, 'verificaUserOportunidades');
-    jest.spyOn(component, 'updateFileMultiple');
     jest.spyOn(component, 'startStepFunctionProspect');
     jest.spyOn(component, 'showMessage');
 
-    // Mock localStorage
-    const store = { gruposAcessos: JSON.stringify(['admin']) };
-    jest.spyOn(localStorage.__proto__, 'getItem').mockImplementation((key: string) => store[key]);
-
-    // Dados de simulação
+    // Estado necessário para o teste
     component.nameFunc = 'Prospect';
     component.selectedFiles = [];
   });
 
-  it('deve executar ngOnInit corretamente', (done) => {
+  afterEach(() => {
+    window.localStorage.clear(); // Limpa o "localStorage" entre testes
+    jest.clearAllMocks();        // Limpa todos os spies/mocks
+  });
+
+  it('deve executar ngOnInit corretamente para Prospect', (done) => {
     component.ngOnInit();
 
     expect(component.verificaAutorizacao).toHaveBeenCalled();
     expect(component.verificaUserOportunidades).toHaveBeenCalled();
     expect(component.gruposAcessos).toEqual(['admin']);
 
-    // Aguarda o setTimeout
     setTimeout(() => {
       expect(component.startStepFunctionProspect).toHaveBeenCalled();
       expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar', 'error');
       done();
-    }, 5100);
-  });
-});
-
-
-
-const store: Record<string, string> = {
-  gruposAcessos: JSON.stringify(['admin'])
-};
-
-jest.spyOn(window.localStorage.__proto__, 'getItem')
-  .mockImplementation((key: string) => store[key]);
-
-
-jest.spyOn(localStorage.__proto__, 'getItem')
-  .mockImplementation((...args: unknown[]) => {
-    const key = args[0] as string;
-    return store[key];
-  });
-
-
-
-
-describe('YourComponent', () => {
-  let getItemSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    const store = {
-      gruposAcessos: JSON.stringify(['admin']),
-    };
-
-    getItemSpy = jest.spyOn(window.localStorage.__proto__, 'getItem')
-      .mockImplementation((key: string) => store[key]);
-  });
-
-  afterEach(() => {
-    getItemSpy.mockRestore(); // 🔁 Restaura o original após cada teste
-  });
-
-  it('deve executar ngOnInit corretamente', (done) => {
-    // ... seu teste
+    }, 5100); // Espera o setTimeout do showMessage
   });
 });
