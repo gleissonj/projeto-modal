@@ -1,28 +1,30 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { YourComponent } from './your-component';
-import { MsalService, MSAL_GUARD_CONFIG } from '@azure/msal-angular';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { YourComponent } from './your-component'; // ajuste o caminho conforme seu projeto
+import { MsalService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
 
-describe('YourComponent - login()', () => {
+describe('YourComponent - Método login()', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
-  let authServiceMock: any;
+
+  // Mock do MsalService com os métodos que podem ser chamados
+  const msalServiceMock = {
+    loginRedirect: jest.fn(),
+    logoutRedirect: jest.fn() // incluso aqui se você usar em outro ponto
+  };
 
   beforeEach(() => {
-    authServiceMock = {
-      loginRedirect: jest.fn()
-    };
-
     TestBed.configureTestingModule({
       declarations: [YourComponent],
       providers: [
-        { provide: MsalService, useValue: authServiceMock },
+        { provide: MsalService, useValue: msalServiceMock },
         {
           provide: MSAL_GUARD_CONFIG,
           useValue: {
             authRequest: {
-              scopes: ['user.read']
+              scopes: ['user.read'],
+              extraQueryParameters: { prompt: 'select_account' }
             }
-          }
+          } as MsalGuardConfiguration
         }
       ]
     });
@@ -31,19 +33,27 @@ describe('YourComponent - login()', () => {
     component = fixture.componentInstance;
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('deve chamar loginRedirect com authRequest quando definido', () => {
     component.login();
 
-    expect(authServiceMock.loginRedirect).toHaveBeenCalledWith(expect.objectContaining({
-      scopes: ['user.read']
-    }));
+    expect(msalServiceMock.loginRedirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scopes: ['user.read'],
+        extraQueryParameters: { prompt: 'select_account' }
+      })
+    );
   });
 
   it('deve chamar loginRedirect sem parâmetros quando authRequest não está definido', () => {
+    // Simula authRequest undefined
     component.msalGuardConfig.authRequest = undefined;
 
     component.login();
 
-    expect(authServiceMock.loginRedirect).toHaveBeenCalledWith();
+    expect(msalServiceMock.loginRedirect).toHaveBeenCalledWith();
   });
 });
