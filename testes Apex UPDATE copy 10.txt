@@ -54,3 +54,14 @@ describe('YourComponent', () => {
     }, 5100);
   });
 });
+
+
+
+const store: Record<string, string> = {
+  gruposAcessos: JSON.stringify(['admin'])
+};
+
+jest.spyOn(window.localStorage.__proto__, 'getItem')
+  .mockImplementation((key: string) => store[key]);
+
+
