@@ -75,3 +75,22 @@ describe('YourComponent', () => {
     }, 5100); // Espera o setTimeout do showMessage
   });
 });
+
+
+
+
+
+import { fakeAsync, tick } from '@angular/core/testing';
+
+it('deve executar ngOnInit corretamente para Prospect', fakeAsync(() => {
+  component.ngOnInit();
+
+  expect(component.verificaAutorizacao).toHaveBeenCalled();
+  expect(component.verificaUserOportunidades).toHaveBeenCalled();
+
+  // Simula o tempo passando
+  tick(5100);
+
+  expect(component.startStepFunctionProspect).toHaveBeenCalled();
+  expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar', 'error');
+}));
