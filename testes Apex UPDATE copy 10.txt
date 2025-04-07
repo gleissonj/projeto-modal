@@ -1,0 +1,56 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { YourComponent } from './your-component';
+import { MultipartUploadService } from 'path-to-service';
+import { of } from 'rxjs';
+
+describe('YourComponent', () => {
+  let component: YourComponent;
+  let fixture: ComponentFixture<YourComponent>;
+  let multipartUploadServiceMock: any;
+
+  beforeEach(() => {
+    multipartUploadServiceMock = {
+      responseWithSuccessOrError$: of({ message: 'Erro ao processar' }),
+    };
+
+    TestBed.configureTestingModule({
+      declarations: [YourComponent],
+      providers: [
+        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+      ]
+    });
+
+    fixture = TestBed.createComponent(YourComponent);
+    component = fixture.componentInstance;
+
+    // Espiando os métodos
+    jest.spyOn(component, 'verificaAutorizacao');
+    jest.spyOn(component, 'verificaUserOportunidades');
+    jest.spyOn(component, 'updateFileMultiple');
+    jest.spyOn(component, 'startStepFunctionProspect');
+    jest.spyOn(component, 'showMessage');
+
+    // Mock localStorage
+    const store = { gruposAcessos: JSON.stringify(['admin']) };
+    jest.spyOn(localStorage.__proto__, 'getItem').mockImplementation((key: string) => store[key]);
+
+    // Dados de simulação
+    component.nameFunc = 'Prospect';
+    component.selectedFiles = [];
+  });
+
+  it('deve executar ngOnInit corretamente', (done) => {
+    component.ngOnInit();
+
+    expect(component.verificaAutorizacao).toHaveBeenCalled();
+    expect(component.verificaUserOportunidades).toHaveBeenCalled();
+    expect(component.gruposAcessos).toEqual(['admin']);
+
+    // Aguarda o setTimeout
+    setTimeout(() => {
+      expect(component.startStepFunctionProspect).toHaveBeenCalled();
+      expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar', 'error');
+      done();
+    }, 5100);
+  });
+});
