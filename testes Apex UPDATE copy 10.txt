@@ -70,3 +70,27 @@ jest.spyOn(localStorage.__proto__, 'getItem')
     const key = args[0] as string;
     return store[key];
   });
+
+
+
+
+describe('YourComponent', () => {
+  let getItemSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    const store = {
+      gruposAcessos: JSON.stringify(['admin']),
+    };
+
+    getItemSpy = jest.spyOn(window.localStorage.__proto__, 'getItem')
+      .mockImplementation((key: string) => store[key]);
+  });
+
+  afterEach(() => {
+    getItemSpy.mockRestore(); // 🔁 Restaura o original após cada teste
+  });
+
+  it('deve executar ngOnInit corretamente', (done) => {
+    // ... seu teste
+  });
+});
