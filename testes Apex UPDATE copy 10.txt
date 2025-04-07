@@ -1,15 +1,25 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { YourComponent } from './your-component'; // ajuste o caminho conforme seu projeto
+import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { YourComponent } from './your-component'; // ajuste o caminho conforme necessário
 import { MsalService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
+import { InteractionType, RedirectRequest } from '@azure/msal-browser';
 
 describe('YourComponent - Método login()', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
 
-  // Mock do MsalService com os métodos que podem ser chamados
+  // Mock do MsalService
   const msalServiceMock = {
     loginRedirect: jest.fn(),
-    logoutRedirect: jest.fn() // incluso aqui se você usar em outro ponto
+    logoutRedirect: jest.fn() // caso use em outros métodos
+  };
+
+  // Configuração completa e tipada do MSAL_GUARD_CONFIG
+  const guardConfig: MsalGuardConfiguration = {
+    interactionType: InteractionType.Redirect,
+    authRequest: {
+      scopes: ['user.read'],
+      extraQueryParameters: { prompt: 'select_account' }
+    }
   };
 
   beforeEach(() => {
@@ -17,15 +27,7 @@ describe('YourComponent - Método login()', () => {
       declarations: [YourComponent],
       providers: [
         { provide: MsalService, useValue: msalServiceMock },
-        {
-          provide: MSAL_GUARD_CONFIG,
-          useValue: {
-            authRequest: {
-              scopes: ['user.read'],
-              extraQueryParameters: { prompt: 'select_account' }
-            }
-          } as MsalGuardConfiguration
-        }
+        { provide: MSAL_GUARD_CONFIG, useValue: guardConfig }
       ]
     });
 
