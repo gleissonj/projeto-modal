@@ -1,96 +1,53 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { YourComponent } from './your-component';
-import { MultipartUploadService } from 'path-to-service';
-import { of } from 'rxjs';
+import { MsalService, MSAL_GUARD_CONFIG } from '@azure/msal-angular';
 
-describe('YourComponent', () => {
+describe('YourComponent - login()', () => {
   let component: YourComponent;
   let fixture: ComponentFixture<YourComponent>;
-  let multipartUploadServiceMock: any;
-
-  // Mock manual do localStorage
-  const localStorageMock = (() => {
-    let store: Record<string, string> = {};
-
-    return {
-      getItem: (key: string) => store[key] || null,
-      setItem: (key: string, value: string) => { store[key] = value; },
-      removeItem: (key: string) => { delete store[key]; },
-      clear: () => { store = {}; },
-    };
-  })();
-
-  beforeAll(() => {
-    // Sobrescreve o localStorage do navegador com nosso mock
-    Object.defineProperty(window, 'localStorage', {
-      value: localStorageMock,
-    });
-  });
+  let authServiceMock: any;
 
   beforeEach(() => {
-    // Prepara o conteúdo do "localStorage"
-    window.localStorage.setItem('gruposAcessos', JSON.stringify(['admin']));
+    const mockAuthRequest = {
+      scopes: ['user.read'],
+      extraQueryParameters: { prompt: 'select_account' }
+    };
 
-    multipartUploadServiceMock = {
-      responseWithSuccessOrError$: of({ message: 'Erro ao processar' }),
+    authServiceMock = {
+      loginRedirect: jest.fn()
     };
 
     TestBed.configureTestingModule({
       declarations: [YourComponent],
       providers: [
-        { provide: MultipartUploadService, useValue: multipartUploadServiceMock }
+        { provide: MsalService, useValue: authServiceMock },
+        { provide: MSAL_GUARD_CONFIG, useValue: { authRequest: mockAuthRequest } }
       ]
     });
 
     fixture = TestBed.createComponent(YourComponent);
     component = fixture.componentInstance;
-
-    // Espiando métodos do componente
-    jest.spyOn(component, 'verificaAutorizacao');
-    jest.spyOn(component, 'verificaUserOportunidades');
-    jest.spyOn(component, 'startStepFunctionProspect');
-    jest.spyOn(component, 'showMessage');
-
-    // Estado necessário para o teste
-    component.nameFunc = 'Prospect';
-    component.selectedFiles = [];
   });
 
   afterEach(() => {
-    window.localStorage.clear(); // Limpa o "localStorage" entre testes
-    jest.clearAllMocks();        // Limpa todos os spies/mocks
+    jest.clearAllMocks();
   });
 
-  it('deve executar ngOnInit corretamente para Prospect', (done) => {
-    component.ngOnInit();
+  it('deve chamar loginRedirect com authRequest quando definido', () => {
+    component.login();
 
-    expect(component.verificaAutorizacao).toHaveBeenCalled();
-    expect(component.verificaUserOportunidades).toHaveBeenCalled();
-    expect(component.gruposAcessos).toEqual(['admin']);
+    expect(authServiceMock.loginRedirect).toHaveBeenCalledWith(expect.objectContaining({
+      scopes: ['user.read'],
+      extraQueryParameters: { prompt: 'select_account' }
+    }));
+  });
 
-    setTimeout(() => {
-      expect(component.startStepFunctionProspect).toHaveBeenCalled();
-      expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar', 'error');
-      done();
-    }, 5100); // Espera o setTimeout do showMessage
+  it('deve chamar loginRedirect sem parâmetros quando authRequest não está definido', () => {
+    // Altera a configuração manualmente
+    component.msalGuardConfig.authRequest = undefined;
+
+    component.login();
+
+    expect(authServiceMock.loginRedirect).toHaveBeenCalledWith();
   });
 });
-
-
-
-
-
-import { fakeAsync, tick } from '@angular/core/testing';
-
-it('deve executar ngOnInit corretamente para Prospect', fakeAsync(() => {
-  component.ngOnInit();
-
-  expect(component.verificaAutorizacao).toHaveBeenCalled();
-  expect(component.verificaUserOportunidades).toHaveBeenCalled();
-
-  // Simula o tempo passando
-  tick(5100);
-
-  expect(component.startStepFunctionProspect).toHaveBeenCalled();
-  expect(component.showMessage).toHaveBeenCalledWith('Erro ao processar', 'error');
-}));
