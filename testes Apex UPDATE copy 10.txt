@@ -65,3 +65,8 @@ jest.spyOn(window.localStorage.__proto__, 'getItem')
   .mockImplementation((key: string) => store[key]);
 
 
+jest.spyOn(localStorage.__proto__, 'getItem')
+  .mockImplementation((...args: unknown[]) => {
+    const key = args[0] as string;
+    return store[key];
+  });
