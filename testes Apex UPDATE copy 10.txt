@@ -8,11 +8,6 @@ describe('YourComponent - login()', () => {
   let authServiceMock: any;
 
   beforeEach(() => {
-    const mockAuthRequest = {
-      scopes: ['user.read'],
-      extraQueryParameters: { prompt: 'select_account' }
-    };
-
     authServiceMock = {
       loginRedirect: jest.fn()
     };
@@ -21,7 +16,14 @@ describe('YourComponent - login()', () => {
       declarations: [YourComponent],
       providers: [
         { provide: MsalService, useValue: authServiceMock },
-        { provide: MSAL_GUARD_CONFIG, useValue: { authRequest: mockAuthRequest } }
+        {
+          provide: MSAL_GUARD_CONFIG,
+          useValue: {
+            authRequest: {
+              scopes: ['user.read']
+            }
+          }
+        }
       ]
     });
 
@@ -29,21 +31,15 @@ describe('YourComponent - login()', () => {
     component = fixture.componentInstance;
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   it('deve chamar loginRedirect com authRequest quando definido', () => {
     component.login();
 
     expect(authServiceMock.loginRedirect).toHaveBeenCalledWith(expect.objectContaining({
-      scopes: ['user.read'],
-      extraQueryParameters: { prompt: 'select_account' }
+      scopes: ['user.read']
     }));
   });
 
   it('deve chamar loginRedirect sem parâmetros quando authRequest não está definido', () => {
-    // Altera a configuração manualmente
     component.msalGuardConfig.authRequest = undefined;
 
     component.login();
