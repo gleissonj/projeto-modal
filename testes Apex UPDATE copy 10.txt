@@ -1,20 +1,23 @@
-it('deve adicionar arquivos e atualizar hash se nome for diferente', () => {
-  const fakeFile = new File(['conteudo'], 'arquivo_teste.txt', { type: 'text/plain' });
-  const eventoMock = {
-    target: {
-      files: [fakeFile]
-    }
-  };
+it('deve processar o arquivo e chamar sendFilesToMultipartUpload quando selectedFiles tiver arquivos', () => {
+  const fakeFile = new File(['conteúdo'], 'teste.txt', { type: 'text/plain' });
 
-  component.selectedFiles = [];
-  component.hash = 'outro_arquivo.txt'; // diferente do nome do arquivo enviado
+  // Setup para passar direto do if
+  component.selectedFiles = [fakeFile];
+  component.generateMapMultipartUpload = jest.fn(); // mocka o método usado no bind
 
-  component.escolherArquivo(eventoMock);
+  component.updateFileMultiple();
 
-  // Verifica se o arquivo foi adicionado ao selectedFiles
-  expect(component.selectedFiles.length).toBe(1);
-  expect(component.selectedFiles[0].name).toBe('arquivo_teste.txt');
+  // Verifica se o primeiro arquivo foi atribuído corretamente
+  expect(component.file).toBe(fakeFile);
 
-  // Verifica se o hash foi atualizado
-  expect(component.hash).toBe('arquivo_teste.txt');
+  // Verifica se o arquivo foi removido do array
+  expect(component.selectedFiles.length).toBe(0);
+
+  // Verifica se os flags foram setados corretamente
+  expect(component.loading).toBe(true);
+  expect(component.subindoArquivo).toBe(true);
+
+  // Verifica se o método de envio foi chamado com o bind correto
+  expect(component.multipartUploadService.sendFilesToMultipartUpload)
+    .toHaveBeenCalledWith(expect.any(Function)); // o bind gera uma função
 });
