@@ -1,69 +1,22 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { YourComponent } from './your-component'; // Altere conforme o nome do seu componente
-import { MsalService } from '@azure/msal-angular';
-import { of } from 'rxjs';
+it('deve exibir erro se nameFunc for "OPP", houver 5 arquivos e os nomes forem inválidos', async () => {
+  // Arrange
+  component.nameFunc = 'OPP';
+  component.selectedFiles = [1, 2, 3, 4, 5]; // pode ser qualquer array com 5 elementos
 
-describe('YourComponent - setLoginDisplay()', () => {
-  let component: YourComponent;
-  let fixture: ComponentFixture<YourComponent>;
+  // Mock da validação do nome
+  component.validaNameArquivo = jest.fn().mockReturnValue(false);
+  component.valueNotFind = 'arquivo_esperado.pdf';
 
-  const mockAccount = {
-    username: 'user@test.com',
-    idTokenClaims: {
-      employeeid: '12345'
-    }
-  };
+  // Spy na função showMessage
+  const showMessageSpy = jest.spyOn(component, 'showMessage');
 
-  const msalServiceMock = {
-    loginRedirect: jest.fn(),
-    logoutRedirect: jest.fn(),
-    instance: {
-      getAllAccounts: jest.fn()
-    },
-    acquireTokenSilent: jest.fn()
-  };
+  // Act
+  await component.uploadArquivoAWS();
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      declarations: [YourComponent],
-      providers: [
-        { provide: MsalService, useValue: msalServiceMock }
-      ]
-    });
-
-    fixture = TestBed.createComponent(YourComponent);
-    component = fixture.componentInstance;
-
-    // ✅ Spies seguros sem __proto__
-    jest.spyOn(window.localStorage, 'setItem');
-    jest.spyOn(window.localStorage, 'clear');
-
-    // ✅ Mock do método login
-    component.login = jest.fn();
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('deve limpar localStorage e chamar login quando não há contas', () => {
-    msalServiceMock.instance.getAllAccounts.mockReturnValue([]);
-
-    component.setLoginDisplay();
-
-    expect(component.loginDisplay).toBe(false);
-    expect(localStorage.clear).toHaveBeenCalled();
-    expect(component.login).toHaveBeenCalled();
-  });
-
-  it('deve definir loginDisplay, salvar userLog e token quando há uma conta', () => {
-    msalServiceMock.instance.getAllAccounts.mockReturnValue([mockAccount]);
-    msalServiceMock.acquireTokenSilent.mockReturnValue(of({ idToken: 'fake-token' }));
-
-    component.setLoginDisplay();
-
-    expect(component.loginDisplay).toBe(true);
-    expect(localStorage.setItem).toHaveBeenCalledWith('userLog', JSON.stringify('12345'));
-    expect(localStorage.setItem).toHaveBeenCalledWith('token', 'fake-token');
-  });
+  // Assert
+  expect(component.validaNameArquivo).toHaveBeenCalled();
+  expect(showMessageSpy).toHaveBeenCalledWith(
+    'O nome do arquivo enviado não corresponde ao nome esperado: arquivo_esperado.pdf',
+    'error'
+  );
 });
