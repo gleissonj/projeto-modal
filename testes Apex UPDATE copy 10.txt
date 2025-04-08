@@ -2,24 +2,28 @@ describe('getValueNameOperation', () => {
   let component: YourComponent;
 
   beforeEach(() => {
-    component = new YourComponent(); // ajuste conforme seu componente real
+    component = new YourComponent(); // ou TestBed.createComponent(...).componentInstance
   });
 
-  it('deve retornar a parte antes do ponto quando houver ponto no nome', () => {
+  it('deve retornar a parte antes do ponto se existir ponto', () => {
     const result = component.getValueNameOperation('documento.pdf');
     expect(result).toBe('documento');
   });
 
-  it('deve retornar undefined quando não houver ponto no nome', () => {
+  it('deve retornar undefined se não houver ponto', () => {
     const result = component.getValueNameOperation('documento');
     expect(result).toBeUndefined();
   });
 
-  it('deve lidar com valor nulo ou indefinido sem lançar erro', () => {
-    const result = component.getValueNameOperation(null);
-    expect(result).toBeUndefined();
+  it('deve lançar erro se name for null', () => {
+    expect(() => component.getValueNameOperation(null)).toThrow();
+  });
+
+  it('deve lançar erro se name for undefined', () => {
+    expect(() => component.getValueNameOperation(undefined)).toThrow();
+  });
+
+  it('deve lançar erro se name não for string', () => {
+    expect(() => component.getValueNameOperation({})).toThrow();
   });
 });
-
-
-.
