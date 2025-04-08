@@ -1,33 +1,20 @@
-describe('getValueNameOperation', () => {
-  let component: any;
+it('deve adicionar arquivos e atualizar hash se nome for diferente', () => {
+  const fakeFile = new File(['conteudo'], 'arquivo_teste.txt', { type: 'text/plain' });
+  const eventoMock = {
+    target: {
+      files: [fakeFile]
+    }
+  };
 
-  beforeEach(() => {
-    component = {
-      getValueNameOperation(name: any) {
-        let index = name.indexOf('.');
-        if (index !== -1) {
-          return name.substring(0, index);
-        }
-      }
-    };
-  });
+  component.selectedFiles = [];
+  component.hash = 'outro_arquivo.txt'; // diferente do nome do arquivo enviado
 
-  it('deve retornar a parte antes do ponto se existir ponto', () => {
-    const result = component.getValueNameOperation('documento.pdf');
-    expect(result).toBe('documento');
-  });
+  component.escolherArquivo(eventoMock);
 
-  it('deve retornar undefined se não houver ponto', () => {
-    const result = component.getValueNameOperation('documento');
-    expect(result).toBeUndefined();
-  });
-});
+  // Verifica se o arquivo foi adicionado ao selectedFiles
+  expect(component.selectedFiles.length).toBe(1);
+  expect(component.selectedFiles[0].name).toBe('arquivo_teste.txt');
 
-
-
-it('deve retornar "documento" ao passar uma string com ponto', () => {
-  const input = 'documento.pdf';
-  expect(input.indexOf('.')).not.toBe(-1); // extra check para debug
-  const result = component.getValueNameOperation(input);
-  expect(result).toBe('documento');
+  // Verifica se o hash foi atualizado
+  expect(component.hash).toBe('arquivo_teste.txt');
 });
