@@ -1,13 +1,12 @@
 it('deve exibir erro se nameFunc for "OPP", houver 5 arquivos e os nomes forem inválidos', async () => {
   // Arrange
   component.nameFunc = 'OPP';
-  component.selectedFiles = [1, 2, 3, 4, 5]; // pode ser qualquer array com 5 elementos
+  component.selectedFiles = Array.from({ length: 5 }, (_, i) =>
+    new File(['conteudo'], `arquivo${i + 1}.txt`)
+  );
 
-  // Mock da validação do nome
   component.validaNameArquivo = jest.fn().mockReturnValue(false);
   component.valueNotFind = 'arquivo_esperado.pdf';
-
-  // Spy na função showMessage
   const showMessageSpy = jest.spyOn(component, 'showMessage');
 
   // Act
