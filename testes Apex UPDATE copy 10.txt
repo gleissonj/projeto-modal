@@ -22,3 +22,12 @@ describe('getValueNameOperation', () => {
     expect(result).toBeUndefined();
   });
 });
+
+
+
+it('deve retornar "documento" ao passar uma string com ponto', () => {
+  const input = 'documento.pdf';
+  expect(input.indexOf('.')).not.toBe(-1); // extra check para debug
+  const result = component.getValueNameOperation(input);
+  expect(result).toBe('documento');
+});
