@@ -1,21 +1,22 @@
-it('deve exibir erro se nameFunc for "OPP", houver 5 arquivos e os nomes forem inválidos', async () => {
-  // Arrange
-  component.nameFunc = 'OPP';
-  component.selectedFiles = Array.from({ length: 5 }, (_, i) =>
-    new File(['conteudo'], `arquivo${i + 1}.txt`)
-  );
+describe('getValueNameOperation', () => {
+  let component: YourComponent;
 
-  component.validaNameArquivo = jest.fn().mockReturnValue(false);
-  component.valueNotFind = 'arquivo_esperado.pdf';
-  const showMessageSpy = jest.spyOn(component, 'showMessage');
+  beforeEach(() => {
+    component = new YourComponent(); // ajuste conforme seu componente real
+  });
 
-  // Act
-  await component.uploadArquivoAWS();
+  it('deve retornar a parte antes do ponto quando houver ponto no nome', () => {
+    const result = component.getValueNameOperation('documento.pdf');
+    expect(result).toBe('documento');
+  });
 
-  // Assert
-  expect(component.validaNameArquivo).toHaveBeenCalled();
-  expect(showMessageSpy).toHaveBeenCalledWith(
-    'O nome do arquivo enviado não corresponde ao nome esperado: arquivo_esperado.pdf',
-    'error'
-  );
+  it('deve retornar undefined quando não houver ponto no nome', () => {
+    const result = component.getValueNameOperation('documento');
+    expect(result).toBeUndefined();
+  });
+
+  it('deve lidar com valor nulo ou indefinido sem lançar erro', () => {
+    const result = component.getValueNameOperation(null);
+    expect(result).toBeUndefined();
+  });
 });
