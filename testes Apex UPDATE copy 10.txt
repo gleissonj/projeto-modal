@@ -1,22 +1,20 @@
-import { of } from 'rxjs';
+it('deve adicionar arquivos e atualizar hash se nome for diferente', () => {
+  const fakeFile = new File(['conteudo'], 'arquivo_teste.txt', { type: 'text/plain' });
+  const eventoMock = {
+    target: {
+      files: [fakeFile]
+    }
+  };
 
-it('deve chamar startStepFunction e sair do método se não houver arquivos selecionados', () => {
-  // Mock do retorno da stepFunction
-  const startStepFnMock = jest.fn().mockReturnValue(of('ok'));
-
-  // Simula o service
-  component.multipartUploadService = {
-    startStepFunction: startStepFnMock,
-    sendFilesToMultipartUpload: jest.fn(),
-  } as any;
-
-  // Garante que selectedFiles está vazio
   component.selectedFiles = [];
+  component.hash = 'outro_arquivo.txt'; // diferente do nome do arquivo enviado
 
-  // Executa o método
-  component.updateFileMultiple();
+  component.escolherArquivo(eventoMock);
 
-  // Verifica se o método certo foi chamado
-  expect(startStepFnMock).toHaveBeenCalledWith(environment.stepFunctionOpp);
-  expect(component.multipartUploadService.sendFilesToMultipartUpload).not.toHaveBeenCalled();
+  // Verifica se o arquivo foi adicionado ao selectedFiles
+  expect(component.selectedFiles.length).toBe(1);
+  expect(component.selectedFiles[0].name).toBe('arquivo_teste.txt');
+
+  // Verifica se o hash foi atualizado
+  expect(component.hash).toBe('arquivo_teste.txt');
 });
