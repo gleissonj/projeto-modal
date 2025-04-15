@@ -12,22 +12,25 @@ def lambda_handler(event, context):
     try:
         # Recuperando o arquivo do S3
         response = s3.get_object(Bucket=bucket, Key=key)
-        file_content = response['Body'].read().decode('utf-8')  # decodificando para string
+        file_content = response['Body'].read()
         
-        # Lendo o CSV usando csv.reader
-        csv_file = io.StringIO(file_content)
-        csv_reader = csv.DictReader(csv_file)  # usa os nomes das colunas como chave
+        # Abrindo o arquivo CSV
+        csv_file = io.StringIO(file_content.decode('utf-8'))
+        csv_reader = csv.reader(csv_file)
         
-        # Processando os dados linha por linha
-        for row in csv_reader:
-            nome = row.get('nome', '')
-            email = row.get('email', '')
-            idade = row.get('idade', '')
-            print(f"Nome: {nome}, Email: {email}, Idade: {idade}")
+        # Processando cada linha do CSV
+        for row_index, row in enumerate(csv_reader):
+            print(f"Linha {row_index + 1}: {row}")
+            
+            # Se você souber que o CSV tem colunas específicas, pode acessar assim:
+            if row:
+                coluna_1 = row[0]  # Primeira coluna
+                coluna_2 = row[1]  # Segunda coluna
+                print(f"Coluna 1: {coluna_1}, Coluna 2: {coluna_2}")
         
         return {
             "statusCode": 200,
-            "body": "Arquivo CSV lido e processado com sucesso."
+            "body": "Arquivo CSV lido com sucesso."
         }
 
     except Exception as e:
