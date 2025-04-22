@@ -1,0 +1,40 @@
+import boto3
+import csv
+import io
+
+def lambda_handler(event, context):
+    bucket = 'meu-bucket-exemplo'
+    key = 'caminho/para/arquivo.csv'
+
+    s3 = boto3.client('s3')
+
+    try:
+        response = s3.get_object(Bucket=bucket, Key=key)
+        content = response['Body'].read().decode('utf-8')
+        csv_file = io.StringIO(content)
+
+        reader = csv.DictReader(csv_file)
+
+        linhas = []
+        for row in reader:
+            # Cada 'row' é um dicionário com nome das colunas como chave
+            print(f"Nome: {row['nome']}, Idade: {row['idade']}")
+            linhas.append(row)
+
+        # Exemplo: acessar a 3ª linha
+        terceira_linha = linhas[2] if len(linhas) >= 3 else None
+        if terceira_linha:
+            print("Terceira linha completa:", terceira_linha)
+            print("Valor da coluna 'email':", terceira_linha.get('email'))
+
+        return {
+            'statusCode': 200,
+            'body': f'{len(linhas)} linhas lidas com sucesso'
+        }
+
+    except Exception as e:
+        print(f"Erro ao ler CSV do S3: {e}")
+        return {
+            'statusCode': 500,
+            'body': f'Erro: {str(e)}'
+        }
