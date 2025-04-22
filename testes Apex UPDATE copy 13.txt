@@ -1,0 +1,30 @@
+import io
+import csv
+import pytest
+from unittest.mock import patch, MagicMock
+from lambda_function import lambda_handler
+
+@patch('boto3.client')
+def test_lambda_handler_csv_mockado(mock_boto_client):
+    # Simula o conteúdo CSV
+    csv_content = (
+        "nome,idade,email\n"
+        "João,30,joao@email.com\n"
+        "Maria,25,maria@email.com\n"
+        "Carlos,28,carlos@email.com\n"
+    )
+
+    # Cria um mock da resposta do S3
+    mock_s3 = MagicMock()
+    mock_response = {
+        'Body': io.BytesIO(csv_content.encode('utf-8'))  # simula o stream de bytes do S3
+    }
+    mock_s3.get_object.return_value = mock_response
+    mock_boto_client.return_value = mock_s3
+
+    # Chama o lambda handler
+    response = lambda_handler({}, None)
+
+    # Verifica o resultado
+    assert response['statusCode'] == 200
+    assert '3 linhas lidas' in response['body']
