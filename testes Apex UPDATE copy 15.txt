@@ -1,0 +1,73 @@
+%dw 2.0
+import * from dw::core::Binaries
+output application/json
+var myFile = payload.parts.file.content as Binary {encoding: "UTF-8"}
+---
+{
+  success: true,
+  fileContent: toBase64(myFile)
+}
+
+
+
+
+%dw 2.0
+import toBase64 from dw::core::Binaries
+output application/json
+---
+{
+  success: true,
+  fileContent: toBase64(read(payload.parts.file.content, "application/octet-stream"))
+}
+
+
+
+%dw 2.0
+output application/json
+var excelBinary = payload // assuming this is the binary content of the .xlsx file
+---
+{
+  base64EncodedExcel: excelBinary as Base64
+}
+
+
+%dw 2.0
+import * from dw::core::Binaries
+output application/json
+---
+{
+  "attachments": [
+    {
+      "filename": "filename",
+      "base64content": toBase64(write(payload,"application/json"))
+    }
+  ]
+}
+
+
+
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+
+%dw 2.0
+output application/json
+---
+{
+  type: typeOf(payload.parts.file.content),
+  value: payload.parts.file.content
+}
+
+
+%dw 2.0
+import toBase64 from dw::core::Binaries
+import read from dw::core::IO
+
+var myFileBinary = read(payload.parts.file.content, "application/octet-stream")
+output application/json
+---
+{
+  success: true,
+  fileContentBase64: toBase64(myFileBinary)
+}
+
+
