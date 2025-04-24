@@ -5,17 +5,17 @@ import os
 
 def lambda_handler(event, context):
     bucket = os.environ.get('BUCKET_NAME')
-    prefix = os.environ.get('CSV_PREFIX', '')  # Ex: "meus-arquivos/csv/"
+    prefix = event.get('prefix', '')  # Ex: "nps/", "prospect/", etc.
 
     s3 = boto3.client('s3')
 
     try:
-        # Lista os arquivos no bucket/prefixo
+        # Lista os arquivos dentro do prefixo informado
         response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
         arquivos = response.get('Contents', [])
 
         if not arquivos:
-            raise Exception("Nenhum arquivo encontrado no bucket/prefixo informado.")
+            raise Exception(f"Nenhum arquivo encontrado no bucket '{bucket}' com prefixo '{prefix}'")
 
         # Pega o arquivo mais recente com base no LastModified
         arquivo_mais_recente = max(arquivos, key=lambda x: x['LastModified'])
