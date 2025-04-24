@@ -70,4 +70,3 @@ output application/json
   fileContentBase64: toBase64(myFileBinary)
 }
 
-
