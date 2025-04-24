@@ -1,0 +1,50 @@
+import io
+import csv
+import pytest
+from datetime import datetime, timezone
+from unittest.mock import patch, MagicMock
+from lambda_function import lambda_handler
+
+@patch('boto3.client')
+def test_lambda_handler_csv_com_prefixo(mock_boto_client):
+    # Simula o conteúdo CSV
+    csv_content = (
+        "nome,idade,email\n"
+        "João,30,joao@email.com\n"
+        "Maria,25,maria@email.com\n"
+        "Carlos,28,carlos@email.com\n"
+    )
+
+    # Simula resposta de list_objects_v2 com múltiplos arquivos
+    mock_arquivos = {
+        'Contents': [
+            {
+                'Key': 'nps/arquivo_antigo.csv',
+                'LastModified': datetime(2023, 1, 1, tzinfo=timezone.utc)
+            },
+            {
+                'Key': 'nps/arquivo_recente.csv',
+                'LastModified': datetime(2025, 4, 22, tzinfo=timezone.utc)
+            }
+        ]
+    }
+
+    # Mock do cliente S3
+    mock_s3 = MagicMock()
+    mock_s3.list_objects_v2.return_value = mock_arquivos
+    mock_s3.get_object.return_value = {
+        'Body': io.BytesIO(csv_content.encode('utf-8'))
+    }
+    mock_boto_client.return_value = mock_s3
+
+    # Define a variável de ambiente BUCKET_NAME simulada
+    import os
+    os.environ['BUCKET_NAME'] = 'meu-bucket-exemplo'
+
+    # Executa a função
+    event = {'prefix': 'nps/'}
+    response = lambda_handler(event, None)
+
+    # Verifica o retorno
+    assert response['statusCode'] == 200
+    assert '3 linhas lidas com sucesso do arquivo nps/arquivo_recente.csv' in response['body']
