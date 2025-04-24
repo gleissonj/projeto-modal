@@ -1,0 +1,53 @@
+import boto3
+import csv
+import io
+import os
+
+def lambda_handler(event, context):
+    bucket = os.environ.get('BUCKET_NAME')
+    prefix = os.environ.get('CSV_PREFIX', '')  # Ex: "meus-arquivos/csv/"
+
+    s3 = boto3.client('s3')
+
+    try:
+        # Lista os arquivos no bucket/prefixo
+        response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+        arquivos = response.get('Contents', [])
+
+        if not arquivos:
+            raise Exception("Nenhum arquivo encontrado no bucket/prefixo informado.")
+
+        # Pega o arquivo mais recente com base no LastModified
+        arquivo_mais_recente = max(arquivos, key=lambda x: x['LastModified'])
+        key = arquivo_mais_recente['Key']
+        print(f"Último arquivo encontrado: {key}")
+
+        # Lê o conteúdo do arquivo
+        response = s3.get_object(Bucket=bucket, Key=key)
+        content = response['Body'].read().decode('utf-8')
+        csv_file = io.StringIO(content)
+
+        reader = csv.DictReader(csv_file)
+        print(f"Cabeçalhos encontrados: {reader.fieldnames}")
+
+        linhas = []
+        for row in reader:
+            print(f"Nome: {row['nome']}, Idade: {row['idade']}")
+            linhas.append(row)
+
+        terceira_linha = linhas[2] if len(linhas) >= 3 else None
+        if terceira_linha:
+            print("Terceira linha completa:", terceira_linha)
+            print("Valor da coluna 'email':", terceira_linha.get('email'))
+
+        return {
+            'statusCode': 200,
+            'body': f'{len(linhas)} linhas lidas com sucesso do arquivo {key}'
+        }
+
+    except Exception as e:
+        print(f"Erro ao ler CSV do S3: {e}")
+        return {
+            'statusCode': 500,
+            'body': f'Erro: {str(e)}'
+        }
