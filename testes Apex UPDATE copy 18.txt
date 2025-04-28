@@ -27,3 +27,11 @@ public class HU7LeadFixtureFactory {
         );
     }
 }
+
+
+
+
+"apex.format.enable": false,
+"xml.format.enable": false,
+"editor.formatOnPaste": false,
+"editor.formatOnSave": false
