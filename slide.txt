@@ -1,0 +1,66 @@
+🎯 Slide 1 – Visão Geral do Produto de IA
+Título: “Detecção Inteligente de Churn de Funcionalidades”
+
+Subtítulo: Por que e como usar IA da Salesforce para prevenir abandono funcional
+
+Destaques:
+
+4 objetivos listados
+
+Justificativa (1–2 bullets)
+
+Imagem de fundo conceitual (IA + gráficos)
+
+🧱 Slide 2 – Coleta de Dados (Etapa 1)
+Título: “Captura de Uso com Data Cloud”
+
+Explicação sobre criação de objeto customizado (UsoFuncionalidade__c)
+
+Icone Data Cloud + Esquema de campos
+
+Bullet rápido: dados coletados (quem, o quê, quando, quanto)
+
+🧠 Slide 3 – Previsão de Churn (Etapa 2)
+Título: “Einstein Prediction Builder”
+
+Explicação do modelo: campo alvo Abandonou__c, score Churn_Score__c
+
+Visual simulado do modelo em Einstein
+
+📊 Slide 4 – Dashboards e Scores (Etapa 3)
+Título: “Análise Visual do Risco”
+
+Wireframe do dashboard (já incluso no texto)
+
+Destaques de insights que podem ser retirados
+
+🔄 Slide 5 – Detecção Automática e Bot Proativo (Etapas 4 e 5)
+Título: “Ação Inteligente: Einstein Bot + AgentForce”
+
+Fluxo explicando:
+
+Verificação de score
+
+Disparo de bot
+
+Prompt dinâmico
+
+Mostra o exemplo de prompt
+
+Ícones: Bot, Prompt Builder, AgentForce
+
+📬 Slide 6 – Notificação Inteligente (Etapa 6)
+Título: “Alerta para o Time de Produto”
+
+Modelo de e-mail
+
+Como o insight chega direto no time responsável
+
+Seta para “Dashboard detalhado”
+
+💡 Slide 7 – Melhoria Contínua + Q&A
+Título: “Evoluindo com IA”
+
+Sugestões finais (multi-LLM, feedback loop)
+
+Espaço para perguntas
