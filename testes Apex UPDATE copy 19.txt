@@ -1,37 +1,49 @@
-public class HU7LeadFixtureFactory {
+Estrutura sobre prediction builder
 
-    private static String generateFakePhoneNumber() {
-        String prefix = '9';
-        String randomDigits = String.valueOf(Crypto.getRandomInteger()).right(8);
-        if (randomDigits.length() < 8) {
-            randomDigits = randomDigits.leftPad(8, '0');
-        }
-        return '11' + prefix + randomDigits; // Exemplo: 11987654321
-    }
+🧠 O que o Prediction Builder faz?
+Ele cria modelos preditivos personalizados (sem código) usando seus próprios dados Salesforce.
+Você define:
 
-    private static String generateFakeEmail() {
-        String randomSuffix = String.valueOf(Crypto.getRandomInteger()).abs().format();
-        return 'testuser' + randomSuffix + '@testdomain.com';
-    }
+O que quer prever (ex: "o usuário vai abandonar o uso da funcionalidade X?")
 
-    public static Lead newProspectLead(String firstName, String lastName, String cpf, String company, String recordIdPage) {
-        return new Lead(
-            FirstName = firstName != null ? firstName : 'Test',
-            LastName = lastName != null ? lastName : 'User',
-            Company = company != null ? company : 'Fake Company Ltda',
-            CPF__c = cpf,
-            Prospect__c = recordIdPage,
-            Phone = generateFakePhoneNumber(),
-            MobilePhone = generateFakePhoneNumber(),
-            Email = generateFakeEmail()
-        );
-    }
-}
+Quais dados usar (atividades, acessos, histórico de uso)
+
+Quando prever (frequência, janelas de tempo)
+
+Pode ainda: disparar flow automatizados e ainda integrar com Einstein Next Best Action para sugerir ações pró-ativas,
+ alimentar o AgentForce para o agente sugerir treinamentos ou suporte proativo
 
 
+📈 Exemplo de uso prático
+“Se o João não usou a funcionalidade 'Painel Financeiro' há 25 dias, e a média dele era usar 3x por semana, o
+ Einstein pode prever 87% de chance de churn para essa funcionalidade.”
 
 
-"apex.format.enable": false,
-"xml.format.enable": false,
-"editor.formatOnPaste": false,
-"editor.formatOnSave": false
+📊 O que significa "criar relatórios e dashboards com os scores de churn"?
+
+
+Significa visualizar, em tempo real, quem tem maior risco de abandono (churn), usando os resultados da IA do 
+Einstein Prediction Builder dentro do Salesforce — em gráficos, tabelas ou painéis interativos.
+
+
+✅ Exemplo prático:
+Depois que o Einstein Prediction Builder gera o modelo, ele cria um campo novo em cada registro com o score de churn, de 0 a 100.
+
+🔢 Exemplo: João tem Churn_Score__c = 92 → alta chance de abandonar
+Maria tem Churn_Score__c = 25 → baixa chance
+
+
+✅ Exemplo prático:
+Depois que o Einstein Prediction Builder gera o modelo, ele cria um campo novo em cada registro com o score de churn, de 0 a 100.
+
+🔢 Exemplo: João tem Churn_Score__c = 92 → alta chance de abandonar
+Maria tem Churn_Score__c = 25 → baixa chance
+
+Acompanhar a adesão real às funcionalidades
+
+Identificar usuários em risco e agir preventivamente
+
+Ajudar o time de produto ou sucesso do cliente a melhorar engajamento
+
+
+
