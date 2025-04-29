@@ -1,0 +1,37 @@
+public class HU7LeadFixtureFactory {
+
+    private static String generateFakePhoneNumber() {
+        String prefix = '9';
+        String randomDigits = String.valueOf(Crypto.getRandomInteger()).right(8);
+        if (randomDigits.length() < 8) {
+            randomDigits = randomDigits.leftPad(8, '0');
+        }
+        return '11' + prefix + randomDigits; // Exemplo: 11987654321
+    }
+
+    private static String generateFakeEmail() {
+        String randomSuffix = String.valueOf(Crypto.getRandomInteger()).abs().format();
+        return 'testuser' + randomSuffix + '@testdomain.com';
+    }
+
+    public static Lead newProspectLead(String firstName, String lastName, String cpf, String company, String recordIdPage) {
+        return new Lead(
+            FirstName = firstName != null ? firstName : 'Test',
+            LastName = lastName != null ? lastName : 'User',
+            Company = company != null ? company : 'Fake Company Ltda',
+            CPF__c = cpf,
+            Prospect__c = recordIdPage,
+            Phone = generateFakePhoneNumber(),
+            MobilePhone = generateFakePhoneNumber(),
+            Email = generateFakeEmail()
+        );
+    }
+}
+
+
+
+
+"apex.format.enable": false,
+"xml.format.enable": false,
+"editor.formatOnPaste": false,
+"editor.formatOnSave": false
