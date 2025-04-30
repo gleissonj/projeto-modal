@@ -58,3 +58,14 @@ describe('c-jx1-asset', () => {
         );
     });
 });
+
+
+
+// __mocks__/lightning/flowSupport.js
+
+export class FlowAttributeChangeEvent {
+    constructor(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+}
