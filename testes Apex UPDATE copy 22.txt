@@ -1,0 +1,20 @@
+module.exports = {
+  // Mapeia o módulo 'lightning/flowSupport' para o mock que está em tests/jest-mocks/lightning/flowSupport.js
+  moduleNameMapper: {
+    '^lightning/flowSupport$': '<rootDir>/tests/jest-mocks/lightning/flowSupport.js',
+  },
+
+  // Define as extensões de arquivos que o Jest deve processar
+  moduleFileExtensions: ['js', 'html'],
+  
+  // Como transformar arquivos LWC antes de rodar os testes
+  transform: {
+    '^.+\\.(js|html)$': '@lwc/jest-transformer',  // Usando o transformer do LWC
+  },
+
+  // Define os diretórios onde o Jest irá procurar os arquivos de teste e código
+  roots: ['<rootDir>/force-app', '<rootDir>/tests'],  // Inclui a pasta 'tests' com mocks e testes
+  
+  // Pode ser necessário adicionar configurações adicionais, caso você tenha
+  // testes assíncronos ou alguma outra configuração específica
+};
