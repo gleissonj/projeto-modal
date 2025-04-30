@@ -80,3 +80,57 @@ export class FlowAttributeChangeEvent {
     this.type = 'FlowAttributeChangeEvent';
   }
 }
+
+
+
+// tests/lwc/jx1AssetListToFlow/jx1AssetListToFlow.test.js
+
+import { createElement } from 'lwc';
+import Jx1AssetListToFlow from 'c/jx1AssetListToFlow';
+import { FlowAttributeChangeEvent } from 'lightning/flowSupport';
+
+describe('c-jx1-asset-list-to-flow', () => {
+    let element;
+
+    beforeEach(() => {
+        element = createElement('c-jx1-asset-list-to-flow', {
+            is: Jx1AssetListToFlow
+        });
+        document.body.appendChild(element);
+    });
+
+    it('deve iniciar com assets vazios', () => {
+        expect(element.assets).toEqual([]);
+    });
+
+    it('deve definir e recuperar os assets corretamente', () => {
+        const mockAssets = [
+            { Name: 'Ativo 1', Produto__c: 'Produto A' },
+            { Name: 'Ativo 2', Produto__c: 'Produto B' }
+        ];
+
+        element.assets = mockAssets;
+        expect(element.assets).toEqual(mockAssets);
+    });
+
+    it('deve disparar FlowAttributeChangeEvent ao selecionar linhas', () => {
+        const selectedRows = [
+            { Name: 'Ativo X', Produto__c: 'Produto X' }
+        ];
+
+        const mockEvent = {
+            detail: { selectedRows }
+        };
+
+        const dispatchSpy = jest.spyOn(element, 'dispatchEvent');
+        element.handlerRowSelection(mockEvent);
+
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'FlowAttributeChangeEvent',
+                attributeName: 'assetswithcheck',
+                value: selectedRows
+            })
+        );
+    });
+});
