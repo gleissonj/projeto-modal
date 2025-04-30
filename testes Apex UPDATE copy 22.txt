@@ -18,3 +18,16 @@ module.exports = {
   // Pode ser necessário adicionar configurações adicionais, caso você tenha
   // testes assíncronos ou alguma outra configuração específica
 };
+
+
+
+
+export class FlowAttributeChangeEvent extends CustomEvent {
+  constructor(attributeName, value) {
+    super('FlowAttributeChangeEvent', {
+      detail: { attributeName, value },
+    });
+    this.attributeName = attributeName;
+    this.value = value;
+  }
+}
