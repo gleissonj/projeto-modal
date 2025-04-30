@@ -69,3 +69,14 @@ export class FlowAttributeChangeEvent {
         this.value = value;
     }
 }
+
+
+// tests/jest-mocks/lightning/flowSupport.js
+
+export class FlowAttributeChangeEvent {
+  constructor(attributeName, value) {
+    this.attributeName = attributeName;
+    this.value = value;
+    this.type = 'FlowAttributeChangeEvent';
+  }
+}
