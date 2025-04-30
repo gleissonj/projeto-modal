@@ -51,3 +51,27 @@ describe('c-jx1-asset-list-to-flow', () => {
         expect(eventDetail.value).toEqual(mockSelectedRows);
     });
 });
+
+
+
+
+
+import { createElement } from 'lwc';
+import Jx1AssetListToFlow from 'c/jx1AssetListToFlow';
+
+describe('c-jx1-asset-list-to-flow', () => {
+    it('should dispatch any event when handlerRowSelection is called', () => {
+        const element = createElement('c-jx1-asset-list-to-flow', {
+            is: Jx1AssetListToFlow
+        });
+        document.body.appendChild(element);
+
+        // Mock do dispatchEvent
+        element.dispatchEvent = jest.fn();
+
+        const mockSelectedRows = [{ id: '001', Name: 'Asset' }];
+        element.handlerRowSelection({ detail: { selectedRows: mockSelectedRows } });
+
+        expect(element.dispatchEvent).toHaveBeenCalled();
+    });
+});
