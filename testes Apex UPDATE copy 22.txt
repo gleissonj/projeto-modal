@@ -31,3 +31,17 @@ export class FlowAttributeChangeEvent extends CustomEvent {
     this.value = value;
   }
 }
+
+
+const path = require('path');
+
+module.exports = {
+  moduleNameMapper: {
+    '^lightning/flowSupport$': '<rootDir>/tests/jest-mocks/lightning/flowSupport.js',
+  },
+  moduleFileExtensions: ['js', 'html'],
+  transform: {
+    '^.+\\.(js|html)$': '@lwc/jest-transformer',
+  },
+  roots: ['<rootDir>/force-app', '<rootDir>/tests'],
+};
