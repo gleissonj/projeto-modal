@@ -1,77 +1,60 @@
-// 👇 MOCKA o módulo lightning/flowSupport ANTES de importar o componente
-jest.mock('lightning/flowSupport', () => {
-    return {
-        FlowAttributeChangeEvent: jest.fn().mockImplementation((attributeName, value) => {
-            return {
-                detail: {
-                    attributeName,
-                    value
-                }
-            };
-        })
-    };
-});
-
 import { createElement } from 'lwc';
-import Jx1AssetListToFlow from 'c/jx1AssetListToFlow'; // ajuste para o nome correto do seu componente
+import Jx1Asset from 'c/jx1Asset';
+import { FlowAttributeChangeEvent } from 'lightning/flowSupport';
 
-describe('c-jx1-asset-list-to-flow', () => {
+describe('c-jx1-asset', () => {
     let element;
 
     beforeEach(() => {
-        element = createElement('c-jx1-asset-list-to-flow', {
-            is: Jx1AssetListToFlow
+        // Cria uma nova instância do componente antes de cada teste
+        element = createElement('c-jx1-asset', {
+            is: Jx1Asset
         });
         document.body.appendChild(element);
     });
 
-    afterEach(() => {
-        while (document.body.firstChild) {
-            document.body.removeChild(document.body.firstChild);
-        }
+    it('deve inicializar com assets vazios', () => {
+        // Verifique se o valor de _assets é um array vazio
+        expect(element.assets).toEqual([]);
     });
 
-    it('should dispatch FlowAttributeChangeEvent with selected rows', () => {
-        const mockSelectedRows = [{ id: '002', Name: 'Ativo 2' }];
-        const handler = jest.fn();
+    it('deve definir e obter assets corretamente', () => {
+        const assetsData = [
+            { Name: 'Ativo 1', Produto__c: 'Produto 1' },
+            { Name: 'Ativo 2', Produto__c: 'Produto 2' }
+        ];
 
-        element.addEventListener('flowattributechange', handler);
+        // Definindo o valor de assets via setter
+        element.assets = assetsData;
+
+        // Verificando se o getter retorna os valores corretamente
+        expect(element.assets).toEqual(assetsData);
+    });
+
+    it('deve disparar FlowAttributeChangeEvent quando handlerRowSelection for chamado', () => {
+        // Simula a seleção de linhas no evento
+        const mockSelectedRows = [
+            { Name: 'Ativo 1', Produto__c: 'Produto 1' },
+            { Name: 'Ativo 2', Produto__c: 'Produto 2' }
+        ];
 
         const event = {
-            detail: {
-                selectedRows: mockSelectedRows
-            }
+            detail: { selectedRows: mockSelectedRows }
         };
 
+        // Espia no dispatchEvent
+        const flowEventSpy = jest.spyOn(element, 'dispatchEvent');
+
+        // Chama o método handlerRowSelection
         element.handlerRowSelection(event);
 
-        expect(handler).toHaveBeenCalled();
-        const eventDetail = handler.mock.calls[0][0].detail;
-        expect(eventDetail.attributeName).toBe('assetswithcheck');
-        expect(eventDetail.value).toEqual(mockSelectedRows);
-    });
-});
-
-
-
-
-
-import { createElement } from 'lwc';
-import Jx1AssetListToFlow from 'c/jx1AssetListToFlow';
-
-describe('c-jx1-asset-list-to-flow', () => {
-    it('should dispatch any event when handlerRowSelection is called', () => {
-        const element = createElement('c-jx1-asset-list-to-flow', {
-            is: Jx1AssetListToFlow
-        });
-        document.body.appendChild(element);
-
-        // Mock do dispatchEvent
-        element.dispatchEvent = jest.fn();
-
-        const mockSelectedRows = [{ id: '001', Name: 'Asset' }];
-        element.handlerRowSelection({ detail: { selectedRows: mockSelectedRows } });
-
-        expect(element.dispatchEvent).toHaveBeenCalled();
+        // Verifica se o evento foi disparado com os dados corretos
+        expect(flowEventSpy).toHaveBeenCalled();
+        expect(flowEventSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: FlowAttributeChangeEvent.name,
+                detail: { selectedRows: mockSelectedRows }
+            })
+        );
     });
 });
