@@ -56,3 +56,22 @@ module.exports = {
         return renderResult;
     }
 })
+
+
+
+
+# Informações básicas do projeto
+sonar.projectKey=seu-projeto
+sonar.projectName=Seu Projeto Salesforce Aura
+sonar.projectVersion=1.0
+sonar.sources=src
+sonar.language=js
+sonar.sourceEncoding=UTF-8
+
+# Excluir arquivos específicos se necessário (opcional)
+# sonar.exclusions=**/*.spec.js, **/test/**
+
+# Ignorar a regra de HTML que exige <title> em <head> (em arquivos .cmp)
+sonar.issue.ignore.multicriteria=e1
+sonar.issue.ignore.multicriteria.e1.ruleKey=html:S5613
+sonar.issue.ignore.multicriteria.e1.resourceKey=**/*.cmp
