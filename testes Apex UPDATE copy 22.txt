@@ -45,3 +45,14 @@ module.exports = {
   },
   roots: ['<rootDir>/force-app', '<rootDir>/tests'],
 };
+
+
+
+/* eslint-disable no-unused-expressions */
+({
+    render: function(component, helper) {
+        var renderResult = this.superRender();
+        // custom logic if needed
+        return renderResult;
+    }
+})
