@@ -1,0 +1,77 @@
+module.exports = {
+  // Mapeia o módulo 'lightning/flowSupport' para o mock que está em tests/jest-mocks/lightning/flowSupport.js
+  moduleNameMapper: {
+    '^lightning/flowSupport$': '<rootDir>/tests/jest-mocks/lightning/flowSupport.js',
+  },
+
+  // Define as extensões de arquivos que o Jest deve processar
+  moduleFileExtensions: ['js', 'html'],
+  
+  // Como transformar arquivos LWC antes de rodar os testes
+  transform: {
+    '^.+\\.(js|html)$': '@lwc/jest-transformer',  // Usando o transformer do LWC
+  },
+
+  // Define os diretórios onde o Jest irá procurar os arquivos de teste e código
+  roots: ['<rootDir>/force-app', '<rootDir>/tests'],  // Inclui a pasta 'tests' com mocks e testes
+  
+  // Pode ser necessário adicionar configurações adicionais, caso você tenha
+  // testes assíncronos ou alguma outra configuração específica
+};
+
+
+
+
+export class FlowAttributeChangeEvent extends CustomEvent {
+  constructor(attributeName, value) {
+    super('FlowAttributeChangeEvent', {
+      detail: { attributeName, value },
+    });
+    this.attributeName = attributeName;
+    this.value = value;
+  }
+}
+
+
+const path = require('path');
+
+module.exports = {
+  moduleNameMapper: {
+    '^lightning/flowSupport$': '<rootDir>/tests/jest-mocks/lightning/flowSupport.js',
+  },
+  moduleFileExtensions: ['js', 'html'],
+  transform: {
+    '^.+\\.(js|html)$': '@lwc/jest-transformer',
+  },
+  roots: ['<rootDir>/force-app', '<rootDir>/tests'],
+};
+
+
+
+/* eslint-disable no-unused-expressions */
+({
+    render: function(component, helper) {
+        var renderResult = this.superRender();
+        // custom logic if needed
+        return renderResult;
+    }
+})
+
+
+
+
+# Informações básicas do projeto
+sonar.projectKey=seu-projeto
+sonar.projectName=Seu Projeto Salesforce Aura
+sonar.projectVersion=1.0
+sonar.sources=src
+sonar.language=js
+sonar.sourceEncoding=UTF-8
+
+# Excluir arquivos específicos se necessário (opcional)
+# sonar.exclusions=**/*.spec.js, **/test/**
+
+# Ignorar a regra de HTML que exige <title> em <head> (em arquivos .cmp)
+sonar.issue.ignore.multicriteria=e1
+sonar.issue.ignore.multicriteria.e1.ruleKey=html:S5613
+sonar.issue.ignore.multicriteria.e1.resourceKey=**/*.cmp

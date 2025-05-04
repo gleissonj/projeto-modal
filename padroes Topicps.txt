@@ -1,0 +1,30 @@
+Descrição Detalhada dos Campos para Criação de Tópicos
+Cada tópico possui os seguintes campos essenciais:
+
+1. Topic Label (Rótulo do Tópico)
+Campo-chave usado pelo algoritmo de classificação para identificar rapidamente o contexto geral.
+
+Descrição: Nome curto e claro que identifica rapidamente o assunto tratado.
+Exemplo: “Solicitações de Certificado”..
+Melhores práticas: Seja breve, específico e use termos claros para fácil reconhecimento.
+2. Classification Description (Descrição de Classificação)
+Essencial para o reconhecimento automático das intenções por meio do NLP (Natural Language Processing).
+
+Descrição: Frases curtas (até três sentenças) explicando exatamente o que o tópico faz e em que situações será acionado.
+Exemplo: “Gerencia solicitações e consultas sobre certificados de conclusão dos cursos realizados pelos alunos.”
+Melhores práticas: Inclua palavras-chave relacionadas à intenção do usuário, para facilitar o reconhecimento pelo sistema.
+3. Scope (Escopo)
+Define explicitamente os limites e permissões do agente dentro do contexto técnico, funcionando como uma camada adicional de segurança e precisão.
+
+Descrição: Define claramente o que o agente está autorizado e capacitado a realizar dentro do tópico.
+Exemplo: “Sua tarefa é exclusivamente gerenciar consultas sobre certificados já emitidos ou solicitar emissão de novos certificados após verificação dos critérios de conclusão.”
+Melhores práticas: Seja direto e específico, indicando claramente os limites do que o agente pode fazer.
+4. Instructions (Instruções)
+São diretrizes que configuram o comportamento do agente durante a execução das tarefas. Utilizadas diretamente pelo Reasoning Engine – Atlas no caso da Salesforce – para decidir como agir e quais fluxos de execução seguir.
+
+Descrição: Diretrizes específicas que determinam como o agente executa as ações dentro do tópico.
+Exemplo:
+“Sempre verifique o status de conclusão antes de emitir um certificado.”
+“Nunca emita certificados para alunos que não tenham completado todos os módulos do curso.”
+“Caso a consulta seja sobre certificados antigos (mais de um ano), direcione para atendimento humano.”
+Melhores práticas: Crie instruções curtas, claras e objetivas, evitando ambiguidades ou contradições.
