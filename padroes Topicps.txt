@@ -28,3 +28,32 @@ Exemplo:
 “Nunca emita certificados para alunos que não tenham completado todos os módulos do curso.”
 “Caso a consulta seja sobre certificados antigos (mais de um ano), direcione para atendimento humano.”
 Melhores práticas: Crie instruções curtas, claras e objetivas, evitando ambiguidades ou contradições.
+
+
+Múltiplos Tópicos por Agente: Aspecto Técnico e Operacional
+Conforme mencionado antes, é fundamental segmentar bem os seus tópicos. Apesar de ser um pouco repetitivo o exemplo abaixo, serve bem para ilustrar a parte técnica da multiplicidade de tópicos.
+
+É totalmente possível e recomendável ter mais de um tópico por agente, especialmente para plataformas com múltiplas funcionalidades ou departamentos. Isso permite uma categorização mais granular e tecnicamente eficiente das tarefas:
+
+Eficiência Algorítmica: Cada interação é processada rapidamente, pois o agente verifica apenas tópicos relevantes ao contexto da pergunta ou ação.
+
+Escalabilidade: Facilita a expansão do agente conforme novos contextos surgem, evitando sobrecarregar um único tópico com múltiplas ações complexas.
+
+Gerenciamento de Ações e Fluxos: A subdivisão técnica em tópicos permite maior clareza e facilidade para manutenção e evolução contínua.
+
+Exemplo Técnico Prático:
+Uma instituição como a Reforce Academy pode estruturar seu agente em tópicos como:
+
+Gestão Acadêmica
+
+Ações: Solicitações de certificados, inscrições e atualizações de dados.
+
+Suporte Financeiro
+
+Ações: Consultas de pagamento, emissão de notas fiscais.
+
+Suporte Técnico
+
+Ações: Reset de senhas, resolução de problemas técnicos em cursos.
+
+Cada tópico atua como uma instância técnica especializada do agente, com suas próprias regras e instruções específicas.
