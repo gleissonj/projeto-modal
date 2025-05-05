@@ -94,3 +94,18 @@ export default class FlowModal extends LightningElement {
         <target>lightning__HomePage</target>
     </targets>
 </LightningComponentBundle>
+
+
+
+.THIS .slds-modal__container {
+    margin: 0 auto;
+    max-width: 80rem;
+    min-width: 20rem;
+}
+
+
+<div class="slds-modal__container" style="{!'width:' + v.width + ';'}">
+    <!-- conteúdo do modal -->
+</div>
+
+
