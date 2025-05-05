@@ -1,0 +1,96 @@
+<template>
+    <lightning-card title={titulo} icon-name={icone}>
+        <template if:true={mostrarBotao}>
+            <div slot="actions">
+                <lightning-button 
+                    variant="brand" 
+                    label={nomeBotao} 
+                    onclick={handleClick}>
+                </lightning-button>
+            </div>
+        </template>
+
+        <template if:true={mostrarFlow}>
+            <section class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container" style={modalStyle}>
+                    <header class="modal-header slds-modal__header">
+                        <lightning-button-icon 
+                            icon-name="utility:close" 
+                            alternative-text="Fechar" 
+                            variant="bare-inverse" 
+                            class="slds-modal__close" 
+                            onclick={closeModal}>
+                        </lightning-button-icon>
+                        <h2 class="title slds-text-heading--medium">{tituloFluxo}</h2>
+                    </header>
+
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <lightning-flow flow-api-name={nomeFluxo} flow-input-variables={flowParams}></lightning-flow>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </lightning-card>
+</template>
+
+
+----------------------------------
+
+
+import { LightningElement, api, track } from 'lwc';
+
+export default class FlowModal extends LightningElement {
+    @api mostrarFlow = false;
+    @api nomeFluxo;
+    @api titulo;
+    @api tituloFluxo;
+    @api mostrarBotao;
+    @api nomeBotao;
+    @api icone;
+    @api width;
+    @api usaId;
+    @api recordId;
+
+    get modalStyle() {
+        return `margin: 0 auto; width: ${this.width}; max-width: 80rem; min-width: 20rem;`;
+    }
+
+    get flowParams() {
+        // Ajuste conforme as variáveis de entrada esperadas pelo Flow
+        let vars = [];
+        if (this.usaId && this.recordId) {
+            vars.push({
+                name: this.usaId,
+                type: 'String',
+                value: this.recordId
+            });
+        }
+        return vars;
+    }
+
+    handleClick() {
+        this.mostrarFlow = true;
+    }
+
+    closeModal() {
+        this.mostrarFlow = false;
+    }
+}
+
+
+
+------------------------------------------------------
+
+
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordPage</target>
+        <target>lightning__AppPage</target>
+        <target>lightning__HomePage</target>
+    </targets>
+</LightningComponentBundle>
