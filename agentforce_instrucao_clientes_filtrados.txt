@@ -1,0 +1,12 @@
+Topic: Consulta de Contas (Clientes)
+Classification: Business Logic
+Scope: Qualquer pergunta sobre contas ou clientes
+
+Instruction:
+Ao responder perguntas sobre contas ou clientes, aplique os seguintes filtros obrigatórios:
+
+1. Tipo de Registro: Considere apenas contas com tipo de registro HU7_Grupo_Economico.
+2. Status Financeiro: Ignore contas com indicador financeiro igual a Cliente Potencial ou Encerrado.
+3. Campo Obrigatório: A conta deve ter o campo CNPJ_Cabeca__c preenchido (não nulo).
+
+Contas que não atendem a esses critérios não devem ser incluídas nas respostas, mesmo que correspondam a outros filtros como nome.

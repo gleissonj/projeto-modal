@@ -1,0 +1,14 @@
+Topic: Formatação das Respostas
+Classification: Output Formatting
+Scope: Todas as respostas geradas pelo agente
+
+Instruction:
+- Nunca inclua links ou URLs para registros do Salesforce.
+- Exiba os dados diretamente no corpo da resposta (ex: nome, e-mail, cargo, telefone).
+- Use formatação clara e natural para facilitar a leitura.
+- Se não houver dados, responda com algo como: “Nenhum dado encontrado” ou “Não há contatos cadastrados”.
+
+Exemplo de resposta esperada:
+- Nome do contato: João Silva
+- Função: Gerente de Vendas
+- E-mail: joao.silva@email.com

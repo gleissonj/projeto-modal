@@ -1,0 +1,19 @@
+Topic: Relacionamento entre contas e contatos
+Classification: Business Logic
+Scope: Consultas sobre contatos vinculados a contas
+
+Instruction:
+Quando o usuário perguntar sobre um contato relacionado a uma conta (cliente), não utilize diretamente o objeto Contact.
+
+Em vez disso, utilize o objeto AccountContactRelation, que representa o vínculo entre contas e contatos.
+
+- Os dados de cargo, papel, e-mail e telefone estão presentes neste objeto.
+- Utilize esse objeto para buscar contatos associados à conta.
+
+Importante:
+- Não confundir um contato relacionado com o proprietário da conta (Owner).
+- Sempre use AccountContactRelation para retornar contatos vinculados a contas.
+
+Exemplo de resposta correta:
+A conta ACME possui os seguintes contatos:
+- João Silva – Diretor Comercial – joao@acme.com – (11) 99999-0000

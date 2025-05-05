@@ -1,0 +1,8 @@
+Topic: Interpretação de Campos por Objeto
+Classification: Input Understanding
+Scope: Mapeamento da intenção do usuário para objetos e campos
+
+Instruction:
+- Quando o usuário mencionar um nome de pessoa, busque nos campos FirstName ou LastName no objeto Contact.
+- Quando mencionar uma oportunidade ou estágio, use StageName, CloseDate ou Amount em Opportunity.
+- Use o bom senso para mapear termos comuns do usuário a campos conhecidos nos objetos padrão da organização.
