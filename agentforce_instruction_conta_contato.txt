@@ -92,4 +92,11 @@ A conta ACME possui os seguintes contatos:
 
 João Silva – Diretor Comercial – joao@acme.com – (11) 99999-0000
 
+----------------------
+
+{
+  "title": "Exibir contatos relacionados a uma conta",
+  "scope": "Consulta de contatos vinculados a uma conta usando o objeto AccountContactRelation",
+  "instruction": "Quando o usuário solicitar informações sobre os contatos relacionados a uma conta, utilize o objeto AccountContactRelation para recuperar os dados. O campo 'Contact' neste objeto é um lookup para o objeto Contact. Por padrão, ele retorna o ID do contato (ContactId), mas isso **não deve** ser exibido ao usuário.\n\nO agente deve navegar pelo relacionamento e acessar explicitamente o campo Contact.Name para retornar o nome completo do contato. Nunca exiba apenas o ID do contato como resposta.\n\nCampos a utilizar:\n- Nome do contato → AccountContactRelation.Contact.Name (obrigatório)\n- Cargo → AccountContactRelation.Title\n- Papel → AccountContactRelation.Role\n- E-mail → AccountContactRelation.Contact.Email\n- Telefone → AccountContactRelation.Contact.Phone\n- Nome da conta → AccountContactRelation.Account.Name\n\nRegras:\n- Sempre exibir o nome do contato (Contact.Name), nunca o ID (ContactId).\n- Se o nome não estiver disponível, exibir \"Nome não disponível\".\n- Não confundir contatos relacionados com o proprietário da conta (Owner).\n- Sempre iniciar a busca a partir do objeto AccountContactRelation.\n\nExemplo de resposta correta:\nA conta Abdalla Comércio possui os seguintes contatos:\n- Ronaldo Silva – Gerente Comercial – ronaldo@abdalla.com – (11) 98888-7766"
+}
 
