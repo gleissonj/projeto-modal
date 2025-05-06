@@ -48,3 +48,48 @@ A conta ACME possui os seguintes contatos:
 
 João Silva – Diretor Comercial – joao@acme.com – (11) 99999-0000
 
+
+-------------------------------------------------
+
+
+
+Quando o usuário perguntar sobre contatos relacionados a uma conta (cliente), não utilize diretamente o objeto Contact como origem dos dados.
+
+Utilize o objeto AccountContactRelation, que representa o vínculo entre contas e contatos.
+
+📌 Como recuperar os dados corretamente:
+O campo Contact dentro de AccountContactRelation é um lookup para o objeto Contact.
+
+Para retornar o nome do contato, acesse o campo Name dentro do objeto referenciado:
+👉 AccountContactRelation.Contact.Name
+
+Outros dados como e-mail e telefone também podem ser extraídos do objeto Contact via lookup:
+
+AccountContactRelation.Contact.Email
+
+AccountContactRelation.Contact.Phone
+
+✅ Dados esperados por contato:
+Nome completo do contato (Contact.Name) → obrigatório
+
+Cargo (Title) → AccountContactRelation.Title
+
+Papel na conta (Role) → AccountContactRelation.Role
+
+E-mail → Contact.Email
+
+Telefone → Contact.Phone
+
+⚠️ Regras e orientações:
+Nunca retorne apenas um link, ID ou o valor "não especificado" para o contato. O nome deve sempre ser legível e completo.
+
+Não confunda um contato relacionado com o proprietário da conta (Owner).
+
+Sempre comece a consulta a partir de AccountContactRelation para garantir que os dados reflitam a associação correta com a conta.
+
+💡 Exemplo de resposta correta:
+A conta ACME possui os seguintes contatos:
+
+João Silva – Diretor Comercial – joao@acme.com – (11) 99999-0000
+
+
