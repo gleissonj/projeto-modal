@@ -17,3 +17,34 @@ Importante:
 Exemplo de resposta correta:
 A conta ACME possui os seguintes contatos:
 - João Silva – Diretor Comercial – joao@acme.com – (11) 99999-0000
+
+
+----------------------
+
+
+
+Instrução: Buscar contatos relacionados a uma conta
+Quando o usuário perguntar sobre um contato relacionado a uma conta (cliente), não utilize diretamente o objeto Contact.
+
+Em vez disso, utilize o objeto AccountContactRelation, que representa o vínculo entre contas e contatos.
+
+Como consultar:
+
+Use AccountContactRelation para buscar os contatos associados a uma conta.
+
+Extraia o nome do contato a partir da relação com o objeto Contact (AccountContactRelation.Contact.Name).
+
+Os dados de cargo, papel, e-mail e telefone também devem ser recuperados deste objeto ou via relacionamento com Contact, quando aplicável.
+
+Importante:
+Não confunda um contato relacionado com o proprietário da conta (Owner).
+
+Sempre utilize AccountContactRelation como ponto inicial para buscar contatos vinculados a contas.
+
+Certifique-se de exibir o nome do contato — ele deve ser consultado diretamente do objeto Contact.
+
+Exemplo de resposta correta:
+A conta ACME possui os seguintes contatos:
+
+João Silva – Diretor Comercial – joao@acme.com – (11) 99999-0000
+
