@@ -109,3 +109,94 @@ export default class FlowModal extends LightningElement {
 </div>
 
 
+
+1º campos "Nessa sprint, eu trabalhei em uma demanda do prospect que envolvia três sistemas: AWS, Mulesoft e Salesforce.
+
+No Glue, adicionei novos campos no job existente do prospect, que agora escreve essas informações em um arquivo no S3.
+
+No Mulesoft, adaptei o fluxo atual para ler esses novos campos e garantir que eles fossem mapeados corretamente para a Salesforce.
+
+Já na Salesforce, criei os campos no objeto destino , deixando  pronto para que os dados sejam armazenados corretamente la no group lead
+
+O fluxo completo agora está funcional, integrado e pronto para suportar esse novo tipo de dado 
+
+
+2- cobertura de testes 90%
+
+onde Atuei no reforço da qualidade do sistema de upload de arquivos. Recentemente, a exigência mínima de cobertura de testes para deploy em produção subiu de 75% para 90%.
+
+Por isso, aumentei a cobertura de testes unitários nas classes, tanto no backend em .NET quanto no frontend em Angular.
+
+Com isso, agora conseguimos implantar o código em produção sem nenhuma restrição relacionada à cobertura
+
+
+4 - Outra frente que atuei nessa sprint foi na renovação de siglas app no Defect Dojo.
+
+Cada serviço que criamos na squad precisa ter sua sigla app registrada nesse portal, que é usado para controle e rastreio de segurança. Essas siglas têm validade anual, e com elas vencidas nao conseguimos nao conseguimos subir o código via esteira e então identifiquei 8 delas que estavam próximas de expirar ou já vencidas e realizei a renovação diretamente no portal, garantindo que todos os serviços da squad continuem aptos para deploy . 
+
+5 - Outra entrega importante dessa sprint foi a criação de uma solução de observabilidade via Lambda.
+
+Desenvolvi uma função lambda que é acionada por um EventBridge, essa funca acessa arquivos de erro no S3 e envia essas informações diretamente para o Datadog.
+
+Essa solução está sendo usada atualmente para o Mulesoft, mas foi pensada de forma genérica, o que permite que seja reaproveitada por outras frentes, como a Digibee, com poucas adaptações.
+
+6 - Também atuei na renovação de certificados do Mulesoft.
+
+A plataforma exige certificados para funcionar corretamente e manter integrações seguras com outros sistemas. Como esses certificados expiram anualmente, fiz a renovação de forma preventiva para evitar qualquer impacto ou paralisação desses serviços do mulesfot.
+
+Após a atualização, validei os serviços para garantir que tudo continuasse operando normalmente. Essa ação da atualização dos certificados garante a continuidade da plataforma e evita incidentes de segurança ou falhas de comunicação.”
+
+
+Sprint 2
+
+1 - lista relacionada do grupo 
+
+“Também entreguei uma melhoria dentro do Salesforce para facilitar a gestão dos atrasos.
+
+Criei uma nova aba chamada ‘Atraso’ na tela do Account, que mostra uma lista relacionada de atrasos.
+
+Isso permite que os usuários visualizem essas informações diretamente na tela do Account, agilizando o acompanhamento e a tomada de decisões.
+
+Essa melhoria traz mais agilidade e praticidade para o time 
+
+2 - Como continuidade da melhoria na aba ‘Atraso’, implementei um botão de ‘Atualização em lote’.
+
+Esse botão abre um modal onde o usuário pode visualizar os registros da lista relacionada e atualizar em massa o campo ‘parecer’ 
+
+Com essa solução, o time ganha eficiência operacional, conseguindo atualizar múltiplos registros de forma rápida
+
+3 - “Também atuei na atualização dos certificados usados pela Salesforce para realizar chamadas de APIs externas.
+
+Esses certificados são exigidos para garantir segurança e validade nas integrações REST. Fiz a criação e a substituição dos certificados que estavam com prazo de expiração próximo, pra garantir que os fluxos externos não fossem interrompidos.
+
+Com essa atualização, mantemos a comunicação segura com os sistemas externos”
+
+
+3 - Atuei na demanda de atualização da carga de assets, onde precisei incluir o campo ‘frequência’ estagio e estagio  na integração dos Assets via Mulesoft.
+
+Esses dados já estavam em um bucket S3, e atualizei o fluxo para levar essas informações para os novos campos na Salesforce.
+
+Com isso, os usuários têm uma visão mais completa dos riscos, facilitando a tomada de decisão”
+
+4 - teve outra demanda q Criei um fluxo que carrega no objeto Parametrização os dados de data da última carga de atrasos e a quantidade de registros inseridos.
+
+Essa informação é usada para que o time implemente uma regra na Salesforce que permite identificar usuários que não possuem atrasos e mostrar essa situação na tela deles.
+
+Com isso, melhoramos a transparência para o usuário final”
+
+
+6 - migração de regra de regularizacao 
+
+“Essa demanda foi uma reestruturação de uma regra de regularização de contratos, que antes estava no Glue.
+
+O Glue  gerava o arquivo de regularização uma vez. Se a integração falhasse, os dados não eram mais atualizados na Salesforce, o que gerava inconsitencia.
+
+Trouxe essa lógica para o Mulesoft, onde após o upsert dos atrasos, salvo a data da carga na Salesforce.
+
+Depois, faço um select buscando os registros que não têm essa mesma data de carga e marco esses como regularizados.
+
+Com isso, evitamos dados travados ou defasados e garantimos que a regularização ocorra mesmo em caso de falhas anteriores.”
+
+
+
+
