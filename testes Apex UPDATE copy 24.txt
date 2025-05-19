@@ -118,7 +118,7 @@ No Mulesoft, adaptei o fluxo atual para ler esses novos campos e garantir que el
 
 Já na Salesforce, criei os campos no objeto destino , deixando  pronto para que os dados sejam armazenados corretamente la no group lead
 
-O fluxo completo agora está funcional, integrado e pronto para suportar esse novo tipo de dado 
+O fluxo completo agora está funcional, integrado e pronto para suportar esse novo tipo de dado de possui socio personalite e private
 
 
 2- cobertura de testes 90%
