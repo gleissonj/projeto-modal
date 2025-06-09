@@ -1,61 +1,11 @@
-public class AtualizaSituacaoAssetsFlow {
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-    // Classe auxiliar para representar cada registro de entrada
-    public class Entrada {
-        @InvocableVariable(label='ID do Asset' required=true)
-        public Id assetId;
-    }
+def hoje = LocalDate.now()
+def primeiroDiaMesAtual = hoje.withDayOfMonth(1)
+def ultimoDiaMesAnterior = primeiroDiaMesAtual.minusDays(1)
 
-    public class WrapperEntrada {
-        @InvocableVariable(label='Lista de Assets para Atualizar' required=true)
-        public List<Entrada> assetsEntrada;
+def formato = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+def resultado = ultimoDiaMesAnterior.format(formato)
 
-        @InvocableVariable(label='Nova Situação' required=true)
-        public String novaSituacao;
-    }
-
-    @InvocableMethod(label='Atualizar Situação dos Assets')
-    public static void atualizarSituacao(List<WrapperEntrada> entradaWrapper) {
-        // Validação inicial
-        if (entradaWrapper == null || entradaWrapper.isEmpty()) return;
-
-        WrapperEntrada entrada = entradaWrapper[0];
-
-        if (entrada.assetsEntrada == null || entrada.assetsEntrada.isEmpty()) return;
-        if (String.isBlank(entrada.novaSituacao)) return;
-
-        // Coleta de IDs dos assets
-        Set<Id> assetIds = new Set<Id>();
-        for (Entrada e : entrada.assetsEntrada) {
-            if (e.assetId != null) {
-                assetIds.add(e.assetId);
-            }
-        }
-
-        if (assetIds.isEmpty()) return;
-
-        // Consulta dos Assets
-        List<Asset> assetsToUpdate = [
-            SELECT Id, Situacao__c
-            FROM Asset
-            WHERE Id IN :assetIds
-        ];
-
-        // Atualizar apenas quando necessário
-        List<Asset> atualizados = new List<Asset>();
-        for (Asset a : assetsToUpdate) {
-            if (a.Situacao__c != entrada.novaSituacao) {
-                a.Situacao__c = entrada.novaSituacao;
-                atualizados.add(a);
-            }
-        }
-
-        if (atualizados.isEmpty()) return;
-
-        // DML em blocos de até 200 registros
-        for (Integer i = 0; i < atualizados.size(); i += 200) {
-            Integer fim = Math.min(i + 200, atualizados.size());
-            update atualizados.subList(i, fim);
-        }
-    }
-}
+return ["ultimoDiaMesAnterior": resultado]
