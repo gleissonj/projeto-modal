@@ -74,3 +74,26 @@ const dataFormatada = `${ano}-${mes}-${dia}`;
 
 // Resultado vai para o payload da Digibee
 payload.ultimoDiaMesAnterior = dataFormatada;
+
+
+
+
+const hoje = new Date();
+
+// Primeiro dia do mês atual
+const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+// Último dia do mês anterior
+const ultimoDiaMesAnterior = new Date(primeiroDiaMesAtual.getTime() - 1);
+
+// Formatar como yyyy-MM-dd
+const ano = ultimoDiaMesAnterior.getFullYear();
+const mes = String(ultimoDiaMesAnterior.getMonth() + 1).padStart(2, '0');
+const dia = String(ultimoDiaMesAnterior.getDate()).padStart(2, '0');
+
+const dataFormatada = `${ano}-${mes}-${dia}`;
+
+// Atribui ao output, que será o novo payload do step
+output = {
+  ultimoDiaMesAnterior: dataFormatada
+};
