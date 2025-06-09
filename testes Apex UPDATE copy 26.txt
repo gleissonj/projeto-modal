@@ -1,79 +1,4 @@
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-def hoje = LocalDate.now()
-def primeiroDiaMesAtual = hoje.withDayOfMonth(1)
-def ultimoDiaMesAnterior = primeiroDiaMesAtual.minusDays(1)
-
-def formato = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-def resultado = ultimoDiaMesAnterior.format(formato)
-
-return ["ultimoDiaMesAnterior": resultado]
-
-
-
-
-def today = Calendar.getInstance()
-
-// Voltar para o primeiro dia do mês atual
-today.set(Calendar.DAY_OF_MONTH, 1)
-
-// Subtrair um dia => último dia do mês anterior
-today.add(Calendar.DAY_OF_MONTH, -1)
-
-def ano = today.get(Calendar.YEAR)
-def mes = today.get(Calendar.MONTH) + 1  // Calendar.MONTH é 0-based
-def dia = today.get(Calendar.DAY_OF_MONTH)
-
-// Formatar como yyyy-MM-dd
-def mesFormatado = mes < 10 ? "0${mes}" : "${mes}"
-def diaFormatado = dia < 10 ? "0${dia}" : "${dia}"
-def dataFormatada = "${ano}-${mesFormatado}-${diaFormatado}"
-
-// Retornar no payload
-return ["ultimoDiaMesAnterior": dataFormatada]
-
-
-
-const hoje = new Date();
-
-// Primeiro dia do mês atual
-const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-
-// Último dia do mês anterior = 1º dia do mês atual - 1 dia
-const ultimoDiaMesAnterior = new Date(primeiroDiaMesAtual - 1);
-
-// Formatar para yyyy-MM-dd
-const ano = ultimoDiaMesAnterior.getFullYear();
-const mes = String(ultimoDiaMesAnterior.getMonth() + 1).padStart(2, '0');
-const dia = String(ultimoDiaMesAnterior.getDate()).padStart(2, '0');
-
-const dataFormatada = `${ano}-${mes}-${dia}`;
-
-// Retornar no payload
-return {
-  ultimoDiaMesAnterior: dataFormatada
-};
-
-
-
-const hoje = new Date();
-
-// Primeiro dia do mês atual
-const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-
-// Último dia do mês anterior
-const ultimoDiaMesAnterior = new Date(primeiroDiaMesAtual.getTime() - 1);
-
-// Formatar como yyyy-MM-dd
-const ano = ultimoDiaMesAnterior.getFullYear();
-const mes = String(ultimoDiaMesAnterior.getMonth() + 1).padStart(2, '0');
-const dia = String(ultimoDiaMesAnterior.getDate()).padStart(2, '0');
-
-const dataFormatada = `${ano}-${mes}-${dia}`;
-
-// Resultado vai para o payload da Digibee
-payload.ultimoDiaMesAnterior = dataFormatada;
 
 
 
@@ -94,6 +19,28 @@ const dia = String(ultimoDiaMesAnterior.getDate()).padStart(2, '0');
 const dataFormatada = `${ano}-${mes}-${dia}`;
 
 // Atribui ao output, que será o novo payload do step
+output = {
+  ultimoDiaMesAnterior: dataFormatada
+};
+
+
+const hoje = new Date();
+
+// Primeiro dia do mês atual
+const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+// Último dia do mês anterior
+const ultimoDiaMesAnterior = new Date(primeiroDiaMesAtual.getTime() - 1);
+
+// Extrai os componentes com padding
+const ano = ultimoDiaMesAnterior.getFullYear();
+const mes = String(ultimoDiaMesAnterior.getMonth() + 1).padStart(2, '0');
+const dia = String(ultimoDiaMesAnterior.getDate()).padStart(2, '0');
+
+// Formato yyyymmdd
+const dataFormatada = `${ano}${mes}${dia}`;
+
+// Retorna no output
 output = {
   ultimoDiaMesAnterior: dataFormatada
 };
