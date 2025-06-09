@@ -44,3 +44,39 @@ const dataFormatada = `${ano}${mes}${dia}`;
 output = {
   ultimoDiaMesAnterior: dataFormatada
 };
+
+
+-----------------´
+
+
+
+const hoje = new Date();
+
+// Primeiro dia do mês atual
+const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+// Começa com o último dia do mês anterior
+let ultimoDiaUtil = new Date(primeiroDiaMesAtual.getTime() - 1);
+
+// Se cair no sábado (6), volta 1 dia. Se cair no domingo (0), volta 2 dias.
+const diaDaSemana = ultimoDiaUtil.getDay();
+if (diaDaSemana === 6) {
+  // sábado
+  ultimoDiaUtil.setDate(ultimoDiaUtil.getDate() - 1);
+} else if (diaDaSemana === 0) {
+  // domingo
+  ultimoDiaUtil.setDate(ultimoDiaUtil.getDate() - 2);
+}
+
+// Extrai os componentes com padding
+const ano = ultimoDiaUtil.getFullYear();
+const mes = String(ultimoDiaUtil.getMonth() + 1).padStart(2, '0');
+const dia = String(ultimoDiaUtil.getDate()).padStart(2, '0');
+
+// Formato yyyymmdd
+const dataFormatada = `${ano}${mes}${dia}`;
+
+// Retorna no output
+output = {
+  ultimoDiaUtilMesAnterior: dataFormatada
+};
