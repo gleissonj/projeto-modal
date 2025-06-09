@@ -9,3 +9,26 @@ def formato = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 def resultado = ultimoDiaMesAnterior.format(formato)
 
 return ["ultimoDiaMesAnterior": resultado]
+
+
+
+
+def today = Calendar.getInstance()
+
+// Voltar para o primeiro dia do mês atual
+today.set(Calendar.DAY_OF_MONTH, 1)
+
+// Subtrair um dia => último dia do mês anterior
+today.add(Calendar.DAY_OF_MONTH, -1)
+
+def ano = today.get(Calendar.YEAR)
+def mes = today.get(Calendar.MONTH) + 1  // Calendar.MONTH é 0-based
+def dia = today.get(Calendar.DAY_OF_MONTH)
+
+// Formatar como yyyy-MM-dd
+def mesFormatado = mes < 10 ? "0${mes}" : "${mes}"
+def diaFormatado = dia < 10 ? "0${dia}" : "${dia}"
+def dataFormatada = "${ano}-${mesFormatado}-${diaFormatado}"
+
+// Retornar no payload
+return ["ultimoDiaMesAnterior": dataFormatada]
