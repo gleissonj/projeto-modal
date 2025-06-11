@@ -1,0 +1,150 @@
+OBJETIVO:
+
+Criar um agente centralizado no Agentforce que responda diferentes perguntas sobre grupos, utilizando uma arquitetura modular com
+
+Com uma estratégia modular e inteligente, você pode:
+
+- Reduzir drasticamente o número de Tópicos
+- Reutilizar Actions
+- Centralizar respostas com prompts flexíveis
+
+🎯 Estratégia para evitar explosão de tópicos e ações
+
+Muitas implementações acabam criando dezenas de tópicos e actions para cada pergunta específica. Isso se torna insustentável.
+
+✅ 1. Agrupe várias intenções num único Tópico genérico com ramificações
+
+Exemplo:
+Tópico: consultar_dados_do_grupo
+Nesse mesmo tópico, você trata:
+
+- Dados cadastrais
+- Subgrupos
+- Responsáveis
+- Contatos
+
+Como?
+Você pergunta algo como:
+
+| “O que você deseja consultar sobre o grupo {{grupo_nome}}?”
+
+E oferece opções como:
+
+📄 Dados cadastrais
+
+👥 Responsáveis
+
+📞 Contatos
+
+🧩 Subgrupos
+
+➡️ E então dispara a Action certa com base na escolha.
+
+✅ 2. Use uma única Action “geral” com ramificações internas (via parâmetro)
+Crie uma Action como:
+
+Apex:
+buscarInformacaoGrupo(grupo_nome, tipo_info)
+
+E internamente no Apex ou Flow:
+
+Se tipo_info = "dados" → retorna dados cadastrais
+Se tipo_info = "contatos" → retorna contatos
+Se tipo_info = "subgrupos" → retorna subgrupos
+Se tipo_info = "responsaveis" → retorna responsáveis
+
+➡️ Uma Action só cobre 4 casos.
+
+✅ 3. Use Prompt Templates com condicionais
+
+Em vez de criar um prompt por caso, você pode criar um template do tipo:
+
+PLAINTEXT
+{{#if dados}}
+O grupo {{grupo_nome}} tem os seguintes dados:
+CNPJ: {{cnpj}}, Tipo: {{tipo}}, Status: {{status}}
+{{/if}}
+
+{{#if contatos}}
+Contatos principais do grupo {{grupo_nome}}:
+{{contatos}}
+{{/if}}
+
+{{#if subgrupos}}
+Subgrupos:
+{{subgrupos}}
+{{/if}}
+
+
+✅ Estratégia complementar recomendada:
+
+Usar 1 tópico por domínio (ex: consultar_informacao_grupo, consultar_informacao_cliente) — cada um com sua própria Action e lógica condicional.
+
+Dessa forma, respeita-se o princípio de coesão e se mantém a escalabilidade.
+
+✅ Benefícios da Arquitetura
+
+Escalável: Um tópico cobre múltiplas intenções correlatas.
+
+Reaproveitável: A mesma Action pode ser expandida para novas necessidades.
+
+Manutenção facilitada: Atualizações pontuais sem risco de impacto lateral.
+
+Redução de esforço: Menos tópicos, menos repetições.
+
+Experiência fluida para o usuário: Fluxo guiado ou aberto.
+
+Padronização de respostas: Um só template cobre múltiplos cenários.
+
+Baixa fricção para evoluções: Fácil adicionar novos tipos de informação.
+
+
+🎯 Resultado Final com Essa Abordagem
+
+Sem estratégia modular
+
+Com estratégia modular
+
+Muitos tópicos e prompts
+
+1 tópico com ramificações internas
+
+Várias actions isoladas
+
+1 action com lógica condicional
+
+Difícil de testar e manter
+
+Fácil de atualizar e escalar
+
+Repetição de lógica e linguagem
+
+Reaproveitamento total
+
+✅ Recomendação Final
+
+Utilize essa arquitetura quando o domínio:
+
+Possui vários atributos de consulta relacionados a um mesmo identificador (como grupo, cliente, contrato).
+
+Precisa crescer com segurança, sem complexidade adicional.
+
+Deve oferecer uma experiência fluida e clara para o usuário.
+
+Essa abordagem combina produtividade com controle técnico.
+
+
+
+✅ Recomendação final para você:
+
+Se seu agente vai lidar com múltiplas perguntas sobre um mesmo grupo,
+→ Crie 1 tópico “Consulta de Grupo” com ramificações internas.
+
+Isso te dá:
+
+- Uma experiência fluida para o usuário
+- Um back-end de fácil manutenção
+- Baixo risco de recomeçar depois
+
+Conclusão direta para você levar à gerência
+“Estamos usando um único tópico porque ele trata apenas de consultas sobre o objeto Grupo. É uma forma de reduzir complexidade, evitar redundância e escalar com segurança. Caso esse mesmo padrão seja necessário para outros objetos (Cliente, Contrato, Produto), criaremos outros tópicos com a mesma arquitetura, respeitando a separação de domínios.”
