@@ -165,3 +165,14 @@ Isso te dá:
 
 Conclusão direta para você levar à gerência
 “Estamos usando um único tópico porque ele trata apenas de consultas sobre o objeto Grupo. É uma forma de reduzir complexidade, evitar redundância e escalar com segurança. Caso esse mesmo padrão seja necessário para outros objetos (Cliente, Contrato, Produto), criaremos outros tópicos com a mesma arquitetura, respeitando a separação de domínios.”
+
+
+Olá! Estou trazendo a estratégia que propus para estruturarmos o agente no Agentforce.
+Trata-se de um modelo mais inteligente, escalável e alinhado com as boas práticas da Salesforce.
+Em vez de criarmos muitos tópicos isolados, agrupamos tudo em um único tópico com ramificações controladas, o que facilita manutenção e evita redundância.
+
+Segue em anexo um documento com o blueprint técnico completo, explicações, justificativas, e até exemplos de código.
+
+Se fizer sentido, posso apresentar isso em uma reunião rápida.
+
+[📎 blueprint_agente_consulta_grupo.pdf]
