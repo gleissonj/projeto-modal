@@ -176,3 +176,45 @@ Segue em anexo um documento com o blueprint técnico completo, explicações, ju
 Se fizer sentido, posso apresentar isso em uma reunião rápida.
 
 [📎 blueprint_agente_consulta_grupo.pdf]
+
+🔄 Como escalar para outros objetos mantendo a mesma estratégia
+
+A arquitetura modular é altamente escalável. Se amanhã for necessário consultar dados de clientes, contratos ou produtos, basta seguir o mesmo padrão com novos tópicos e ações específicas:
+
+Domínio
+
+Tópico único
+
+Action reutilizável
+
+Grupo
+
+consultar_informacao_grupo
+
+buscarInformacaoGrupo(...)
+
+Cliente
+
+consultar_informacao_cliente
+
+buscarInformacaoCliente(...)
+
+Contrato
+
+consultar_informacao_contrato
+
+buscarInformacaoContrato(...)
+
+Produto
+
+consultar_informacao_produto
+
+buscarInformacaoProduto(...)
+
+🔑 Regra de ouro: um tópico deve tratar apenas de um domínio específico (grupo, cliente, contrato, etc.). Nunca misture múltiplos objetos no mesmo fluxo.
+
+➡️ Isso mantém a arquitetura modular, escalável e dentro das boas práticas do Agentforce.
+
+Como comunicar isso à liderança:
+
+“Se amanhã for necessário adicionar outros domínios ao agente, como cliente ou contrato, não teremos que refazer nada. Basta replicar a arquitetura atual com um novo tópico por domínio. Essa estratégia cresce com organização, velocidade e clareza.”

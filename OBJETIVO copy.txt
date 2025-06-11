@@ -1,0 +1,62 @@
+📍 Roadmap de Implementação da Estratégia Modular
+
+🔹 Fase 0 – Análise e Definição da Estratégia (1 a 2 dias)
+
+Levantar requisitos de negócio e perguntas que o agente deve responder
+
+Explorar opções de arquitetura possíveis e impactos técnicos
+
+Validar a abordagem modular com liderança técnica e funcional
+
+Criar blueprint técnico e plano de execução
+
+🔹 Fase 1 – Planejamento e levantamento (1 a 2 dias)
+
+Mapear todas as intenções relacionadas ao objeto “Grupo”
+
+Identificar todos os campos e objetos customizados envolvidos
+
+Definir os valores possíveis para tipo_info (dados, subgrupos, contatos, responsáveis...)
+
+🔹 Fase 2 – Estruturação no Agentforce (1 a 3 dias)
+
+Criar o Tópico consultar_informacao_grupo
+
+Definir os slots grupo_nome e tipo_info
+
+Criar frases de treinamento para userPhrases
+
+Modelar o Prompt Template com condicionais (handlebars)
+
+🔹 Fase 3 – Implementação da Action (2 a 4 dias)
+
+Desenvolver Apex Class buscarInformacaoGrupo(...) ou Flow equivalente
+
+Implementar lógica condicional baseada no tipo_info
+
+Garantir que os dados retornados estejam no formato correto para o prompt
+
+🔹 Fase 4 – Testes e refinamento (1 a 2 dias)
+
+Testar cada valor de tipo_info
+
+Verificar variações de nome de grupo (corrigir erros comuns)
+
+Ajustar mensagens de fallback se o grupo não for encontrado
+
+🔹 Fase 5 – Validação com usuários-chave e liderança (1 dia)
+
+Demonstração funcional do agente respondendo diferentes tipos de consulta
+
+Coleta de feedback para ajustes finos de linguagem e comportamento
+
+🔹 Fase 6 – Go live e acompanhamento inicial (1 a 2 dias)
+
+Publicação no ambiente de produção
+
+Monitoramento de uso e cobertura das intenções
+
+Preparar plano de expansão (outros objetos/domínios)
+
+Duração estimada total: 7 a 14 dias úteis, dependendo do nível de refinamento e validações necessárias.
+
