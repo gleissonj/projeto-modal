@@ -1,3 +1,20 @@
+💡 Por que a Estratégia Modular é a Melhor para Este Caso
+
+Trabalha com um único domínio (Grupo): Todas as informações solicitadas estão relacionadas ao mesmo objeto principal, tornando viável e natural unificar tudo em um único fluxo.
+
+Evita explosão de tópicos e ações: Agrupa várias intenções sobre grupo em um só ponto. Facilita manutenção, leitura e reuso.
+
+Facilita expansão e evolução: Para adicionar uma nova informação (ex: endereço do grupo), basta incluir um novo tipo na lógica condicional, sem criar novo tópico ou action.
+
+Reaproveita lógica e código: A lógica de consulta (Apex ou Flow) fica toda centralizada, facilitando manutenção, testes e controle de versões.
+
+Oferece uma experiência fluida ao usuário: O bot pode perguntar “O que você deseja consultar sobre o grupo XPTO?” e guiar o usuário com opções, sem travar em intenções isoladas.
+
+Garante consistência nas respostas: Com um prompt template condicional, a resposta segue o mesmo formato sempre, independente do tipo solicitado.
+
+Está alinhada com boas práticas de coesão semântica: Não mistura temas diferentes. Está tudo dentro do mesmo domínio lógico, respeitando o escopo.
+
+
 OBJETIVO:
 
 Criar um agente centralizado no Agentforce que responda diferentes perguntas sobre grupos, utilizando uma arquitetura modular com
