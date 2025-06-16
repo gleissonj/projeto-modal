@@ -1,82 +1,119 @@
+public class GrupoHandler {
 
+    public class EntradaGrupo {
+        @InvocableVariable(required=true)
+        public String grupo_nome;
 
+        @InvocableVariable(required=true)
+        public String tipo_info;
+    }
 
+    public class CNPJPorSubgrupo {
+        @InvocableVariable
+        public String cnpj;
 
+        @InvocableVariable
+        public String tipo; // Exemplo: 'Cabeça' ou 'Raiz'
+    }
 
-const hoje = new Date();
+    public class SubgrupoComCNPJs {
+        @InvocableVariable
+        public String nome_subgrupo;
 
-// Primeiro dia do mês atual
-const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        @InvocableVariable
+        public List<CNPJPorSubgrupo> cnpjs_do_subgrupo;
+    }
 
-// Último dia do mês anterior
-const ultimoDiaMesAnterior = new Date(primeiroDiaMesAtual.getTime() - 1);
+    public class ResultadoGrupo {
+        @InvocableVariable
+        public String grupo_nome;
 
-// Formatar como yyyy-MM-dd
-const ano = ultimoDiaMesAnterior.getFullYear();
-const mes = String(ultimoDiaMesAnterior.getMonth() + 1).padStart(2, '0');
-const dia = String(ultimoDiaMesAnterior.getDate()).padStart(2, '0');
+        @InvocableVariable
+        public String tipo_info;
 
-const dataFormatada = `${ano}-${mes}-${dia}`;
+        @InvocableVariable
+        public String cnpj;
 
-// Atribui ao output, que será o novo payload do step
-output = {
-  ultimoDiaMesAnterior: dataFormatada
-};
+        @InvocableVariable
+        public String endereco;
 
+        @InvocableVariable
+        public List<String> contatos;
 
-const hoje = new Date();
+        @InvocableVariable
+        public List<String> responsaveis;
 
-// Primeiro dia do mês atual
-const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        @InvocableVariable
+        public List<SubgrupoComCNPJs> subgrupos;
+    }
 
-// Último dia do mês anterior
-const ultimoDiaMesAnterior = new Date(primeiroDiaMesAtual.getTime() - 1);
+    @InvocableMethod(label='Buscar informações de grupo para Prompt Template')
+    public static List<ResultadoGrupo> buscar(List<EntradaGrupo> entradas) {
+        List<ResultadoGrupo> resultados = new List<ResultadoGrupo>();
 
-// Extrai os componentes com padding
-const ano = ultimoDiaMesAnterior.getFullYear();
-const mes = String(ultimoDiaMesAnterior.getMonth() + 1).padStart(2, '0');
-const dia = String(ultimoDiaMesAnterior.getDate()).padStart(2, '0');
+        for (EntradaGrupo entrada : entradas) {
+            ResultadoGrupo r = new ResultadoGrupo();
+            r.grupo_nome = entrada.grupo_nome;
+            r.tipo_info = entrada.tipo_info != null ? entrada.tipo_info.toLowerCase() : '';
 
-// Formato yyyymmdd
-const dataFormatada = `${ano}${mes}${dia}`;
+            // 🔧 Dados mockados – Ajuste depois com queries reais
+            r.cnpj = '12.345.678/0001-00';
+            r.endereco = 'Av. Paulista, 1000 - São Paulo/SP';
 
-// Retorna no output
-output = {
-  ultimoDiaMesAnterior: dataFormatada
-};
+            // Contatos
+            r.contatos = new List<String>{
+                'João da Silva – (11) 99999-0001 – joao@nestle.com',
+                'Maria Souza – (11) 98888-0002 – maria@nestle.com'
+            };
 
+            // Responsáveis
+            r.responsaveis = new List<String>{
+                'Carlos Menezes (Officer) – Região Sudeste – Plataforma B2B',
+                'Ana Paula (Assistente) – Segmento Varejo'
+            };
 
------------------´
+            // Subgrupos
+            List<SubgrupoComCNPJs> listaSubgrupos = new List<SubgrupoComCNPJs>();
 
+            // Subgrupo 1: Nestlé Alimentos
+            List<CNPJPorSubgrupo> cnpjsAlimentos = new List<CNPJPorSubgrupo>();
+            CNPJPorSubgrupo cnpj1 = new CNPJPorSubgrupo();
+            cnpj1.cnpj = '12.345.678/0001-00';
+            cnpj1.tipo = 'Cabeça';
+            cnpjsAlimentos.add(cnpj1);
 
+            CNPJPorSubgrupo cnpj2 = new CNPJPorSubgrupo();
+            cnpj2.cnpj = '23.456.789/0001-11';
+            cnpj2.tipo = 'Raiz';
+            cnpjsAlimentos.add(cnpj2);
 
-const hoje = new Date();
+            SubgrupoComCNPJs alimentos = new SubgrupoComCNPJs();
+            alimentos.nome_subgrupo = 'Nestlé Alimentos';
+            alimentos.cnpjs_do_subgrupo = cnpjsAlimentos;
+            listaSubgrupos.add(alimentos);
 
-// Primeiro dia do mês atual
-const primeiroDiaMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            // Subgrupo 2: Nestlé Bebidas
+            List<CNPJPorSubgrupo> cnpjsBebidas = new List<CNPJPorSubgrupo>();
+            CNPJPorSubgrupo cnpj3 = new CNPJPorSubgrupo();
+            cnpj3.cnpj = '34.567.890/0001-22';
+            cnpj3.tipo = 'Cabeça';
+            cnpjsBebidas.add(cnpj3);
 
-// Começa com o último dia do mês anterior
-let ultimoDiaUtil = new Date(primeiroDiaMesAtual.getTime() - 1);
+            CNPJPorSubgrupo cnpj4 = new CNPJPorSubgrupo();
+            cnpj4.cnpj = '45.678.901/0001-33';
+            cnpj4.tipo = 'Raiz';
+            cnpjsBebidas.add(cnpj4);
 
-// Se cair no sábado (6), volta 1 dia. Se cair no domingo (0), volta 2 dias.
-const diaDaSemana = ultimoDiaUtil.getDay();
-if (diaDaSemana === 6) {
-  // sábado
-  ultimoDiaUtil.setDate(ultimoDiaUtil.getDate() - 1);
-} else if (diaDaSemana === 0) {
-  // domingo
-  ultimoDiaUtil.setDate(ultimoDiaUtil.getDate() - 2);
+            SubgrupoComCNPJs bebidas = new SubgrupoComCNPJs();
+            bebidas.nome_subgrupo = 'Nestlé Bebidas';
+            bebidas.cnpjs_do_subgrupo = cnpjsBebidas;
+            listaSubgrupos.add(bebidas);
+
+            r.subgrupos = listaSubgrupos;
+
+            resultados.add(r);
+        }
+
+        return resultados;
+    }
 }
-
-// Extrai os componentes com padding
-const ano = ultimoDiaUtil.getFullYear();
-const mes = String(ultimoDiaUtil.getMonth() + 1).padStart(2, '0');
-const dia = String(ultimoDiaUtil.getDate()).padStart(2, '0');
-
-// Formato yyyymmdd
-const dataFormatada = `${ano}${mes}${dia}`;
-
-// Retorna no output
-output = {
-  ultimoDiaUtilMesAnterior: dataFormatada
-};

@@ -1,73 +1,20 @@
-✅ Novo Tópico: Critérios de Escolha de Plataforma
-Título sugerido: Por que usar AWS para algumas integrações e DigiBee para outras?
+Tópico que permite ao agente responder perguntas relacionadas a um grupo específico, como dados cadastrais, contatos, subgrupos e responsáveis.
 
-Objetivo: Justificar tecnicamente e estrategicamente a divisão de uso.
+Permitir que usuários consultem informações sobre um grupo, como dados cadastrais, contatos, subgrupos ou responsáveis.
 
-MOSTRAR IMAGEM Q SALVEI
+Respond with relevant information about a group based on the user's request. Possible information types include: registration data, contacts, subgroups, and account managers. Ask for the group name if it's not provided.
 
+This topic handles all user questions about information related to a business group in Salesforce.
+It should be selected when the user asks about:
 
-🎯 Objetivo: Justificar tecnicamente e estrategicamente a divisão de uso
-1. Estratégia Arquitetural
-AWS será a plataforma principal para integrações core, críticas e de alto volume.
+Group registration data
 
-Oferece mais flexibilidade, performance e controle técnico.
+Group contacts
 
-Permite seguir princípios de arquitetura moderna: serverless, observabilidade nativa, IaC, CI/CD.
+Group subgroups
 
-Ideal para construir APIs robustas e processamentos batch escaláveis e resilientes.
+Group account managers (responsibles, officers, or assistants)
 
-DigiBee será usada para integrações mais leves e padronizadas, com foco em agilidade.
-
-Solução low-code, ideal para casos que exigem rápida entrega e menos customização.
-
-Acelera o delivery para integrações padrão com sistemas SaaS, ERPs, CRMs, etc.
-
-Reduz a dependência do time de engenharia para integrações de menor complexidade.
-
-
-
-7. Estratégia de Migração
-Abordagem: Big Bang vs. Faseada
-
-Priorização por tipo de integração (síncrona, batch, eventos)
-
-Ferramentas e automações que serão usadas
-
-Exemplo de migração de um fluxo (antes e depois)
-
-
-
-8. Riscos e Mitigações
-Riscos possíveis (interrupção, curva de aprendizado, dependência de sistemas legados)
-
-Planos de mitigação e contingência
-
-
-9. Benefícios Esperados
-Ganhos em custo
-
-Tempo de desenvolvimento reduzido
-
-Aumento de confiabilidade
-
-Monitoramento e troubleshooting facilitados
-
-Alinhamento com boas práticas de arquitetura moderna
-
-
-10. Próximos Passos
-Timeline da migração
-
-Marcos principais
-
-Equipes envolvidas
-
-Roadmap futuro
-
-
-11 - Principal desafio atuais :
-
-- Volume de integrações
-- Tempo de desenvolvimento
-- Escalabilidade
-
+Any general question about a group’s data
+If the user's question mentions a group name or requests information about a company group, trigger this topic.
+Ask for the group name if the user doesn't provide it.
