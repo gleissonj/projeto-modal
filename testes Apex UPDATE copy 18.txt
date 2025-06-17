@@ -2,7 +2,7 @@ public class GrupoHandler {
 
     public class EntradaGrupo {
         @InvocableVariable(required=true)
-        public Account account;  // Agora recebendo o próprio objeto Account
+        public Account account;  // Agora o input é o próprio objeto Account
     }
 
     public class CNPJPorSubgrupo {
@@ -10,7 +10,7 @@ public class GrupoHandler {
         public String cnpj;
 
         @InvocableVariable
-        public String tipo;
+        public String tipo; // Exemplo: 'Cabeça' ou 'Raiz'
     }
 
     public class SubgrupoComCNPJs {
@@ -48,21 +48,23 @@ public class GrupoHandler {
         for (EntradaGrupo entrada : entradas) {
             if (entrada.account == null || entrada.account.Id == null) continue;
 
-            // Caso você precise mais campos do Account (além do Id), precisará fazer um SOQL aqui
+            // Fazendo uma consulta ao Account para garantir que Name esteja preenchido
             Account grupo = [SELECT Id, Name FROM Account WHERE Id = :entrada.account.Id LIMIT 1];
 
             ResultadoGrupo r = new ResultadoGrupo();
             r.grupo_nome = grupo.Name;
 
-            // Mock de dados fixos (até você colocar as consultas reais)
+            // Mock de dados fixos - substitua por consultas reais depois
             r.cnpj = '12.345.678/0001-00';
             r.endereco = 'Av. Paulista, 1000 - São Paulo/SP';
 
+            // Contatos
             r.contatos = new List<String>{
                 'João da Silva – (11) 99999-0001 – joao@nestle.com',
                 'Maria Souza – (11) 98888-0002 – maria@nestle.com'
             };
 
+            // Responsáveis
             r.responsaveis = new List<String>{
                 'Carlos Menezes (Officer) – Região Sudeste – Plataforma B2B',
                 'Ana Paula (Assistente) – Segmento Varejo'
@@ -70,17 +72,39 @@ public class GrupoHandler {
 
             List<SubgrupoComCNPJs> listaSubgrupos = new List<SubgrupoComCNPJs>();
 
+            // Subgrupo 1: Nestlé Alimentos
             List<CNPJPorSubgrupo> cnpjsAlimentos = new List<CNPJPorSubgrupo>();
-            cnpjsAlimentos.add(new CNPJPorSubgrupo { cnpj = '12.345.678/0001-00', tipo = 'Cabeça' });
-            cnpjsAlimentos.add(new CNPJPorSubgrupo { cnpj = '23.456.789/0001-11', tipo = 'Raiz' });
+            CNPJPorSubgrupo cnpjAlim1 = new CNPJPorSubgrupo();
+            cnpjAlim1.cnpj = '12.345.678/0001-00';
+            cnpjAlim1.tipo = 'Cabeça';
+            cnpjsAlimentos.add(cnpjAlim1);
 
-            listaSubgrupos.add(new SubgrupoComCNPJs { nome_subgrupo = 'Nestlé Alimentos', cnpjs_do_subgrupo = cnpjsAlimentos });
+            CNPJPorSubgrupo cnpjAlim2 = new CNPJPorSubgrupo();
+            cnpjAlim2.cnpj = '23.456.789/0001-11';
+            cnpjAlim2.tipo = 'Raiz';
+            cnpjsAlimentos.add(cnpjAlim2);
 
+            SubgrupoComCNPJs alimentos = new SubgrupoComCNPJs();
+            alimentos.nome_subgrupo = 'Nestlé Alimentos';
+            alimentos.cnpjs_do_subgrupo = cnpjsAlimentos;
+            listaSubgrupos.add(alimentos);
+
+            // Subgrupo 2: Nestlé Bebidas
             List<CNPJPorSubgrupo> cnpjsBebidas = new List<CNPJPorSubgrupo>();
-            cnpjsBebidas.add(new CNPJPorSubgrupo { cnpj = '34.567.890/0001-22', tipo = 'Cabeça' });
-            cnpjsBebidas.add(new CNPJPorSubgrupo { cnpj = '45.678.901/0001-33', tipo = 'Raiz' });
+            CNPJPorSubgrupo cnpjBeb1 = new CNPJPorSubgrupo();
+            cnpjBeb1.cnpj = '34.567.890/0001-22';
+            cnpjBeb1.tipo = 'Cabeça';
+            cnpjsBebidas.add(cnpjBeb1);
 
-            listaSubgrupos.add(new SubgrupoComCNPJs { nome_subgrupo = 'Nestlé Bebidas', cnpjs_do_subgrupo = cnpjsBebidas });
+            CNPJPorSubgrupo cnpjBeb2 = new CNPJPorSubgrupo();
+            cnpjBeb2.cnpj = '45.678.901/0001-33';
+            cnpjBeb2.tipo = 'Raiz';
+            cnpjsBebidas.add(cnpjBeb2);
+
+            SubgrupoComCNPJs bebidas = new SubgrupoComCNPJs();
+            bebidas.nome_subgrupo = 'Nestlé Bebidas';
+            bebidas.cnpjs_do_subgrupo = cnpjsBebidas;
+            listaSubgrupos.add(bebidas);
 
             r.subgrupos = listaSubgrupos;
 
