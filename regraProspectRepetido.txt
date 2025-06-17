@@ -1,43 +1,13 @@
-private static void processLeads(
-    List<ContactResponse> leads, 
-    Id recordPage,  // O Id do prospect que estamos lidando
-    Map<String, Lead> mapLeadExisting, 
-    List<ContactUpdateComparison> leadToFrontChoice2, 
-    List<Lead> newLeadsToInsert) 
-{
-    for (ContactResponse newLead : leads) {
-        ContactUpdateComparison respostaContato = new ContactUpdateComparison(
-            newLead.nome,
-            newLead.cpf,
-            new List<ContactUpdateInfo>(),
-            new List<ContactUpdateInfo>()
-        );
+// Criando a entrada de teste
+GrupoHandler_Responsaveis.Request req = new GrupoHandler_Responsaveis.Request();
+req.groupName = 'Grupo Exemplo Nestlé';
+req.codGrupo = 'GRP-123';
 
-        // Verifica se já existe um lead para o CPF
-        if (mapLeadExisting.containsKey(formatCPF(newLead.cpf))) {
-            Lead leadCurrent = mapLeadExisting.get(formatCPF(newLead.cpf));
+List<GrupoHandler_Responsaveis.Request> listaRequests = new List<GrupoHandler_Responsaveis.Request>();
+listaRequests.add(req);
 
-            // Verifica se o Lead encontrado pertence ao prospect correto
-            if (leadCurrent.Prospect__c == recordPage) {
-                // O contato já existe no Salesforce e pertence ao prospect correto
-                compareAndUpdateContact(newLead, leadCurrent, respostaContato);
+// Executando o método Invocable
+List<GrupoHandler_Responsaveis.Response> resultado = GrupoHandler_Responsaveis.buscarResponsaveis(listaRequests);
 
-                if (!respostaContato.telefones.isEmpty() || !respostaContato.emails.isEmpty()) {
-                    leadToFrontChoice2.add(respostaContato);
-                }
-            }
-            // Caso o Lead pertença a outro prospect, não deve ser atualizado ou inserido
-            else {
-                System.debug('Lead encontrado para CPF ' + newLead.cpf + ' mas pertence a outro Prospect.');
-            }
-        } else {
-            // Não encontrou o Lead, então só cria um novo se for para o prospect correto
-            Lead newLeadInsert = createNewLead(newLead);
-            if (newLeadInsert.Prospect__c == recordPage) {
-                newLeadsToInsert.add(newLeadInsert);
-            } else {
-                System.debug('Tentativa de criação de Lead com CPF ' + newLead.cpf + ' para outro Prospect.');
-            }
-        }
-    }
-}
+// Exibindo o resultado no log
+System.debug('----- Resultado do Prompt -----\n' + resultado[0].prompt);
