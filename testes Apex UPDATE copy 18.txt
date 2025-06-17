@@ -1,37 +1,92 @@
-public class HU7LeadFixtureFactory {
+public class GrupoHandler {
 
-    private static String generateFakePhoneNumber() {
-        String prefix = '9';
-        String randomDigits = String.valueOf(Crypto.getRandomInteger()).right(8);
-        if (randomDigits.length() < 8) {
-            randomDigits = randomDigits.leftPad(8, '0');
+    public class EntradaGrupo {
+        @InvocableVariable(required=true)
+        public Account account;  // Agora recebendo o próprio objeto Account
+    }
+
+    public class CNPJPorSubgrupo {
+        @InvocableVariable
+        public String cnpj;
+
+        @InvocableVariable
+        public String tipo;
+    }
+
+    public class SubgrupoComCNPJs {
+        @InvocableVariable
+        public String nome_subgrupo;
+
+        @InvocableVariable
+        public List<CNPJPorSubgrupo> cnpjs_do_subgrupo;
+    }
+
+    public class ResultadoGrupo {
+        @InvocableVariable
+        public String grupo_nome;
+
+        @InvocableVariable
+        public String cnpj;
+
+        @InvocableVariable
+        public String endereco;
+
+        @InvocableVariable
+        public List<String> contatos;
+
+        @InvocableVariable
+        public List<String> responsaveis;
+
+        @InvocableVariable
+        public List<SubgrupoComCNPJs> subgrupos;
+    }
+
+    @InvocableMethod(label='Buscar informações de grupo para Prompt Template')
+    public static List<ResultadoGrupo> buscar(List<EntradaGrupo> entradas) {
+        List<ResultadoGrupo> resultados = new List<ResultadoGrupo>();
+
+        for (EntradaGrupo entrada : entradas) {
+            if (entrada.account == null || entrada.account.Id == null) continue;
+
+            // Caso você precise mais campos do Account (além do Id), precisará fazer um SOQL aqui
+            Account grupo = [SELECT Id, Name FROM Account WHERE Id = :entrada.account.Id LIMIT 1];
+
+            ResultadoGrupo r = new ResultadoGrupo();
+            r.grupo_nome = grupo.Name;
+
+            // Mock de dados fixos (até você colocar as consultas reais)
+            r.cnpj = '12.345.678/0001-00';
+            r.endereco = 'Av. Paulista, 1000 - São Paulo/SP';
+
+            r.contatos = new List<String>{
+                'João da Silva – (11) 99999-0001 – joao@nestle.com',
+                'Maria Souza – (11) 98888-0002 – maria@nestle.com'
+            };
+
+            r.responsaveis = new List<String>{
+                'Carlos Menezes (Officer) – Região Sudeste – Plataforma B2B',
+                'Ana Paula (Assistente) – Segmento Varejo'
+            };
+
+            List<SubgrupoComCNPJs> listaSubgrupos = new List<SubgrupoComCNPJs>();
+
+            List<CNPJPorSubgrupo> cnpjsAlimentos = new List<CNPJPorSubgrupo>();
+            cnpjsAlimentos.add(new CNPJPorSubgrupo { cnpj = '12.345.678/0001-00', tipo = 'Cabeça' });
+            cnpjsAlimentos.add(new CNPJPorSubgrupo { cnpj = '23.456.789/0001-11', tipo = 'Raiz' });
+
+            listaSubgrupos.add(new SubgrupoComCNPJs { nome_subgrupo = 'Nestlé Alimentos', cnpjs_do_subgrupo = cnpjsAlimentos });
+
+            List<CNPJPorSubgrupo> cnpjsBebidas = new List<CNPJPorSubgrupo>();
+            cnpjsBebidas.add(new CNPJPorSubgrupo { cnpj = '34.567.890/0001-22', tipo = 'Cabeça' });
+            cnpjsBebidas.add(new CNPJPorSubgrupo { cnpj = '45.678.901/0001-33', tipo = 'Raiz' });
+
+            listaSubgrupos.add(new SubgrupoComCNPJs { nome_subgrupo = 'Nestlé Bebidas', cnpjs_do_subgrupo = cnpjsBebidas });
+
+            r.subgrupos = listaSubgrupos;
+
+            resultados.add(r);
         }
-        return '11' + prefix + randomDigits; // Exemplo: 11987654321
-    }
 
-    private static String generateFakeEmail() {
-        String randomSuffix = String.valueOf(Crypto.getRandomInteger()).abs().format();
-        return 'testuser' + randomSuffix + '@testdomain.com';
-    }
-
-    public static Lead newProspectLead(String firstName, String lastName, String cpf, String company, String recordIdPage) {
-        return new Lead(
-            FirstName = firstName != null ? firstName : 'Test',
-            LastName = lastName != null ? lastName : 'User',
-            Company = company != null ? company : 'Fake Company Ltda',
-            CPF__c = cpf,
-            Prospect__c = recordIdPage,
-            Phone = generateFakePhoneNumber(),
-            MobilePhone = generateFakePhoneNumber(),
-            Email = generateFakeEmail()
-        );
+        return resultados;
     }
 }
-
-
-
-
-"apex.format.enable": false,
-"xml.format.enable": false,
-"editor.formatOnPaste": false,
-"editor.formatOnSave": false
