@@ -1,92 +1,24 @@
-import boto3
-import csv
-import io
+### INSTRUCTIONS
 
-# Cliente S3
-s3 = boto3.client('s3')
+✅ IMPORTANTE: Sempre responda em português (Brasil).
 
-def lambda_handler(event, context):
-    bucket = event['bucket']
-    key = event['key']
-    
-    try:
-        # Recuperando o arquivo do S3
-        response = s3.get_object(Bucket=bucket, Key=key)
-        file_content = response['Body'].read()
-        
-        # Abrindo o arquivo CSV
-        csv_file = io.StringIO(file_content.decode('utf-8'))
-        csv_reader = csv.reader(csv_file)
-        
-        # Processando cada linha do CSV
-        for row_index, row in enumerate(csv_reader):
-            print(f"Linha {row_index + 1}: {row}")
-            
-            # Se você souber que o CSV tem colunas específicas, pode acessar assim:
-            if row:
-                coluna_1 = row[0]  # Primeira coluna
-                coluna_2 = row[1]  # Segunda coluna
-                print(f"Coluna 1: {coluna_1}, Coluna 2: {coluna_2}")
-        
-        return {
-            "statusCode": 200,
-            "body": "Arquivo CSV lido com sucesso."
-        }
+Você receberá da Action Apex uma única string chamada `prompt`, que já contém toda a resposta final formatada, pronta para ser exibida ao usuário.
 
-    except Exception as e:
-        print(f"Erro ao processar o arquivo: {str(e)}")
-        return {
-            "statusCode": 500,
-            "body": f"Erro ao processar o arquivo: {str(e)}"
-        }
+Essa string já inclui:
 
+- Nome do grupo
+- Lista de subgrupos
+- Lista de CNPJs com o tipo (Cabeça ou Raiz)
+- Formatação com emojis, marcadores e espaçamento adequado
 
+### O que o LLM deve fazer:
 
+Apenas exibir o conteúdo da variável `prompt` exatamente como foi recebido.  
+Não tente criar, reformatar, traduzir, ou alterar o conteúdo da resposta.
 
+### Restrições:
 
-import unittest
-from unittest.mock import patch
-from handler import lambda_handler
-
-class TestLambdaHandler(unittest.TestCase):
-
-    @patch("handler.logger")
-    def test_lambda_handler(self, mock_logger):
-        # Arrange
-        event = {"key": "value"}
-        context = None
-
-        # Act
-        response = lambda_handler(event, context)
-
-        # Assert
-        mock_logger.info.assert_called_once_with(f"Evento recebido: {event}")
-        self.assertEqual(response, {"statusCode": 200, "body": "Evento processado"})
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-
-
-import unittest
-from unittest.mock import patch
-from app.lambda_function import lambda_handler  # importa do módulo certo
-
-class TestLambdaHandler(unittest.TestCase):
-
-    @patch("app.lambda_function.logger")  # importa o logger do lugar certo
-    def test_lambda_handler_logs_and_returns_response(self, mock_logger):
-        event = {"foo": "bar"}
-        context = None
-
-        response = lambda_handler(event, context)
-
-        mock_logger.info.assert_called_once_with(f"Evento recebido : {event}")
-        self.assertEqual(response, {
-            "statusCode": 200,
-            "body": "Evento processado"
-        })
-
-if __name__ == "__main__":
-    unittest.main()
+- Não invente dados
+- Não traduza o conteúdo
+- Não inclua rodapés, agradecimentos ou mensagens extras
+- Apenas mostre ao usuário exatamente o que está no campo `prompt`
