@@ -1,132 +1,37 @@
-📊 Objetivo do Produto de IA
+public class GrupoHandler_Responsaveis {
 
-Criar uma solução inteligente e proativa para:
+    public class EntradaGrupo {
+        @InvocableVariable(required=true)
+        public Account account;  // Input: o próprio Account
+    }
 
-1 - Monitorar a adoção de funcionalidades no Salesforce.
+    public class ResultadoResponsaveis {
+        @InvocableVariable
+        public String prompt;  // Apenas o campo final, com a resposta formatada
+    }
 
-2 - Prever risco de abandono (churn funcional).
+    @InvocableMethod(label='Buscar responsáveis do grupo (Mockado)')
+    public static List<ResultadoResponsaveis> buscarResponsaveis(List<EntradaGrupo> entradas) {
+        List<ResultadoResponsaveis> resultados = new List<ResultadoResponsaveis>();
 
-3 - Atuar automaticamente com o usuário para investigar motivos de baixo uso.
+        for (EntradaGrupo entrada : entradas) {
+            if (entrada.account == null || entrada.account.Id == null) continue;
 
-4 - Notificar o time responsável com insights acionáveis.
+            // Simulando como se tivesse consultado o Account
+            String grupoNome = 'Grupo Exemplo Nestlé';  // Mockado
 
-✅ Justificativa
+            // Criando uma resposta de responsáveis mockada em formato texto (pode ser JSON, ou texto direto)
+            String promptFinal = '✅ Responsáveis pelo grupo ' + grupoNome + ':\n\n';
+            promptFinal += '1️⃣ Nome: Carlos Menezes\n   Cargo: Officer\n   Região: Sudeste\n   Plataforma: B2B\n\n';
+            promptFinal += '2️⃣ Nome: Ana Paula\n   Cargo: Assistente\n   Departamento: Varejo\n   Região: Sudeste\n   Plataforma: B2B\n\n';
+            promptFinal += '3️⃣ Nome: João Silva\n   Cargo: Coordenador\n   Departamento: Comercial\n   Região: Nacional\n   Plataforma: B2C';
 
-* Funcionalidades desenvolvidas mas não utilizadas geram desperdício de tempo, dinheiro e esforço.
+            ResultadoResponsaveis r = new ResultadoResponsaveis();
+            r.prompt = promptFinal;
 
-* Times de produto nem sempre conseguem perceber rapidamente o desuso.
+            resultados.add(r);
+        }
 
-* A IA da Salesforce permite detectar padrões de comportamento e agir proativamente.
-
-
-⚖️ Arquitetura e Etapas com Ferramentas Einstein/AgentForce
-
-1. Coleta e estruturação dos dados de uso
-
-Produto usado: Salesforce Data Cloud
-
-Armazena eventos de uso de funcionalidades: qual funcionalidade, quando, quantas vezes, por quem, etc.
-
-Sugestão: criar um objeto customizado UsoFuncionalidade__c
-
-2. Previsão de churn funcional
-
-Produto usado: Einstein Prediction Builder
-
-Treina um modelo com base nos dados do Data Cloud.
-
-Campo alvo: Abandonou__c (Sim/Não com base em uso nos últimos 30 dias, por exemplo).
-
-Gera um campo Churn_Score__c (0 a 100)
-
-3. Visualização dos scores em relatórios e dashboards
-
-Produto usado: Salesforce Reports and Dashboards
-
-Exibe:
-
-Funcionalidades com maior risco de churn
-
-Perfis mais afetados
-
-Tendências de uso por funcionalidade
-
-Score por funcionalidade e por usuário
-
-4. Verificação periódica dos scores e detecção de alerta
-
-Produto usado: Salesforce Flow + Apex Trigger (opcional)
-
-Um fluxo ou Apex roda periodicamente e verifica:
-
-Se o score de churn de alguma funcionalidade está muito alto (>80)
-
-Se o uso caiu drasticamente
-
-5. Abertura proativa de Einstein Bot com prompt explicativo
-
-Produto usado: Einstein Bots + AgentForce
-
-Um Einstein Bot é exibido em tela (via chat embutido ou modal) para o usuário afetado.
-
-O bot aciona um agente generativo com:
-
-Prompt Template dinâmico usando dados do Data Cloud (usuário, funcionalidade, histórico de uso)
-
-Action Function opcional para coletar info adicional em tempo real
-
-Exemplo de Prompt para Prompt Builder:
-Olá {{firstName}}, notei que você não tem usado a funcionalidade {{nomeFuncionalidade}} nas últimas semanas.
-Poderia nos contar o motivo?
-
-( ) Não entendi como usar
-( ) Não vejo valor
-( ) Estou tendo problemas técnicos
-( ) Outro (descreva)
-
-O agente coleta a resposta e pode usar LLM (Einstein Copilot) para classificar a motivação (ex: dificuldade, falta de valor percebido, erro técnico)
-
-6. Alerta por e-mail ao time de produto/responsável
-
-Produto usado: Salesforce Flow + Email Alert
-
-Um fluxo envia um e-mail com:
-
-Nome da funcionalidade afetada
-
-Usuários com alto risco de churn
-
-Resposta obtida pelo agente
-
-Link para dashboard com mais detalhes
-
-Modelo de E-mail de Alerta:
-Assunto: Alerta de Churn - Funcionalidade {{nomeFuncionalidade}}
-
-Olá time,
-
-Identificamos que a funcionalidade "{{nomeFuncionalidade}}" apresenta alto risco de abandono (Score médio: {{churnScore}}).
-
-Motivos reportados por usuários:
-
-{{topRespostas}}
-
-Recomendamos investigar e atuar rapidamente.
-
-[Ver Dashboard Detalhado]
-
-
-
-
-Resumo Visual do Fluxo de IA com Salesforce para Churn Funcional
-📊 Dados de uso de funcionalidades coletados no Data Cloud
- ⬇
-🧠 Previsão de abandono com Einstein Prediction Builder (churn score)
- ⬇
-📈 Scores exibidos em Dashboards e Relatórios
- ⬇
-🔍 Verificação automática via Flow detecta uso muito baixo
- ⬇
-💬 AgentForce + Einstein Bot conversa com o usuário para entender a causa
- ⬇
-📧 Alerta com insights enviado ao Time de Produto
+        return resultados;
+    }
+}
