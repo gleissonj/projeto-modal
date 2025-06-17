@@ -1,40 +1,51 @@
 public class GrupoHandler_Responsaveis {
 
-    public class EntradaGrupo {
+    public class Request {
         @InvocableVariable(required=true)
-        public Account account;  // Recebendo o próprio objeto Account como input
+        public String groupName;
+
+        @InvocableVariable(required=true)
+        public String codGrupo;
     }
 
-    public class ResultadoResponsaveis {
+    public class Response {
         @InvocableVariable
-        public String grupo_nome;
-
-        @InvocableVariable
-        public List<String> responsaveis;
+        public String prompt;  // Único campo de saída
     }
 
-    @InvocableMethod(label='Buscar responsáveis do grupo')
-    public static List<ResultadoResponsaveis> buscarResponsaveis(List<EntradaGrupo> entradas) {
-        List<ResultadoResponsaveis> resultados = new List<ResultadoResponsaveis>();
+    @InvocableMethod(label='Buscar responsáveis do grupo (Mockado)')
+    public static List<Response> buscarResponsaveis(List<Request> requests) {
+        List<Response> responses = new List<Response>();
 
-        for (EntradaGrupo entrada : entradas) {
-            if (entrada.account == null || entrada.account.Id == null) continue;
+        for (Request req : requests) {
+            if (String.isBlank(req.groupName) || String.isBlank(req.codGrupo)) continue;
 
-            // Fazendo consulta para garantir o nome do grupo
-            Account grupo = [SELECT Id, Name FROM Account WHERE Id = :entrada.account.Id LIMIT 1];
+            String promptFinal = '✅ Responsáveis pelo grupo ' + req.groupName + ' (Código: ' + req.codGrupo + '):\n\n';
 
-            ResultadoResponsaveis r = new ResultadoResponsaveis();
-            r.grupo_nome = grupo.Name;
+            // Responsável 1
+            promptFinal += '👤 Nome: Carlos Menezes\n';
+            promptFinal += '📌 Cargo: Officer\n';
+            promptFinal += '🖥️ Plataforma: B2B\n';
+            promptFinal += '🗂️ Carteira: Grandes Contas\n\n';
 
-            // Mock de responsáveis - Substitua depois pelas queries reais
-            r.responsaveis = new List<String>{
-                'Carlos Menezes (Officer) – Região Sudeste – Plataforma B2B',
-                'Ana Paula (Assistente) – Segmento Varejo'
-            };
+            // Responsável 2
+            promptFinal += '👤 Nome: Ana Paula\n';
+            promptFinal += '📌 Cargo: Assistente\n';
+            promptFinal += '🖥️ Plataforma: B2B\n';
+            promptFinal += '🗂️ Carteira: Varejo SP\n\n';
 
-            resultados.add(r);
+            // Responsável 3
+            promptFinal += '👤 Nome: João Silva\n';
+            promptFinal += '📌 Cargo: Coordenador\n';
+            promptFinal += '🖥️ Plataforma: B2C\n';
+            promptFinal += '🗂️ Carteira: Nacional';
+
+            Response r = new Response();
+            r.prompt = promptFinal;
+
+            responses.add(r);
         }
 
-        return resultados;
+        return responses;
     }
 }
