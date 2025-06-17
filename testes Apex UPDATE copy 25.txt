@@ -18,3 +18,23 @@ Group account managers (responsibles, officers, or assistants)
 Any general question about a group’s data
 If the user's question mentions a group name or requests information about a company group, trigger this topic.
 Ask for the group name if the user doesn't provide it.
+
+
+
+
+Testes
+
+-----------------------
+
+
+List<GrupoHandler.EntradaGrupo> entradas = new List<GrupoHandler.EntradaGrupo>();
+
+GrupoHandler.EntradaGrupo entrada = new GrupoHandler.EntradaGrupo();
+entrada.grupo_nome = 'Nestlé';
+entrada.tipo_info = 'responsaveis'; // Você pode trocar para: dados, contatos, subgrupos, tudo...
+
+entradas.add(entrada);
+
+List<GrupoHandler.ResultadoGrupo> resultado = GrupoHandler.buscar(entradas);
+
+System.debug('Resultado: ' + JSON.serializePretty(resultado));

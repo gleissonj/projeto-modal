@@ -1,72 +1,40 @@
-%dw 2.0
-import * from dw::core::Binaries
-output application/json
-var myFile = payload.parts.file.content as Binary {encoding: "UTF-8"}
----
-{
-  success: true,
-  fileContent: toBase64(myFile)
-}
+Pergunta: Me traga informações do grupo Nestle
+
+📌 O que você deseja consultar sobre o grupo Nestlé?
+
+Selecione uma das opções abaixo:
+
+1️⃣ Dados cadastrais  
+2️⃣ Contatos  
+3️⃣ Subgrupos  
+4️⃣ Responsáveis  
+5️⃣ Tudo (informações completas)
+
+É só me dizer: *“Quero os contatos da Nestlé”* ou *“Me mostra tudo da Nestlé”*.
+
+Pergunta: quem é o officer do grupo nestle?
+
+📌 Consulta sobre o grupo Nestlé
+
+👤 Officer responsável:
+Carlos Menezes – Região Sudeste – Plataforma B2B
+
+🧑‍💼 Assistente de contas:
+Ana Paula – Segmento Varejo
+
+Pergunta: qual é a plataforma do officer da nestle?
+📌 Consulta sobre o grupo Nestlé
+
+👤 Officer responsável:
+Carlos Menezes – Região Sudeste – Plataforma B2B
 
 
+Pergunta: e se eu fizer uma resposta e não perguntar o grupo
+exemplo: quem é o officer?
+❓ Para te responder, preciso saber qual é o grupo que você quer consultar.
 
+Pode me dizer, por exemplo:
+“Quem é o officer do grupo Nestlé?”
 
-%dw 2.0
-import toBase64 from dw::core::Binaries
-output application/json
----
-{
-  success: true,
-  fileContent: toBase64(read(payload.parts.file.content, "application/octet-stream"))
-}
-
-
-
-%dw 2.0
-output application/json
-var excelBinary = payload // assuming this is the binary content of the .xlsx file
----
-{
-  base64EncodedExcel: excelBinary as Base64
-}
-
-
-%dw 2.0
-import * from dw::core::Binaries
-output application/json
----
-{
-  "attachments": [
-    {
-      "filename": "filename",
-      "base64content": toBase64(write(payload,"application/json"))
-    }
-  ]
-}
-
-
-
-Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-
-
-%dw 2.0
-output application/json
----
-{
-  type: typeOf(payload.parts.file.content),
-  value: payload.parts.file.content
-}
-
-
-%dw 2.0
-import toBase64 from dw::core::Binaries
-import read from dw::core::IO
-
-var myFileBinary = read(payload.parts.file.content, "application/octet-stream")
-output application/json
----
-{
-  success: true,
-  fileContentBase64: toBase64(myFileBinary)
-}
-
+Ou apenas:
+“Grupo Nestlé”
