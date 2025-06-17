@@ -49,3 +49,22 @@ public class GrupoHandler_Responsaveis {
         return responses;
     }
 }
+
+
+
+
+
+
+// Criando a entrada de teste
+GrupoHandler_Responsaveis.Request req = new GrupoHandler_Responsaveis.Request();
+req.groupName = 'Grupo Exemplo Nestlé';
+req.codGrupo = 'GRP-123';
+
+List<GrupoHandler_Responsaveis.Request> listaRequests = new List<GrupoHandler_Responsaveis.Request>();
+listaRequests.add(req);
+
+// Executando
+List<GrupoHandler_Responsaveis.Response> resultado = GrupoHandler_Responsaveis.buscarResponsaveis(listaRequests);
+
+// Log
+System.debug('Resultado do Prompt:\n' + resultado[0].prompt);
