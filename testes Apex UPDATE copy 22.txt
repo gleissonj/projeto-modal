@@ -54,3 +54,21 @@ public class GrupoHandler_Subgrupos {
 
 
 
+
+// Criando a entrada de teste
+GrupoHandler_Subgrupos.Request req = new GrupoHandler_Subgrupos.Request();
+req.groupName = 'Grupo Exemplo Nestlé';
+req.codGrupo = 'GRP-123';
+
+List<GrupoHandler_Subgrupos.Request> listaRequests = new List<GrupoHandler_Subgrupos.Request>();
+listaRequests.add(req);
+
+// Executando o método Invocable
+List<GrupoHandler_Subgrupos.Response> resultado = GrupoHandler_Subgrupos.buscarSubgrupos(listaRequests);
+
+// Exibindo o resultado no log
+System.debug('Resultado do Prompt:\n' + resultado[0].prompt);
+
+
+
+
