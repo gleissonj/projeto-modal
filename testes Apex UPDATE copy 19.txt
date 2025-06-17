@@ -1,62 +1,40 @@
-Estrutura sobre prediction builder
+public class GrupoHandler_Responsaveis {
 
-🧠 O que o Prediction Builder faz?
-Ele cria modelos preditivos personalizados (sem código) usando seus próprios dados Salesforce.
-Você define:
+    public class EntradaGrupo {
+        @InvocableVariable(required=true)
+        public Account account;  // Recebendo o próprio objeto Account como input
+    }
 
-O que quer prever (ex: "o usuário vai abandonar o uso da funcionalidade X?")
+    public class ResultadoResponsaveis {
+        @InvocableVariable
+        public String grupo_nome;
 
-Quais dados usar (atividades, acessos, histórico de uso)
+        @InvocableVariable
+        public List<String> responsaveis;
+    }
 
-Quando prever (frequência, janelas de tempo)
+    @InvocableMethod(label='Buscar responsáveis do grupo')
+    public static List<ResultadoResponsaveis> buscarResponsaveis(List<EntradaGrupo> entradas) {
+        List<ResultadoResponsaveis> resultados = new List<ResultadoResponsaveis>();
 
-Pode ainda: disparar flow automatizados e ainda integrar com Einstein Next Best Action para sugerir ações pró-ativas,
- alimentar o AgentForce para o agente sugerir treinamentos ou suporte proativo
+        for (EntradaGrupo entrada : entradas) {
+            if (entrada.account == null || entrada.account.Id == null) continue;
 
+            // Fazendo consulta para garantir o nome do grupo
+            Account grupo = [SELECT Id, Name FROM Account WHERE Id = :entrada.account.Id LIMIT 1];
 
-📈 Exemplo de uso prático
-“Se o João não usou a funcionalidade 'Painel Financeiro' há 25 dias, e a média dele era usar 3x por semana, o
- Einstein pode prever 87% de chance de churn para essa funcionalidade.”
+            ResultadoResponsaveis r = new ResultadoResponsaveis();
+            r.grupo_nome = grupo.Name;
 
+            // Mock de responsáveis - Substitua depois pelas queries reais
+            r.responsaveis = new List<String>{
+                'Carlos Menezes (Officer) – Região Sudeste – Plataforma B2B',
+                'Ana Paula (Assistente) – Segmento Varejo'
+            };
 
-📊 O que significa "criar relatórios e dashboards com os scores de churn"?
+            resultados.add(r);
+        }
 
-
-Significa visualizar, em tempo real, quem tem maior risco de abandono (churn), usando os resultados da IA do 
-Einstein Prediction Builder dentro do Salesforce — em gráficos, tabelas ou painéis interativos.
-
-
-✅ Exemplo prático:
-Depois que o Einstein Prediction Builder gera o modelo, ele cria um campo novo em cada registro com o score de churn, de 0 a 100.
-
-🔢 Exemplo: João tem Churn_Score__c = 92 → alta chance de abandonar
-Maria tem Churn_Score__c = 25 → baixa chance
-
-
-✅ Exemplo prático:
-Depois que o Einstein Prediction Builder gera o modelo, ele cria um campo novo em cada registro com o score de churn, de 0 a 100.
-
-🔢 Exemplo: João tem Churn_Score__c = 92 → alta chance de abandonar
-Maria tem Churn_Score__c = 25 → baixa chance
-
-Acompanhar a adesão real às funcionalidades
-
-Identificar usuários em risco e agir preventivamente
-
-Ajudar o time de produto ou sucesso do cliente a melhorar engajamento
-
-
-
-
-magine que sua equipe acabou de lançar uma funcionalidade nova dentro do Salesforce — ela levou semanas para ser desenvolvida, testada e implantada. Mas... será que ela está realmente sendo usada?
-
-Muitas vezes, funcionalidades são lançadas com uma proposta clara, mas depois de algum tempo, o uso despenca ou simplesmente nunca decola. O problema? A gente só percebe isso tarde demais.
-
-É aí que entra o Einstein Prediction Builder. Ele permite que a gente crie um modelo de IA — sem precisar escrever uma linha de código — que analisa o comportamento dos usuários e prevê com alta precisão quais funcionalidades estão com risco de abandono.
-
-Com isso, conseguimos agir antes: oferecer treinamentos, ajustar a usabilidade ou até repensar a funcionalidade. A grande virada aqui é que decisões de produto e adoção deixam de ser achismo e passam a ser baseadas em dados e inteligência preditiva.
-
-Em resumo: o Prediction Builder nos ajuda a proteger o investimento em desenvolvimento funcional, garantindo que o que é lançado seja realmente adotado.
-
-
-
+        return resultados;
+    }
+}
