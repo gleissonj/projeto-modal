@@ -1,60 +1,30 @@
-// myComponent.test.js
-import { createElement } from 'lwc';
-import MyComponent from 'c/myComponent';
+Status Atual das Demandas
+Contexto: Transição entre Squads
 
-const flushPromises = () => new Promise(setImmediate);
+Recentemente mudei para a nova squad, onde estou alocado para atuar com o projeto do Agentforce. No entanto, conforme alinhado previamente com a liderança, continuei apoiando a squad anterior até concluir as histórias pendentes da sprint.
 
-describe('c-my-component', () => {
-    let element;
+Atuação na Squad Anterior
+Meu prazo inicial para finalizar as atividades na squad antiga era sexta-feira passada, conforme comuniquei.
 
-    beforeEach(() => {
-        element = createElement('c-my-component', {
-            is: MyComponent
-        });
-        document.body.appendChild(element); // Adiciona o componente ao DOM
-    });
+Contudo, após esse alinhamento, surgiram duas novas demandas que não estavam no escopo original, o que ampliou meu prazo de entrega:
 
-    it('should process contact data correctly', async () => {
-        // Mock de dados para contacts
-        const mockContacts = [
-            {
-                name: 'John Doe',
-                idLead: '12345',
-                phones: [{ type: 'Atual', value: '1234' }, { type: 'Novo', value: '5678' }],
-                emails: [{ type: 'Atual', value: 'john.doe@example.com' }],
-                mobilePhones: [{ type: 'Novo', value: '9876' }]
-            },
-            {
-                name: 'Jane Doe',
-                idLead: '67890',
-                phones: [{ type: 'Atual', value: '4321' }],
-                emails: [{ type: 'Novo', value: 'jane.doe@example.com' }],
-                mobilePhones: [{ type: 'Atual', value: '8765' }]
-            }
-        ];
+Criação de uma nova integração do zero – Risco Sacado
 
-        // Definir os dados de contatos diretamente
-        element.contacts = mockContacts;
+Implementação de um Start automático no StepFunction após upload de arquivo de dados
 
-        // Chame o método que usa a propriedade contacts
-        element.processData();
+Essas atividades foram concluídas hoje.
 
-        // Aguarde que as promessas sejam resolvidas e o DOM seja atualizado
-        await flushPromises();
+Situação atual: Estou aguardando o time de dados finalizar uma parte que depende da entrega deles, para eu poder fazer a integração final e encerrar completamente.
 
-        // Verifique os resultados
-        expect(element.processedData.length).toBe(2); // Espera 2 contatos processados
-        expect(element.hasPhoneColumn).toBe(true); // Deve ter a coluna de telefones
-        expect(element.hasEmailColumn).toBe(true); // Deve ter a coluna de emails
-        expect(element.hasMobilePhone).toBe(true); // Deve ter a coluna de celular
+Situação na Squad Nova (Agentforce)
+Até o momento, meu avanço com as tarefas do Agentforce foi limitado, pois estava priorizando as entregas pendentes da squad anterior.
 
-        // Verifique os dados processados
-        const firstContact = element.processedData[0];
-        expect(firstContact.selectedPhone).toBe('1234'); // Espera que o telefone selecionado seja '1234'
-        expect(firstContact.selectedEmail).toBe('john.doe@example.com'); // Espera que o email selecionado seja o primeiro
+Hoje foi o primeiro dia que consegui atuar de forma focada, sem interrupções, no tema do Agentforce.
 
-        const secondContact = element.processedData[1];
-        expect(secondContact.selectedPhone).toBe('4321'); // Espera que o telefone selecionado seja '4321'
-        expect(secondContact.selectedEmail).toBe('jane.doe@example.com'); // Espera que o email selecionado seja o primeiro
-    });
-});
+A partir de agora, com a finalização das demandas da squad antiga (salvo o bloqueio da integração dependente do time de dados), meu foco estará 100% direcionado para o Agentforce.
+
+Próximos Passos
+Continuar avançando nas tarefas do Agentforce de forma dedicada.
+
+Assim que o time de dados concluir a parte deles, farei a integração final pendente na squad antiga.
+
