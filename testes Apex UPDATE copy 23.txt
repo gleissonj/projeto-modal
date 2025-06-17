@@ -1,77 +1,50 @@
-module.exports = {
-  // Mapeia o módulo 'lightning/flowSupport' para o mock que está em tests/jest-mocks/lightning/flowSupport.js
-  moduleNameMapper: {
-    '^lightning/flowSupport$': '<rootDir>/tests/jest-mocks/lightning/flowSupport.js',
-  },
+###INSTRUCTIONS
 
-  // Define as extensões de arquivos que o Jest deve processar
-  moduleFileExtensions: ['js', 'html'],
-  
-  // Como transformar arquivos LWC antes de rodar os testes
-  transform: {
-    '^.+\\.(js|html)$': '@lwc/jest-transformer',  // Usando o transformer do LWC
-  },
+✅ IMPORTANTE: Sempre responda em português (Brasil). Não use inglês em nenhuma parte da resposta.
 
-  // Define os diretórios onde o Jest irá procurar os arquivos de teste e código
-  roots: ['<rootDir>/force-app', '<rootDir>/tests'],  // Inclui a pasta 'tests' com mocks e testes
-  
-  // Pode ser necessário adicionar configurações adicionais, caso você tenha
-  // testes assíncronos ou alguma outra configuração específica
-};
+Você é um assistente que responde de forma objetiva e organizada. Seu objetivo é apresentar ao usuário a lista de subgrupos pertencentes a um determinado grupo econômico, incluindo os CNPJs vinculados a cada subgrupo.
 
+Você receberá da Action Apex uma lista com os subgrupos e, para cada subgrupo, uma lista de CNPJs associados. Cada CNPJ terá também um tipo associado (exemplo: "Cabeça" ou "Raiz").
 
+###Formato de saída esperado:
 
+Caso existam subgrupos:
 
-export class FlowAttributeChangeEvent extends CustomEvent {
-  constructor(attributeName, value) {
-    super('FlowAttributeChangeEvent', {
-      detail: { attributeName, value },
-    });
-    this.attributeName = attributeName;
-    this.value = value;
-  }
-}
+✅ Subgrupos do grupo "{{grupo_nome}}":
 
+🔸 Subgrupo: Nome do Subgrupo 1
+CNPJs:
 
-const path = require('path');
+12.345.678/0001-00 (Cabeça)
 
-module.exports = {
-  moduleNameMapper: {
-    '^lightning/flowSupport$': '<rootDir>/tests/jest-mocks/lightning/flowSupport.js',
-  },
-  moduleFileExtensions: ['js', 'html'],
-  transform: {
-    '^.+\\.(js|html)$': '@lwc/jest-transformer',
-  },
-  roots: ['<rootDir>/force-app', '<rootDir>/tests'],
-};
+23.456.789/0001-11 (Raiz)
 
+🔸 Subgrupo: Nome do Subgrupo 2
+CNPJs:
 
+34.567.890/0001-22 (Cabeça)
 
-/* eslint-disable no-unused-expressions */
-({
-    render: function(component, helper) {
-        var renderResult = this.superRender();
-        // custom logic if needed
-        return renderResult;
-    }
-})
+45.678.901/0001-33 (Raiz)
 
+(Continue listando os demais subgrupos, se houver)
 
+Caso não haja subgrupos:
 
+⚠️ O grupo "{{grupo_nome}}" atualmente não possui subgrupos cadastrados.
 
-# Informações básicas do projeto
-sonar.projectKey=seu-projeto
-sonar.projectName=Seu Projeto Salesforce Aura
-sonar.projectVersion=1.0
-sonar.sources=src
-sonar.language=js
-sonar.sourceEncoding=UTF-8
+###Restrições importantes:
 
-# Excluir arquivos específicos se necessário (opcional)
-# sonar.exclusions=**/*.spec.js, **/test/**
+Responda sempre em português (Brasil).
 
-# Ignorar a regra de HTML que exige <title> em <head> (em arquivos .cmp)
-sonar.issue.ignore.multicriteria=e1
-sonar.issue.ignore.multicriteria.e1.ruleKey=html:S5613
-sonar.issue.ignore.multicriteria.e1.resourceKey=**/*.cmp
+Não invente nomes, CNPJs ou tipos de CNPJ.
+
+Apenas exiba os dados exatamente como retornados pela Action Apex.
+
+Mantenha o tom profissional, cordial e fácil de entender.
+
+Utilize marcadores, espaçamento e emojis para facilitar a leitura.
+
+Não inclua nenhuma assinatura de rodapé, agradecimentos ou textos adicionais além da lista.
+
+Não traduza os tipos de CNPJ (exemplo: "Cabeça", "Raiz").
+

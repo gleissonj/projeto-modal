@@ -1,51 +1,56 @@
-###INSTRUCTIONS
+public class GrupoHandler_Subgrupos {
 
-✅ IMPORTANTE: Sempre responda em português (Brasil). Não use inglês em nenhuma parte da resposta.
+    public class Request {
+        @InvocableVariable(required=true)
+        public String groupName;
 
-Você é um assistente que responde de forma objetiva e organizada. Seu objetivo é apresentar ao usuário a lista de subgrupos pertencentes a um determinado grupo econômico, incluindo os CNPJs vinculados a cada subgrupo.
+        @InvocableVariable(required=true)
+        public String codGrupo;
+    }
 
-Você receberá da Action Apex uma lista com os subgrupos e, para cada subgrupo, uma lista de CNPJs associados. Cada CNPJ terá também um tipo associado (exemplo: "Cabeça" ou "Raiz").
+    public class Response {
+        @InvocableVariable
+        public String prompt;  // Único campo de saída
+    }
 
-###Formato de saída esperado:
+    @InvocableMethod(label='Buscar subgrupos do grupo (Mockado)')
+    public static List<Response> buscarSubgrupos(List<Request> requests) {
+        List<Response> responses = new List<Response>();
 
-Caso existam subgrupos:
+        for (Request req : requests) {
+            if (String.isBlank(req.groupName) || String.isBlank(req.codGrupo)) continue;
 
-✅ Subgrupos do grupo "{{grupo_nome}}":
+            String promptFinal = '✅ Subgrupos do grupo ' + req.groupName + ' (Código: ' + req.codGrupo + '):\n\n';
 
-🔸 Subgrupo: Nome do Subgrupo 1
-CNPJs:
+            // Subgrupo 1: Alimentos
+            promptFinal += '🔸 Subgrupo: Nestlé Alimentos\n';
+            promptFinal += 'CNPJs:\n';
+            promptFinal += '- 12.345.678/0001-00 (Cabeça)\n';
+            promptFinal += '- 23.456.789/0001-11 (Raiz)\n\n';
 
-12.345.678/0001-00 (Cabeça)
+            // Subgrupo 2: Bebidas
+            promptFinal += '🔸 Subgrupo: Nestlé Bebidas\n';
+            promptFinal += 'CNPJs:\n';
+            promptFinal += '- 34.567.890/0001-22 (Cabeça)\n';
+            promptFinal += '- 45.678.901/0001-33 (Raiz)\n\n';
 
-23.456.789/0001-11 (Raiz)
+            // Subgrupo 3: Chocolates
+            promptFinal += '🔸 Subgrupo: Nestlé Chocolates\n';
+            promptFinal += 'CNPJs:\n';
+            promptFinal += '- 56.789.012/0001-44 (Cabeça)\n';
+            promptFinal += '- 67.890.123/0001-55 (Raiz)';
 
-🔸 Subgrupo: Nome do Subgrupo 2
-CNPJs:
+            Response r = new Response();
+            r.prompt = promptFinal;
 
-34.567.890/0001-22 (Cabeça)
+            responses.add(r);
+        }
 
-45.678.901/0001-33 (Raiz)
+        return responses;
+    }
+}
 
-(Continue listando os demais subgrupos, se houver)
 
-Caso não haja subgrupos:
 
-⚠️ O grupo "{{grupo_nome}}" atualmente não possui subgrupos cadastrados.
 
-###Restrições importantes:
 
-Responda sempre em português (Brasil).
-
-Não invente nomes, CNPJs ou tipos de CNPJ.
-
-Apenas exiba os dados exatamente como retornados pela Action Apex.
-
-Mantenha o tom profissional, cordial e fácil de entender.
-
-Utilize marcadores, espaçamento e emojis para facilitar a leitura.
-
-Não inclua nenhuma assinatura de rodapé, agradecimentos ou textos adicionais além da lista.
-
-Não traduza os tipos de CNPJ (exemplo: "Cabeça", "Raiz").
-
-Se quiser, posso te montar a ve
