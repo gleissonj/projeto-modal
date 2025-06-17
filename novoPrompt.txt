@@ -1,0 +1,37 @@
+public class GrupoHandler_Responsaveis {
+
+    public class Request {
+        @InvocableVariable(required=true)
+        public String groupName;
+
+        @InvocableVariable(required=true)
+        public String codGrupo;
+    }
+
+    public class Response {
+        @InvocableVariable
+        public String prompt;  // Campo final com a resposta pronta para o Prompt Template
+    }
+
+    @InvocableMethod(label='Buscar responsáveis do grupo (Mockado)')
+    public static List<Response> buscarResponsaveis(List<Request> requests) {
+        List<Response> responses = new List<Response>();
+
+        for (Request req : requests) {
+            if (String.isBlank(req.groupName) || String.isBlank(req.codGrupo)) continue;
+
+            // Montando resposta mockada
+            String promptFinal = '✅ Responsáveis pelo grupo ' + req.groupName + ' (Código: ' + req.codGrupo + '):\n\n';
+            promptFinal += '1️⃣ Nome: Carlos Menezes\n   Cargo: Officer\n   Região: Sudeste\n   Plataforma: B2B\n\n';
+            promptFinal += '2️⃣ Nome: Ana Paula\n   Cargo: Assistente\n   Departamento: Varejo\n   Região: Sudeste\n   Plataforma: B2B\n\n';
+            promptFinal += '3️⃣ Nome: João Silva\n   Cargo: Coordenador\n   Departamento: Comercial\n   Região: Nacional\n   Plataforma: B2C';
+
+            Response r = new Response();
+            r.prompt = promptFinal;
+
+            responses.add(r);
+        }
+
+        return responses;
+    }
+}
