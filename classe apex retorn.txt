@@ -1,0 +1,54 @@
+public class getReponsableTestJson {
+@InvocableMethod(label='Buscar responsáveis do grupo (Mockado)')
+    public static List<Response> getPricebookEntries(){
+        List<Response> responses = new List<Response>();
+         String grupoNome = 'Grupo Exemplo Nestlé';  // Mockado
+
+        Map<String, Object> payload = new Map<String, Object>();
+            payload.put('groupName', 'Nestle');
+        	List<Responsavel> listaResponsaveis = new List<Responsavel>();
+            // Officer
+            Responsavel officer = new Responsavel();
+            officer.tipo = 'Officer';
+            officer.nome = 'Carlos Menezes testando';
+            officer.cargo = 'Officer';
+            officer.plataforma = 'B2B';
+            officer.carteira = 'Grandes Contas';
+            listaResponsaveis.add(officer);
+
+            // Assistente de Conta
+            Responsavel assistente = new Responsavel();
+            assistente.tipo = 'Assistente de Conta';
+            assistente.nome = 'Ana Paula';
+            assistente.cargo = 'Assistente';
+            assistente.plataforma = 'B2B';
+            assistente.carteira = 'Varejo SP';
+            listaResponsaveis.add(assistente);
+        
+        payload.put('responsaveis', listaResponsaveis);
+        
+        Response r = new Response();
+            r.prompt = JSON.serializePretty(payload);
+        responses.add(r);
+        
+        return responses;
+    }
+    
+    public class Response {
+        @InvocableVariable (label='Prompt' description='Prompt' required=false)
+        public String Prompt;
+    }
+    
+    public class Request {
+        @InvocableVariable(required=true)
+        public String groupName;
+    }
+
+    public class Responsavel {
+        public String tipo;
+        public String nome;
+        public String cargo;
+        public String plataforma;
+        public String carteira;
+    }
+}

@@ -1,0 +1,84 @@
+public class GrupoHandler_Subgrupos {
+
+    public class Request {
+        @InvocableVariable(required=true)
+        public String groupName;
+
+        @InvocableVariable(required=true)
+        public String codGrupo;
+    }
+
+    public class CNPJPorSubgrupo {
+        public String cnpj;
+        public String tipo;
+    }
+
+    public class Subgrupo {
+        public String nome_subgrupo;
+        public List<CNPJPorSubgrupo> cnpjs_do_subgrupo;
+    }
+
+    public class Response {
+        @InvocableVariable
+        public String prompt;  // Apenas a string JSON como prompt
+    }
+
+    @InvocableMethod(label='Buscar subgrupos do grupo (Mockado - JSON Prompt)')
+    public static List<Response> buscarSubgrupos(List<Request> requests) {
+        List<Response> responses = new List<Response>();
+
+        for (Request req : requests) {
+            if (String.isBlank(req.groupName) || String.isBlank(req.codGrupo)) continue;
+
+            Map<String, Object> payload = new Map<String, Object>();
+            payload.put('grupo_nome', req.groupName);
+
+            List<Subgrupo> listaSubgrupos = new List<Subgrupo>();
+
+            // Subgrupo 1: Alimentos
+            List<CNPJPorSubgrupo> cnpjsAlimentos = new List<CNPJPorSubgrupo>();
+            CNPJPorSubgrupo cnpj1 = new CNPJPorSubgrupo();
+            cnpj1.cnpj = '12.345.678/0001-00';
+            cnpj1.tipo = 'Cabeça';
+            cnpjsAlimentos.add(cnpj1);
+
+            CNPJPorSubgrupo cnpj2 = new CNPJPorSubgrupo();
+            cnpj2.cnpj = '23.456.789/0001-11';
+            cnpj2.tipo = 'Raiz';
+            cnpjsAlimentos.add(cnpj2);
+
+            Subgrupo alimentos = new Subgrupo();
+            alimentos.nome_subgrupo = 'Nestlé Alimentos';
+            alimentos.cnpjs_do_subgrupo = cnpjsAlimentos;
+            listaSubgrupos.add(alimentos);
+
+            // Subgrupo 2: Bebidas
+            List<CNPJPorSubgrupo> cnpjsBebidas = new List<CNPJPorSubgrupo>();
+            CNPJPorSubgrupo cnpj3 = new CNPJPorSubgrupo();
+            cnpj3.cnpj = '34.567.890/0001-22';
+            cnpj3.tipo = 'Cabeça';
+            cnpjsBebidas.add(cnpj3);
+
+            CNPJPorSubgrupo cnpj4 = new CNPJPorSubgrupo();
+            cnpj4.cnpj = '45.678.901/0001-33';
+            cnpj4.tipo = 'Raiz';
+            cnpjsBebidas.add(cnpj4);
+
+            Subgrupo bebidas = new Subgrupo();
+            bebidas.nome_subgrupo = 'Nestlé Bebidas';
+            bebidas.cnpjs_do_subgrupo = cnpjsBebidas;
+            listaSubgrupos.add(bebidas);
+
+            // Adicionando os subgrupos ao payload
+            payload.put('subgrupos', listaSubgrupos);
+
+            // Criando a resposta final
+            Response r = new Response();
+            r.prompt = JSON.serializePretty(payload);
+
+            responses.add(r);
+        }
+
+        return responses;
+    }
+}
