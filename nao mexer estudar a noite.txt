@@ -1,137 +1,93 @@
-@AuraEnabled(cacheable=false)
-public static List<ContactResponse> GetContato() {
-    // Chama o serviço externo e desserializa a resposta
-    List<ContactResponse> leads = getContactsFromService();
-    
-    // Cria um conjunto com os CPFs
-    Set<String> cpfs = getCPFs(leads);
-    
-    // Busca os contatos existentes no Salesforce
-    Map<String, Lead> mapLeadExisting = getExistingLeads(cpfs);
-    
-    // Inicializa listas
-    List<ContactUpdateComparison> leadToFrontChoice2 = new List<ContactUpdateComparison>();
-    List<Lead> newLeadsToInsert = new List<Lead>();
-    
-    // Processa os contatos da API
-    processLeads(leads, mapLeadExisting, leadToFrontChoice2, newLeadsToInsert);
-    
-    // Insere novos contatos
-    insertNewLeads(newLeadsToInsert);
-    
-    // Retorna o resultado
-    return leadToFrontChoice2;
-}
+public class CNPJValidator {
 
-// Função para obter os contatos do serviço externo
-private static List<ContactResponse> getContactsFromService() {
-    OutbondResponse response = service.getContact('212121');
-    return (List<ContactResponse>) JSON.deserialize(GetResponse().toString(), List<ContactResponse>.class);
-}
+    public class Request {
+        @InvocableVariable(required=true)
+        public String cnpj;
+    }
 
-// Função para criar um Set de CPFs a partir dos leads
-private static Set<String> getCPFs(List<ContactResponse> leads) {
-    Set<String> cpfs = new Set<String>();
-    for (ContactResponse lead : leads) {
-        if (String.isNotBlank(lead.cpf)) {
-            cpfs.add(formatCPF(lead.cpf));
+    public class ValidationResult {
+        @InvocableVariable
+        public Boolean isValid;
+
+        @InvocableVariable
+        public String message;
+    }
+
+    @InvocableMethod(label='Validar CNPJ')
+    public static List<ValidationResult> validateCNPJ(List<Request> requestList) {
+        List<ValidationResult> results = new List<ValidationResult>();
+
+        for (Request req : requestList) {
+            ValidationResult result = runValidations(req.cnpj);
+            results.add(result);
         }
+
+        return results;
     }
-    return cpfs;
-}
 
-// Função para buscar os leads existentes no Salesforce e criar um mapa
-private static Map<String, Lead> getExistingLeads(Set<String> cpfs) {
-    List<Lead> leadsExisting = [SELECT id, CPF__c, Phone, Email, MobilePhone FROM Lead WHERE CPF__c IN :cpfs];
-    Map<String, Lead> mapLeadExisting = new Map<String, Lead>();
-    for (Lead lead : leadsExisting) {
-        mapLeadExisting.put(lead.CPF__c, lead);
-    }
-    return mapLeadExisting;
-}
+    private static ValidationResult runValidations(String cnpj) {
+        ValidationResult result = new ValidationResult();
 
-// Função para processar cada lead da API
-private static void processLeads(
-    List<ContactResponse> leads, 
-    Map<String, Lead> mapLeadExisting, 
-    List<ContactUpdateComparison> leadToFrontChoice2, 
-    List<Lead> newLeadsToInsert) 
-{
-    for (ContactResponse newLead : leads) {
-        ContactUpdateComparison respostaContato = new ContactUpdateComparison(
-            newLead.nome,
-            newLead.cpf,
-            new List<ContactUpdateInfo>(),
-            new List<ContactUpdateInfo>()
-        );
+        String errorMessage = getValidationError(cnpj);
 
-        if (mapLeadExisting.containsKey(formatCPF(newLead.cpf))) {
-            // O contato já existe no Salesforce
-            Lead leadCurrent = mapLeadExisting.get(formatCPF(newLead.cpf));
-            compareAndUpdateContact(newLead, leadCurrent, respostaContato);
-
-            if (!respostaContato.telefones.isEmpty() || !respostaContato.emails.isEmpty()) {
-                leadToFrontChoice2.add(respostaContato);
-            }
+        if (errorMessage != null) {
+            result.isValid = false;
+            result.message = errorMessage;
         } else {
-            // Criar novo lead
-            Lead newLeadInsert = createNewLead(newLead);
-            newLeadsToInsert.add(newLeadInsert);
+            result.isValid = true;
+            result.message = 'CNPJ válido.';
         }
-    }
-}
 
-// Função para comparar e atualizar os contatos
-public static void compareAndUpdateContact(ContactResponse newLead, Lead leadCurrent, ContactUpdateComparison respostaContato) {
-    Lead contactLead = new Lead();
-    assignPhoneNumbers(contactLead, newLead.telefones, newLead.optOutTelefone);
-    
-    Set<String> phonesCurrent = new Set<String>{leadCurrent.Phone};
-    Set<String> emailsCurrent = new Set<String>{leadCurrent.Email};
-    Set<String> mobilePhonesCurrent = new Set<String>{leadCurrent.MobilePhone};
-
-    // Comparar telefones
-    if (!phonesCurrent.contains(contactLead.Phone)) {
-        respostaContato.addTelefone(leadCurrent.Phone, 'Atual');
-        respostaContato.addTelefone(contactLead.Phone, 'Novo');
+        return result;
     }
 
-    // Comparar mobile phones
-    if (!mobilePhonesCurrent.contains(contactLead.MobilePhone)) {
-        respostaContato.addMobilePhones(leadCurrent.MobilePhone, 'Atual');
-        respostaContato.addMobilePhones(contactLead.MobilePhone, 'Novo');
-    }
-
-    // Comparar emails
-    if (newLead.emails != null && !newLead.emails.isEmpty()) {
-        if (!emailsCurrent.contains(newLead.emails[0].valor_dado_cadastral.email)) {
-            respostaContato.addEmail(leadCurrent.Email, 'Atual');
-            respostaContato.addEmail(newLead.emails[0].valor_dado_cadastral.email, 'Novo');
+    private static String getValidationError(String cnpj) {
+        if (String.isBlank(cnpj)) {
+            return 'CNPJ inválido: valor nulo ou vazio.';
         }
+
+        if (!Pattern.matches('^[0-9\\.\\-/]*$', cnpj)) {
+            return 'CNPJ inválido: contém caracteres não numéricos ou inválidos.';
+        }
+
+        String cleanCNPJ = cnpj.replaceAll('[^0-9]', '');
+
+        if (cleanCNPJ.length() != 14) {
+            return 'CNPJ inválido: quantidade de dígitos incorreta (esperado: 14).';
+        }
+
+        if (cleanCNPJ == String.valueOf(cleanCNPJ.substring(0,1)).repeat(14)) {
+            return 'CNPJ inválido: todos os dígitos são iguais.';
+        }
+
+        if (!validateCheckDigits(cleanCNPJ)) {
+            return 'CNPJ inválido: dígitos verificadores não conferem.';
+        }
+
+        return null;  // Se passou todas as validações
     }
-}
 
-// Função para criar um novo Lead a partir de um ContactResponse
-public static Lead createNewLead(ContactResponse newLead, Id recordPage) {
-    Map<String, String> nameParts = splitName(newLead.nome);
-    Id recordTypeFunctionId = FS1_LeadRecordType.prospectId();
+    private static Boolean validateCheckDigits(String cnpj) {
+        Integer[] weights1 = new Integer[] {5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
+        Integer[] weights2 = new Integer[] {6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2};
 
-    Lead newLeadInsert = new Lead(
-        HU7_CPF__c = formatCPF(newLead.cpf),
-        Email = newLead.emails.size() > 0 ? newLead.emails[0].valor_dado_cadastral : '',
-        FirstName = nameParts.get('firstName'),
-        LastName = nameParts.get('lastName'),
-        RecordTypeId = recordTypeFunctionId,
-        Prospect__c = recordIdPage
-        );
+        String numbers = cnpj.substring(0, 12);
+        Integer sum = 0;
 
-    assignPhoneNumbers(newLeadInsert, newLead.telefones, newLead.optOutTelefone);
-    return newLeadInsert;
-}
+        for (Integer i = 0; i < 12; i++) {
+            sum += Integer.valueOf(String.valueOf(numbers.charAt(i))) * weights1[i];
+        }
+        Integer digit1 = (sum % 11 < 2) ? 0 : 11 - (sum % 11);
 
-// Função para inserir novos leads no Salesforce
-public static void insertNewLeads(List<Lead> newLeadsToInsert) {
-    if (!newLeadsToInsert.isEmpty()) {
-        repository.insertLeads(newLeadsToInsert);
+        numbers += String.valueOf(digit1);
+        sum = 0;
+        for (Integer i = 0; i < 13; i++) {
+            sum += Integer.valueOf(String.valueOf(numbers.charAt(i))) * weights2[i];
+        }
+        Integer digit2 = (sum % 11 < 2) ? 0 : 11 - (sum % 11);
+
+        String checkDigits = String.valueOf(digit1) + String.valueOf(digit2);
+
+        return cnpj.endsWith(checkDigits);
     }
 }
