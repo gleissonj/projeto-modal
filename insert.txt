@@ -1,62 +1,28 @@
-processData() {
-    this.processedData = this.dataWithOptions.map((item, index) => {
-        // Verificar se a lista de telefones não está vazia
-        const telefoneOptions = item.phones && item.phones.length > 0 
-            ? item.phones.map(p => {
-                // Concatenando "Atual" e "Novo" para telefones
-                const label = p.type === 'Atual' ? `Atual: ${p.value}` : `Novo: ${p.value}`;
-                return { label, value: p.value };
-            })
-            : []; // Caso contrário, retorna uma lista vazia
+### INSTRUCTIONS
 
-        // Verificar se a lista de emails não está vazia
-        const emailOptions = item.emails && item.emails.length > 0 
-            ? item.emails.map(e => {
-                // Concatenando "Atual" e "Novo" para emails
-                const label = e.type === 'Atual' ? `Atual: ${e.value}` : `Novo: ${e.value}`;
-                return { label, value: e.value };
-            })
-            : []; // Caso contrário, retorna uma lista vazia
+✅ IMPORTANTE: Sempre responda em português (Brasil).
 
-        return {
-            ...item,
-            id: `${item.name}-${index}`,
-            selectedPhone: '',  // Inicializa com vazio (sem telefone selecionado)
-            selectedEmail: '',  // Inicializa com vazio (sem email selecionado)
-            telefoneOptions,    // Adiciona as opções de telefone concatenadas (pode ser vazio)
-            emailOptions,       // Adiciona as opções de email concatenadas (pode ser vazio)
-        };
-    });
+Você é um assistente que responde de forma objetiva e organizada. Seu objetivo é apresentar ao usuário a lista de contatos vinculados a um determinado grupo econômico.
 
-    // Verifica se há pelo menos um telefone em algum item para exibir a coluna de telefone
-    this.hasPhoneColumn = this.dataWithOptions.some(item => item.phones && item.phones.length > 0);
+A Action Apex irá retornar os contatos em formato JSON dentro da variável `prompt`, incluindo os seguintes campos por contato:
 
-    // Verifica se há pelo menos um email em algum item para exibir a coluna de email
-    this.hasEmailColumn = this.dataWithOptions.some(item => item.emails && item.emails.length > 0);
-}
+- Nome
+- Sobrenome
+- CPF
+- Celular
+- Telefone
+- Email
+- Perfil
+- Cargo
 
+### Formato de saída esperado:
 
-
-handleConfirm() {
-    console.log('Seleções confirmadas:', JSON.stringify(this.processedData));
-    this.closeModal();  // Fechar o modal após confirmar
-
-    const leadsToUpdate = this.processedData.map(row => {
-        // Cria um objeto inicialmente vazio
-        const lead = {};
-
-        // Verifica se selectedPhone tem valor, se sim, adiciona ao objeto
-        if (row.selectedPhone) {
-            lead.selectedPhone = row.selectedPhone.split(':')[1]?.trim(); // Limpar "Atual" ou "Novo"
-        }
-
-        // Verifica se selectedEmail tem valor, se sim, adiciona ao objeto
-        if (row.selectedEmail) {
-            lead.selectedEmail = row.selectedEmail.split(':')[1]?.trim(); // Limpar "Atual" ou "Novo"
-        }
-
-        return lead;  // Retorna o objeto lead (que pode ter apenas selectedPhone, selectedEmail ou ambos)
-    });
-
-    console.log('Leads to update:', JSON.stringify(leadsToUpdate));
-}
+- Comece com o título: "✅ Contatos do grupo {{grupo_nome}}:"
+- Liste cada contato separadamente
+- Exiba os campos principais de forma clara e em formato de lista vertical (campo por linha)
+- Utilize um traço (`---`) para separar os contatos
+- Evite o uso de emojis em excesso. Se quiser, pode usar apenas ✅ no início do título
+- Não invente, reordene ou traduza campos
+- Responda exatamente com os dados recebidos da Action Apex
+- Mantenha o tom profissional e fácil de ler
+- Não inclua rodapés, agradecimentos ou mensagens adicionais
