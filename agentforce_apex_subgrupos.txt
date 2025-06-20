@@ -1,0 +1,132 @@
+public class HU7_GetAccountIdsBySubGrupo_V1 {
+
+    public class Request {
+        @InvocableVariable(
+            required=true,
+            label='Nome do Subgrupo',
+            description='Informe parte do nome do Subgrupo para buscar o Grupo Econômico relacionado'
+        )
+        public String accountSubGrupo;
+    }
+
+    public class Response {
+        @InvocableVariable(
+            label='IDs dos Grupos Econômicos',
+            description='Lista de IDs das contas do tipo Grupo Econômico relacionadas aos Subgrupos informados'
+        )
+        public List<Id> accountIds;
+    }
+
+    @InvocableMethod(
+        label='Buscar IDs de Grupos Econômicos a partir de Subgrupos (Por Nome Parcial)',
+        description='Retorna os IDs das contas com RecordType HU7_Grupo_Economico vinculadas aos Subgrupos cujo nome contém o termo informado'
+    )
+    public static List<Response> run(List<Request> requests) {
+        Set<String> subgrupoNames = extractSubgrupoNames(requests);
+        Map<String, Set<String>> subgrupoInputToIdGrupos = getIdGruposBySubgrupos(subgrupoNames);
+        Map<String, Id> idGrupoToGrupoEconomicoId = getAccountIdsByIdGrupo(flattenSetMap(subgrupoInputToIdGrupos));
+        return buildResponse(requests, subgrupoInputToIdGrupos, idGrupoToGrupoEconomicoId);
+    }
+
+    private static Set<String> extractSubgrupoNames(List<Request> requests) {
+        Set<String> names = new Set<String>();
+        for(Request req : requests) {
+            if(String.isNotBlank(req.accountSubGrupo)) {
+                names.add(req.accountSubGrupo.trim());
+            }
+        }
+        return names;
+    }
+
+    private static Map<String, Set<String>> getIdGruposBySubgrupos(Set<String> subgrupoNames) {
+        Map<String, Set<String>> result = new Map<String, Set<String>>();
+        if(subgrupoNames.isEmpty()) return result;
+
+        for(String inputName : subgrupoNames) {
+            result.put(inputName, new Set<String>());
+        }
+
+        List<Account> subgrupos = [
+            SELECT Name, HU7_IdGrupo__c
+            FROM Account
+            WHERE RecordType.DeveloperName = 'HU7_Sub_Grupo_Economico'
+            AND (
+                // Fazendo LIKE para cada nome informado
+                Name LIKE :('%' + String.join(new List<String>(subgrupoNames), '%') + '%')
+            )
+        ];
+
+        for(Account acc : subgrupos) {
+            for(String inputName : subgrupoNames) {
+                if(acc.Name != null && acc.Name.toLowerCase().contains(inputName.toLowerCase())) {
+                    if(!result.containsKey(inputName)) result.put(inputName, new Set<String>());
+                    result.get(inputName).add(acc.HU7_IdGrupo__c);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static Set<String> flattenSetMap(Map<String, Set<String>> input) {
+        Set<String> flat = new Set<String>();
+        for(Set<String> ids : input.values()) {
+            flat.addAll(ids);
+        }
+        return flat;
+    }
+
+    private static Map<String, Id> getAccountIdsByIdGrupo(Set<String> idGrupos) {
+        Map<String, Id> result = new Map<String, Id>();
+        if(idGrupos.isEmpty()) return result;
+
+        for(Account grupo : [
+            SELECT Id, HU7_IDExternoGrupo__c
+            FROM Account
+            WHERE HU7_IDExternoGrupo__c IN :idGrupos
+            AND RecordType.DeveloperName = 'HU7_Grupo_Economico'
+        ]) {
+            result.put(grupo.HU7_IDExternoGrupo__c, grupo.Id);
+        }
+        return result;
+    }
+
+    private static List<Response> buildResponse(List<Request> requests, Map<String, Set<String>> subgrupoToIdGrupos, Map<String, Id> idGrupoToGrupoEconomicoId) {
+        List<Response> responses = new List<Response>();
+
+        for(Request req : requests) {
+            List<Id> grupoIds = new List<Id>();
+            Set<String> idGrupos = subgrupoToIdGrupos.get(req.accountSubGrupo);
+
+            if(idGrupos != null) {
+                for(String idGrupo : idGrupos) {
+                    if(idGrupoToGrupoEconomicoId.containsKey(idGrupo)) {
+                        grupoIds.add(idGrupoToGrupoEconomicoId.get(idGrupo));
+                    }
+                }
+            }
+
+            Response resp = new Response();
+            resp.accountIds = grupoIds;
+            responses.add(resp);
+        }
+
+        return responses;
+    }
+}
+
+
+
+TESTAR
+
+
+List<HU7_GetAccountIdsBySubGroup_V1.Request> requests = new List<HU7_GetAccountIdsBySubGroup_V1.Request>();
+
+HU7_GetAccountIdsBySubGroup_V1.Request req1 = new HU7_GetAccountIdsBySubGroup_V1.Request();
+req1.accountSubGrupo = 'Amb';
+
+
+requests.add(req1);
+
+
+List<HU7_GetAccountIdsBySubGroup_V1.Response> responses = HU7_GetAccountIdsBySubGroup_V1.run(requests);

@@ -1,0 +1,98 @@
+public class HU7_GetAccountIdsByCnpj_V1 {
+
+    public class Request {
+        @InvocableVariable(required=true label='CNPJ' description='Informe o CNPJ para buscar o Grupo Econômico relacionado')
+        public String accountCNPJ;
+    }
+
+    public class Response {
+        @InvocableVariable(label='Grupo Econômico IDs' description='Lista de IDs das contas do tipo Grupo Econômico relacionadas ao(s) CNPJ(s) informado(s)')
+        public List<Id> accountIds;
+    }
+
+    @InvocableMethod(label='Buscar IDs de Grupos Econômicos a partir de CNPJs' description='Retorna os Ids das contas com RecordType HU7_Grupo_Economico relacionadas aos CNPJs informados')
+    public static List<Response> run(List<Request> requests) {
+        Set<String> cnpjs = extractCnpjs(requests);
+        Map<String, String> cnpjToGrupoExterno = getGrupoExternoIdsByCnpjs(cnpjs);
+        Map<String, Id> grupoExternoToAccountId = getAccountIdsByGrupoExternoIds(new List<String>(cnpjToGrupoExterno.values()));
+        return buildResponse(requests, cnpjToGrupoExterno, grupoExternoToAccountId);
+    }
+
+    private static Set<String> extractCnpjs(List<Request> requests) {
+        Set<String> cnpjs = new Set<String>();
+        for(Request req : requests) {
+            if(String.isNotBlank(req.accountCNPJ)) {
+                cnpjs.add(req.accountCNPJ.trim());
+            }
+        }
+        return cnpjs;
+    }
+
+    private static Map<String, String> getGrupoExternoIdsByCnpjs(Set<String> cnpjs) {
+        Map<String, String> result = new Map<String, String>();
+        if(cnpjs.isEmpty()) return result;
+
+        for(Account acc : [
+            SELECT AccountNumber, Hu7IdGrupo__c
+            FROM Account
+            WHERE AccountNumber IN :cnpjs
+        ]) {
+            if(String.isNotBlank(acc.Hu7IdGrupo__c)) {
+                result.put(acc.AccountNumber, acc.Hu7IdGrupo__c);
+            }
+        }
+        return result;
+    }
+
+    private static Map<String, Id> getAccountIdsByGrupoExternoIds(List<String> grupoExternoIds) {
+        Map<String, Id> result = new Map<String, Id>();
+        if(grupoExternoIds.isEmpty()) return result;
+
+        for(Account grupo : [
+            SELECT Id, HU7_IDExterno__c
+            FROM Account
+            WHERE HU7_IDExterno__c IN :grupoExternoIds
+            AND RecordType.DeveloperName = 'HU7_Grupo_Economico'
+        ]) {
+            result.put(grupo.HU7_IDExterno__c, grupo.Id);
+        }
+        return result;
+    }
+
+    private static List<Response> buildResponse(List<Request> requests, Map<String, String> cnpjToGrupoExterno, Map<String, Id> grupoExternoToAccountId) {
+        List<Response> responses = new List<Response>();
+
+        for(Request req : requests) {
+            List<Id> grupoIds = new List<Id>();
+            String idExternoGrupo = cnpjToGrupoExterno.get(req.accountCNPJ);
+
+            if(idExternoGrupo != null && grupoExternoToAccountId.containsKey(idExternoGrupo)) {
+                grupoIds.add(grupoExternoToAccountId.get(idExternoGrupo));
+            }
+
+            Response resp = new Response();
+            resp.accountIds = grupoIds;
+            responses.add(resp);
+        }
+
+        return responses;
+    }
+}
+
+
+
+
+
+teste 
+
+
+List<HU7_GetAccountIdsByCnpj_V1.Request> requests = new List<HU7_GetAccountIdsByCnpj_V1.Request>();
+
+HU7_GetAccountIdsByCnpj_V1.Request req1 = new HU7_GetAccountIdsByCnpj_V1.Request();
+req1.accountCNPJ = '001647702';
+
+
+requests.add(req1);
+
+
+List<HU7_GetAccountIdsByCnpj_V1.Response> responses = HU7_GetAccountIdsByCnpj_V1.run(requests);
