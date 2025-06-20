@@ -49,3 +49,25 @@ Example User Input (Exemplos reais que disparam esse tópico):
 "Preciso dos contatos do grupo Coca-Cola"
 
 "Quem são os contatos da empresa Nestlé?"
+
+
+
+------------------------------------
+
+Exemplo para action prompot 
+
+*Agent Action Instructions
+Executa o Prompt Flex responsável por consultar e apresentar os contatos de um grupo econômico.
+O Prompt irá receber o ID do grupo selecionado e, internamente, chamará a Apex responsável por buscar os dados reais de contato.
+
+
+
+*Loading Text
+Consultando os contatos do grupo... Por favor, aguarde.
+
+
+
+Nome do grupo econômico
+
+
+ID do grupo econômico selecionado pelo usuário, usado para buscar os contatos via Apex.
