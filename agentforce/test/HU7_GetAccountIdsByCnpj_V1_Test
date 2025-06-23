@@ -1,25 +1,28 @@
 @IsTest
 private class HU7_GetAccountIdsByCnpj_V1_Test {
 
+    static Id rtGrupoId;
+
     @TestSetup
     static void setup() {
-        // Criar RecordType de Grupo Econômico (simulação caso use em ambiente de teste)
-        RecordType rtGrupo = new RecordType(
-            DeveloperName = 'HU7_Grupo_Economico',
-            SobjectType = 'Account',
-            Name = 'HU7 Grupo Econômico'
-        );
-        insert rtGrupo;
+        // Buscar o RecordType de Grupo Econômico
+        rtGrupoId = [
+            SELECT Id
+            FROM RecordType
+            WHERE DeveloperName = 'HU7_Grupo_Economico'
+            AND SobjectType = 'Account'
+            LIMIT 1
+        ].Id;
 
         // Criar um Grupo Econômico (Account com RecordType correto)
         Account grupoEconomico = new Account(
             Name = 'Grupo Teste',
-            RecordTypeId = rtGrupo.Id,
+            RecordTypeId = rtGrupoId,
             Hu7IDExterno__c = 'GRUPO123'
         );
         insert grupoEconomico;
 
-        // Criar um Account com CNPJ e IdGrupo vinculado ao Grupo Econômico
+        // Criar uma empresa com CNPJ e IdGrupo vinculado
         Account empresa = new Account(
             Name = 'Empresa Teste',
             AccountNumber = '12345678000190',  // CNPJ mockado
@@ -64,16 +67,14 @@ private class HU7_GetAccountIdsByCnpj_V1_Test {
     @IsTest
     static void test_GrupoSemIdExterno() {
         // Criar um Grupo sem IdExterno
-        RecordType rtGrupo = [SELECT Id FROM RecordType WHERE DeveloperName = 'HU7_Grupo_Economico' AND SobjectType = 'Account' LIMIT 1];
-
         Account grupoSemIdExterno = new Account(
             Name = 'Grupo Sem ID Externo',
-            RecordTypeId = rtGrupo.Id
+            RecordTypeId = rtGrupoId
             // Sem Hu7IDExterno__c
         );
         insert grupoSemIdExterno;
 
-        // Empresa apontando para esse grupo
+        // Empresa apontando para esse grupo (sem IdGrupo definido)
         Account empresa = new Account(
             Name = 'Empresa Sem Id Externo',
             AccountNumber = '11111111000111',
