@@ -1,20 +1,32 @@
 @IsTest
 private class HU7_GetGroupByContactInfo_V1_Test {
 
+    static Id grupoId;
+    static Id contatoId;
+
     @TestSetup
     static void setup() {
-        // Criar Account (Grupo Econômico)
+        // Criar o Grupo Econômico
         Account grupo = new Account(Name = 'Grupo Teste');
         insert grupo;
+        grupoId = grupo.Id;
 
-        // Criar contato no objeto AccountContactRelation__c
-        AccountContactRelation__c contato = new AccountContactRelation__c(
-            Name = 'Carlos Silva',
-            Email__c = 'carlos.silva@teste.com',
-            CPF__c = '12345678900',
-            AccountId__c = grupo.Id
+        // Criar o Contato
+        Contact contato = new Contact(
+            FirstName = 'Carlos',
+            LastName = 'Silva',
+            Email = 'carlos.silva@teste.com',
+            Hu7_CPF__c = '12345678900'
         );
         insert contato;
+        contatoId = contato.Id;
+
+        // Criar o relacionamento AccountContactRelation__c
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            ContactId__c = contato.Id,
+            AccountId__c = grupo.Id
+        );
+        insert rel;
     }
 
     @IsTest
