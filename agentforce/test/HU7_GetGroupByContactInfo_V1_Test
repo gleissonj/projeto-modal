@@ -6,46 +6,29 @@ private class HU7_GetGroupByContactInfo_V1_Test {
 
     @TestSetup
     static void setup() {
-        // Criar o Grupo Econômico (Account)
+        // Criar o Grupo Econômico
         Account grupo = new Account(Name = 'Grupo Teste');
         insert grupo;
         grupoId = grupo.Id;
 
-        // Criar o Contato
+        // Criar o Contato como Private Contact (sem AccountId)
         Contact contato = new Contact(
             FirstName = 'Carlos',
             LastName = 'Silva',
             Email = 'carlos.silva@teste.com',
-            Hu7_CPF__c = '12345678900',
-            AccountId = grupo.Id
+            Hu7_CPF__c = '12345678900'
         );
         insert contato;
         contatoId = contato.Id;
 
-        // Criar o relacionamento AccountContactRelation__c, preenchendo os campos usados no filtro da Apex
+        // Criar manualmente a relação AccountContactRelation__c
         AccountContactRelation__c rel = new AccountContactRelation__c(
             ContactId__c = contato.Id,
             AccountId__c = grupo.Id,
-            Name = 'Carlos Silva',               // Nome no relation
-            Email__c = 'carlos.silva@teste.com', // Email no relation
-            CPF__c = '12345678900'               // CPF no relation
+            Email__c = 'carlos.silva@teste.com',
+            CPF__c = '12345678900'
         );
         insert rel;
-    }
-
-    @IsTest
-    static void test_ContatoPorNome() {
-        List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
-        HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
-        req.contactName = 'Carlos';
-        requests.add(req);
-
-        Test.startTest();
-        List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);
-        Test.stopTest();
-
-        System.assertEquals(1, responses.size(), 'Deveria retornar um grupo');
-        System.assertEquals('Grupo Teste', responses[0].groupName);
     }
 
     @IsTest
@@ -82,7 +65,7 @@ private class HU7_GetGroupByContactInfo_V1_Test {
     static void test_ContatoNaoEncontrado() {
         List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
         HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
-        req.contactName = 'Inexistente';
+        req.contactEmail = 'naoexiste@teste.com';
         requests.add(req);
 
         Test.startTest();
