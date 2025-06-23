@@ -1,0 +1,131 @@
+public class HU7_GetContactDetailsByInfo_V1 {
+
+    public class Request {
+        @InvocableVariable(
+            label = 'Nome do Contato'
+            description = 'Parte ou nome completo do contato para busca no objeto AccountContactRelation__c.'
+            required=false
+        )
+        public String contactName;
+
+        @InvocableVariable(
+            label = 'Email do Contato'
+            description = 'Parte ou email completo do contato para busca no objeto AccountContactRelation__c.'
+            required=false
+        )
+        public String contactEmail;
+
+        @InvocableVariable(
+            label = 'CPF do Contato'
+            description = 'Parte ou CPF completo do contato para busca no objeto AccountContactRelation__c.'
+            required=false
+        )
+        public String contactCPF;
+    }
+
+    public class Response {
+        @InvocableVariable(
+            label = 'Prompt'
+            description = 'Prompt'
+            required=false
+        )
+        public String Prompt;
+    }
+
+    @InvocableMethod(
+        label = 'Buscar Detalhes de Contato por Nome, Email ou CPF'
+        description = 'Recebe Nome, Email ou CPF e retorna os detalhes do contato (Nome, Email, Telefone, Celular, CPF e Nome do Grupo Econômico) como um único campo de texto formatado (Prompt).'
+    )
+    public static List<Response> getDetailsContact(List<Request> requests) {
+        List<Response> results = new List<Response>();
+
+        if (requests == null || requests.isEmpty()) return results;
+
+        Request req = requests[0];
+
+        Map<String, String> filtros = new Map<String, String>{
+            'Name' => req.contactName,
+            'Email__c' => req.contactEmail,
+            'CPF__c' => req.contactCPF
+        };
+
+        List<String> conditions = new List<String>();
+        if (!String.isBlank(req.contactName)) conditions.add('Name LIKE :nameLike');
+        if (!String.isBlank(req.contactEmail)) conditions.add('Email__c LIKE :emailLike');
+        if (!String.isBlank(req.contactCPF)) conditions.add('CPF__c LIKE :cpfLike');
+
+        if (conditions.isEmpty()) return results;
+
+        String nameLike = String.isBlank(req.contactName) ? null : '%' + req.contactName + '%';
+        String emailLike = String.isBlank(req.contactEmail) ? null : '%' + req.contactEmail + '%';
+        String cpfLike = String.isBlank(req.contactCPF) ? null : '%' + req.contactCPF + '%';
+
+        String finalQuery = 'SELECT AccountId__c, Name, Email__c, Phone__c, CPF__c FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
+
+        List<AccountContactRelation__c> contatos = Database.query(finalQuery);
+
+        Set<Id> accountIds = new Set<Id>();
+        for (AccountContactRelation__c c : contatos) if (c.AccountId__c != null) accountIds.add(c.AccountId__c);
+
+        Map<Id, String> accountIdToGroupName = new Map<Id, String>();
+        if (!accountIds.isEmpty()) {
+            for (Account acc : [SELECT Id, Name FROM Account WHERE Id IN :accountIds]) {
+                accountIdToGroupName.put(acc.Id, acc.Name);
+            }
+        }
+
+        List<String> promptParts = new List<String>();
+
+        if (contatos.isEmpty()) {
+            promptParts.add('Nenhum contato encontrado com as informações fornecidas. Por favor, revise os dados e tente novamente.');
+        } else {
+            for (AccountContactRelation__c c : contatos) {
+                Map<String, String> campos = new Map<String, String>{
+                    'Nome' => c.Name,
+                    'Email' => c.Email__c,
+                    'Telefone' => c.Phone__c,
+                    'CPF' => c.CPF__c,
+                    'Grupo Econômico' => accountIdToGroupName.get(c.AccountId__c)
+                };
+
+                List<String> linhaContato = new List<String>{
+                    'Contato encontrado:',
+                    ''
+                };
+
+                for (String chave : campos.keySet()) {
+                    String valor = campos.get(chave);
+                    if (!String.isBlank(valor)) linhaContato.add(chave + ': ' + valor);
+                }
+
+                promptParts.add(String.join(linhaContato, '\n'));
+            }
+        }
+
+        Response r = new Response();
+        r.Prompt = String.join(promptParts, '\n\n');
+        results.add(r);
+    System.debug('teste' + results);
+        return results;
+    }
+}
+
+
+
+------------------------------
+
+
+// Cria a lista de requests
+List<HU7_GetContactDetailsByInfo_V1.Request> requests = new List<HU7_GetContactDetailsByInfo_V1.Request>();
+
+// Cria um request de exemplo
+HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+req.contactName = '';   // Altere o valor conforme os dados que tem na sua org
+req.contactEmail = 'gleisson@gmal.com';      // Se quiser, pode preencher
+req.contactCPF = '';        // Se quiser, pode preencher
+
+// Adiciona o request à lista
+requests.add(req);
+
+// Executa o método da classe
+List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(requests);

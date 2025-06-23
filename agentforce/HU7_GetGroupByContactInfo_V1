@@ -1,0 +1,129 @@
+public class HU7_GetGroupByContactInfo_V1 {
+
+    public class Request {
+        @InvocableVariable(label = 'Nome do Contato' description = 'Parte ou nome completo do contato a ser buscado.')
+        public String contactName;
+
+        @InvocableVariable(label = 'Email do Contato' description = 'Parte ou email completo do contato a ser buscado.')
+        public String contactEmail;
+
+        @InvocableVariable(label = 'CPF do Contato' description = 'Parte ou CPF completo do contato a ser buscado.')
+        public String contactCPF;
+    }
+
+    public class Response {
+        @InvocableVariable(label = 'Nome do Grupo Econômico' description = 'Nome do Grupo Econômico relacionado ao contato encontrado.')
+        public String groupName;
+    }
+
+    @InvocableMethod(
+        label = 'Buscar Grupo Econômico por Nome, Email ou CPF do Contato'
+        description = 'Recebe nome parcial, email ou CPF de um contato e retorna o nome do grupo econômico, nome, email e CPF do contato encontrado.'
+    )
+    public static List<Response> run(List<Request> requests) {
+        List<Response> results = new List<Response>();
+
+        if (!validateRequest(requests)) return results;
+
+        Request req = requests[0];
+        String query = buildQuery(req);
+        if (String.isBlank(query)) return results;
+
+        List<AccountContactRelation__c> contatos = executeQuery(query);
+        if (contatos.isEmpty()) return results;
+
+        Map<Id, String> groupNames = fetchGroupNames(getAccountIds(contatos));
+        return buildResponse(contatos, groupNames);
+    }
+
+    private static Boolean validateRequest(List<Request> requests) {
+        if (requests == null || requests.isEmpty()) return false;
+
+        Request req = requests[0];
+        return !String.isBlank(req.contactName) || !String.isBlank(req.contactEmail) || !String.isBlank(req.contactCPF);
+    }
+
+    private static String buildQuery(Request req) {
+        Map<String, String> fieldToValue = new Map<String, String>{
+            'Name' => req.contactName,
+            'Email__c' => req.contactEmail,
+            'CPF__c' => req.contactCPF
+        };
+
+        List<String> conditions = new List<String>();
+        for (String field : fieldToValue.keySet()) {
+            String value = fieldToValue.get(field);
+            if (!String.isBlank(value)) {
+                conditions.add(field + ' LIKE \'%' + String.escapeSingleQuotes(value) + '%\'');
+            }
+        }
+
+        if (conditions.isEmpty()) return null;
+
+        return 'SELECT AccountId__c, Name, Email__c, CPF__c FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
+    }
+
+    private static List<AccountContactRelation__c> executeQuery(String soql) {
+        return Database.query(soql);
+    }
+
+    private static Set<Id> getAccountIds(List<AccountContactRelation__c> contatos) {
+        Set<Id> ids = new Set<Id>();
+        for (AccountContactRelation__c c : contatos) {
+            if (c.AccountId__c != null) {
+                ids.add(c.AccountId__c);
+            }
+        }
+        return ids;
+    }
+
+    private static Map<Id, String> fetchGroupNames(Set<Id> accountIds) {
+        Map<Id, String> result = new Map<Id, String>();
+        if (accountIds.isEmpty()) return result;
+
+        for (Account acc : [
+            SELECT Id, Name
+            FROM Account
+            WHERE Id IN :accountIds
+        ]) {
+            result.put(acc.Id, acc.Name);
+        }
+        return result;
+    }
+
+    private static List<Response> buildResponse(List<AccountContactRelation__c> contatos, Map<Id, String> groupNames) {
+        List<Response> results = new List<Response>();
+        for (AccountContactRelation__c c : contatos) {
+            String grupoName = groupNames.get(c.AccountId__c);
+            if (grupoName != null) {
+                Response r = new Response();
+                r.groupName = grupoName;
+                results.add(r);
+            }
+        }
+        System.debug('resuts' + results);
+        return results;
+    }
+}
+
+
+
+
+
+-------
+
+Testar anonomious 
+
+List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
+
+// Cria um request de exemplo
+HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
+req.contactName = '';  // Preencha com o nome ou parte do nome que deseja testar
+req.contactEmail = 'gleisson@gmal.com';    // Se quiser testar por email, preencha aqui
+req.contactCPF = '';      // Se quiser testar por CPF, preencha aqui
+
+// Adiciona o request à lista
+requests.add(req);
+
+// Executa o método
+List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);

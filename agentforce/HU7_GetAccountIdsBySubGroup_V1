@@ -1,0 +1,143 @@
+public class HU7_GetAccountIdsBySubGroup_V1 {
+     public class Request {
+        @InvocableVariable(
+            required=true
+            label='Nome do Subgrupo'
+            description='Informe parte do nome do Subgrupo para buscar o Grupo Econômico relacionado'
+        )
+        public String accountSubGrupo;
+    }
+
+    public class Response {
+        @InvocableVariable(
+            label='IDs dos Grupos Econômicos'
+            description='Lista de IDs das contas do tipo Grupo Econômico relacionadas aos Subgrupos informados'
+        )
+        public List<Id> accountIds;
+    }
+
+    @InvocableMethod(
+        label='Buscar IDs de Grupos Econômicos a partir de Subgrupos (Por Nome Parcial)'
+        description='Retorna os IDs das contas com RecordType HU7_Grupo_Economico vinculadas aos Subgrupos cujo nome contém o termo informado'
+    )
+    public static List<Response> run(List<Request> requests) {
+        System.debug('requests ' + requests);
+        Set<String> subgrupoNames = extractSubgrupoNames(requests);
+        System.debug('subgrupoNames ' + subgrupoNames);
+        Map<String, Set<String>> subgrupoInputToIdGrupos = getIdGruposBySubgrupos(subgrupoNames);
+        Map<String, Id> idGrupoToGrupoEconomicoId = getAccountIdsByIdGrupo(flattenSetMap(subgrupoInputToIdGrupos));
+        return buildResponse(requests, subgrupoInputToIdGrupos, idGrupoToGrupoEconomicoId);
+    }
+
+    private static Set<String> extractSubgrupoNames(List<Request> requests) {
+        Set<String> names = new Set<String>();
+        for(Request req : requests) {
+            if(String.isNotBlank(req.accountSubGrupo)) {
+                names.add(req.accountSubGrupo.trim());
+                System.debug('names ' + names);
+            }
+        }
+        return names;
+    }
+
+    private static Map<String, Set<String>> getIdGruposBySubgrupos(Set<String> subgrupoNames) {
+        Map<String, Set<String>> result = new Map<String, Set<String>>();
+        if(subgrupoNames.isEmpty()) return result;
+
+        for(String inputName : subgrupoNames) {
+            result.put(inputName, new Set<String>());
+            System.debug('result ' + result);
+        }
+
+        List<Account> subgrupos = [
+            SELECT Name, Hu7IdGrupo__c
+            FROM Account
+            WHERE RecordTypeDeveloperName__c = 'HU7_Sub_Grupo'
+            AND (
+                // Fazendo LIKE para cada nome informado
+                Name LIKE :('%' + String.join(new List<String>(subgrupoNames), '%') + '%')
+            )
+        ];
+    System.debug('subgrupos ' + subgrupos);
+        for(Account acc : subgrupos) {
+            for(String inputName : subgrupoNames) {
+                System.debug('subgrupoNames ' + subgrupoNames);
+                if(acc.Name != null && acc.Name.toLowerCase().contains(inputName.toLowerCase())) {
+                    System.debug('caiu for ');
+                    if(!result.containsKey(inputName)) result.put(inputName, new Set<String>());
+                    result.get(inputName).add(acc.Hu7IdGrupo__c);
+                }
+            }
+        }
+System.debug('result' + result);
+        return result;
+    }
+
+    private static Set<String> flattenSetMap(Map<String, Set<String>> input) {
+        System.debug('input' + input);
+        Set<String> flat = new Set<String>();
+        for(Set<String> ids : input.values()) {
+            flat.addAll(ids);
+        }
+        System.debug('flat' + flat);
+        return flat;
+    }
+
+    private static Map<String, Id> getAccountIdsByIdGrupo(Set<String> idGrupos) {
+        System.debug('idGrupos' + idGrupos);
+        Map<String, Id> result = new Map<String, Id>();
+        if(idGrupos.isEmpty()) return result;
+
+        for(Account grupo : [
+            SELECT Id, Hu7IDExterno__c
+            FROM Account
+            WHERE Hu7IDExterno__c IN :idGrupos
+            AND RecordTypeDeveloperName__c = 'HU7_Grupo_Economico'
+        ]) {
+            result.put(grupo.Hu7IDExterno__c, grupo.Id);
+        }
+        System.debug('resultfinal' + result);
+        return result;
+    }
+
+    private static List<Response> buildResponse(List<Request> requests, Map<String, Set<String>> subgrupoToIdGrupos, Map<String, Id> idGrupoToGrupoEconomicoId) {
+        List<Response> responses = new List<Response>();
+System.debug('requestsFinal' + requests);
+        for(Request req : requests) {
+            
+            List<Id> grupoIds = new List<Id>();
+            Set<String> idGrupos = subgrupoToIdGrupos.get(req.accountSubGrupo);
+
+            if(idGrupos != null) {
+                for(String idGrupo : idGrupos) {
+                    if(idGrupoToGrupoEconomicoId.containsKey(idGrupo)) {
+                        grupoIds.add(idGrupoToGrupoEconomicoId.get(idGrupo));
+                    }
+                }
+            }
+
+            Response resp = new Response();
+            resp.accountIds = grupoIds;
+            responses.add(resp);
+        }
+System.debug('responsesFinal' + responses);
+        return responses;
+    }
+}
+
+
+------------------------------
+
+
+// Criando a lista de requests
+List<HU7_GetAccountIdsBySubGroup_V1.Request> requests = new List<HU7_GetAccountIdsBySubGroup_V1.Request>();
+
+// Criando um request de exemplo
+HU7_GetAccountIdsBySubGroup_V1.Request req = new HU7_GetAccountIdsBySubGroup_V1.Request();
+req.accountSubGrupo = 'Ambev sub';  // Substitua por um nome de Subgrupo que exista na sua org
+
+// Adicionando o request na lista
+requests.add(req);
+
+// Executando a classe
+List<HU7_GetAccountIdsBySubGroup_V1.Response> responses = HU7_GetAccountIdsBySubGroup_V1.run(requests);

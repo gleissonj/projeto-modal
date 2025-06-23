@@ -1,0 +1,76 @@
+@IsTest
+private class HU7_GetContactDetailsByInfo_V1_Test {
+
+    @TestSetup
+    static void setup() {
+        // Criar um Account (Grupo Econômico)
+        Account grupo = new Account(Name = 'Grupo Econômico Teste');
+        insert grupo;
+
+        // Criar um contato (AccountContactRelation__c)
+        AccountContactRelation__c contato = new AccountContactRelation__c(
+            Name = 'Maria Souza',
+            Email__c = 'maria.souza@teste.com',
+            Phone__c = '11999998888',
+            CPF__c = '98765432100',
+            AccountId__c = grupo.Id
+        );
+        insert contato;
+    }
+
+    @IsTest
+    static void test_ContatoPorNome() {
+        List<HU7_GetContactDetailsByInfo_V1.Request> requests = new List<HU7_GetContactDetailsByInfo_V1.Request>();
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+        req.contactName = 'Maria';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta');
+        System.assert(responses[0].Prompt.contains('Maria Souza'), 'Prompt deveria conter o nome do contato');
+        System.assert(responses[0].Prompt.contains('Grupo Econômico Teste'), 'Prompt deveria conter o grupo econômico');
+    }
+
+    @IsTest
+    static void test_ContatoNaoEncontrado() {
+        List<HU7_GetContactDetailsByInfo_V1.Request> requests = new List<HU7_GetContactDetailsByInfo_V1.Request>();
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+        req.contactName = 'Inexistente';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta');
+        System.assert(responses[0].Prompt.contains('Nenhum contato encontrado'), 'Deveria retornar mensagem de contato não encontrado');
+    }
+
+    @IsTest
+    static void test_RequestCamposNulos() {
+        List<HU7_GetContactDetailsByInfo_V1.Request> requests = new List<HU7_GetContactDetailsByInfo_V1.Request>();
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+        // Todos os campos nulos
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Sem filtros, a resposta deveria ser vazia');
+    }
+
+    @IsTest
+    static void test_RequestListaVazia() {
+        List<HU7_GetContactDetailsByInfo_V1.Request> requests = new List<HU7_GetContactDetailsByInfo_V1.Request>();
+
+        Test.startTest();
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Com lista de requests vazia, a resposta deveria ser vazia');
+    }
+}

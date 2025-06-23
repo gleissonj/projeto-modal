@@ -1,0 +1,70 @@
+📍 Roadmap de Implementação da Estratégia Modular com Prompt Template + Apex 
+
+
+🔹 Fase 0 – Definição da Estratégia (1 a 2 dias)
+
+Analisar o domínio principal e identificar relacionamentos
+
+Escolher a arquitetura modular com Prompt Template + Apex
+
+Avaliar aderência às boas práticas e escalabilidade
+
+🔹 Fase 1 – Planejamento e levantamento (1 a 2 dias)
+
+Mapear todas as intenções relacionadas ao objeto “Grupo”
+
+Identificar todos os campos e objetos customizados envolvidos
+
+Definir os valores possíveis para tipo_info (dados contatos, account...)
+
+🔹 Fase 1.5 – Criação do Agente e Estrutura Base (1 dia)
+
+Criar o agente manualmente (Vamos usar o default)
+
+Definir nome, API Name, função, empresa e agente de fallback
+
+Habilitar o tracking das conversas para logs
+
+🔹 Fase 2 – Estruturação no Agentforce (1 a 3 dias)
+
+Criar o Tópico consultar_informacao_grupo
+
+Criar o Instrucoes do topico + scopes  e actions
+
+Definir os slots grupo_nome e tipo_info
+
+Criar frases de treinamento (user phrases)
+
+🔹 Fase 3 – Desenvolvimento Técnico (2 a 4 dias)
+
+Criar Apex GrupoHandler com lógica baseada no tipo de consulta
+
+Garantir que os dados retornados estejam estruturados (campos separados)
+
+Criar Prompt Template via Prompt Builder que chame o Apex e formate a resposta com handlebars
+
+Criar testes unitarios das classes apex
+
+🔹 Fase 4 – Testes e refinamento (1 a 2 dias)
+
+Testar cada valor de tipo_info
+
+Verificar variações de nome de grupo (corrigir erros comuns)
+
+Ajustar mensagens de fallback se o grupo não for encontrado
+
+🔹 Fase 5 – Validação com usuários-chave e liderança (1 dia)
+
+Demonstração funcional do agente respondendo diferentes tipos de consulta
+
+Coleta de feedback para ajustes finos de linguagem e comportamento
+
+🔹 Fase 6 – Go live e acompanhamento inicial (1 a 2 dias)
+
+Publicação no ambiente de produção
+
+Monitoramento de uso e cobertura das intenções
+
+Preparar plano de expansão (outros objetos/domínios)
+
+Duração estimada total: 8 a 15 dias úteis, dependendo do nível de refinamento e validações necessárias.

@@ -1,0 +1,100 @@
+📍 Roadmap de Implementação da Estratégia Modular – Entregas por Frente Funcional
+🔹 Fase 0 – Definição da Estratégia (Concluída ✅)
+Análise de domínio e relacionamentos (Grupo, Subgrupo, CNPJ, Contatos, etc.)
+
+Escolha da arquitetura modular com Prompt Template Flex + Apex + Actions
+
+Garantia de aderência às boas práticas do Agentforce
+
+🔹 Fase 1 – Planejamento e Levantamento (Concluída ✅)
+Mapeamento das intenções que o agente deve atender (Contatos, Dados Cadastrais, Subgrupos e Responsáveis)
+
+Levantamento dos objetos e campos necessários no Salesforce
+
+Definição dos tipos de informação (Ex: tipo_info: contatos, dados_cadastrais, subgrupos, responsáveis)
+
+🔹 Fase 1.5 – Criação do Agente e Estrutura Base (Concluída ✅)
+Criação do Agente
+
+Criação do Tópico único: consultar_informacao_grupo
+
+Definição de Instructions, Scope e Action Placeholder no Tópico
+
+Estruturação base que atende todas as frentes (já pensando nas próximas entregas)
+
+🚀 Agora, a entrega será feita em "Frentes Funcionais":
+
+✅ Entrega Parcial 1: Consultas de Contatos de Grupo (Prioridade Atual)
+Fase 2 – Estruturação no Agentforce (Para Contatos)
+Configurar primeira Action: Action de Resolução de Grupo/Subgrupo/CNPJ
+
+Criar Prompt Template Flex específico para Contatos
+
+Criar Action de Buscar Contatos por Grupo/CodGrupo
+
+Mapear variáveis de conversa
+
+Ajustar fluxo condicional (se for contatos, chama Action de Contatos)
+
+Fase 3 – Desenvolvimento Técnico (Para Contatos)
+Desenvolver Apex para busca de contatos (mockado inicialmente)
+
+Configurar Prompt Template com formatação específica para contatos
+
+Garantir que o LLM do Agentforce identifique corretamente intenção de contatos
+
+Criar testes unitarios das classes apex
+
+Fase 4 – Testes e Refinamento (Para Contatos em IT e UAT)
+Testar variações: nome de grupo, subgrupo, CNPJ
+
+Validar desambiguação de grupos
+
+Ajustar linguagem final de apresentação dos contatos
+
+Fase 5 – Validação e Go Live (Para Contatos)
+Fazer demo só da frente de contatos
+
+Validar com liderança
+
+Publicar só a frente de Contatos
+
+Garantir que está funcional antes de seguir para a próxima frente
+
+------------------------------------
+
+✅ Entrega Parcial 2: Dados Cadastrais
+👉 Mesmo fluxo, mas agora criando o Apex + Prompt Template + Action só para dados cadastrais
+
+--------------------------------------
+
+✅ Entrega Parcial 3: Subgrupos
+👉 Depois de dados cadastrais, a mesma coisa: criar a frente de Subgrupos
+
+----------------------------------------
+
+✅ Entrega Parcial 4: Responsáveis
+👉 Por último, a frente de Responsáveis do Grupo
+
+
+
+
+✅ Cronograma de Entregas – Incluindo as Fases já Concluídas
+
+| Entrega / Fase                                    | Fases envolvidas                                                                                                   | Status       | Prazo Sugerido       |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------ | -------------------- |
+| **Fase 0 – Definição da Estratégia**              | Análise de domínio, escolha da arquitetura modular, boas práticas                                                  | ✅ Concluído  | **1 a 2 dias úteis** |
+| **Fase 1 – Planejamento e Levantamento**          | Mapeamento de intenções, levantamento de campos e objetos, definição de escopo                                     | ✅ Concluído  | **1 a 2 dias úteis** |
+| **Fase 1.5 – Criação do Agente e Estrutura Base** | Criação do Agente no Agentforce, tópico base, scope, instructions e variables                                      | ✅ Concluído  | **1 dia útil**       |
+| **Entrega 1 – Contatos**                          | Estruturação Agentforce (Actions e Prompt), Apex de Contatos, Prompt Template Flex de Contatos, Testes e Validação | Em andamento | **5 a 7 dias úteis** |
+| **Entrega 2 – Dados Cadastrais**                  | Reutilização da base + Nova Apex + Novo Prompt Template                                                            | Futuro       | **3 a 5 dias úteis** |
+| **Entrega 3 – Subgrupos**                         | Nova Apex + Novo Prompt Template + Testes                                                                          | Futuro       | **3 a 5 dias úteis** |
+| **Entrega 4 – Responsáveis**                      | Nova Apex + Novo Prompt Template + Testes                                                                          | Futuro       | **3 a 5 dias úteis** |
+
+
+OBSERVAÇÕES
+✅ Como o Tópico e a estrutura base já são únicos e genéricos,
+👉 As próximas frentes (depois de Contatos) terão tempo de entrega menor, pois serão apenas extensões da arquitetura já criada.
+
+✅ O maior esforço é na primeira entrega (Contatos), pois ela envolve validar toda a base estrutural (Actions, Variáveis, Prompt, Integração com Apex e LLM).
+

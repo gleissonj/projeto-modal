@@ -1,0 +1,107 @@
+@IsTest
+private class HU7_GetAccountIdsByCnpj_V1_Test {
+
+    @TestSetup
+    static void setup() {
+        // Criar RecordType de Grupo Econômico (simulação caso use em ambiente de teste)
+        RecordType rtGrupo = new RecordType(
+            DeveloperName = 'HU7_Grupo_Economico',
+            SobjectType = 'Account',
+            Name = 'HU7 Grupo Econômico'
+        );
+        insert rtGrupo;
+
+        // Criar um Grupo Econômico (Account com RecordType correto)
+        Account grupoEconomico = new Account(
+            Name = 'Grupo Teste',
+            RecordTypeId = rtGrupo.Id,
+            Hu7IDExterno__c = 'GRUPO123'
+        );
+        insert grupoEconomico;
+
+        // Criar um Account com CNPJ e IdGrupo vinculado ao Grupo Econômico
+        Account empresa = new Account(
+            Name = 'Empresa Teste',
+            AccountNumber = '12345678000190',  // CNPJ mockado
+            Hu7IdGrupo__c = 'GRUPO123'
+        );
+        insert empresa;
+    }
+
+    @IsTest
+    static void test_CnpjEncontrado() {
+        List<HU7_GetAccountIdsByCnpj_V1.Request> requests = new List<HU7_GetAccountIdsByCnpj_V1.Request>();
+
+        HU7_GetAccountIdsByCnpj_V1.Request req = new HU7_GetAccountIdsByCnpj_V1.Request();
+        req.accountCNPJ = '12345678000190';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetAccountIdsByCnpj_V1.Response> responses = HU7_GetAccountIdsByCnpj_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta');
+        System.assertEquals(1, responses[0].accountIds.size(), 'Deveria retornar um grupo');
+        System.assertNotEquals(null, responses[0].accountIds[0], 'ID do grupo não deveria ser nulo');
+    }
+
+    @IsTest
+    static void test_CnpjNaoEncontrado() {
+        List<HU7_GetAccountIdsByCnpj_V1.Request> requests = new List<HU7_GetAccountIdsByCnpj_V1.Request>();
+
+        HU7_GetAccountIdsByCnpj_V1.Request req = new HU7_GetAccountIdsByCnpj_V1.Request();
+        req.accountCNPJ = '99999999999999';  // CNPJ inexistente
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetAccountIdsByCnpj_V1.Response> responses = HU7_GetAccountIdsByCnpj_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta');
+        System.assertEquals(0, responses[0].accountIds.size(), 'Não deveria retornar grupos');
+    }
+
+    @IsTest
+    static void test_GrupoSemIdExterno() {
+        // Criar um Grupo sem IdExterno
+        RecordType rtGrupo = [SELECT Id FROM RecordType WHERE DeveloperName = 'HU7_Grupo_Economico' AND SobjectType = 'Account' LIMIT 1];
+
+        Account grupoSemIdExterno = new Account(
+            Name = 'Grupo Sem ID Externo',
+            RecordTypeId = rtGrupo.Id
+            // Sem Hu7IDExterno__c
+        );
+        insert grupoSemIdExterno;
+
+        // Empresa apontando para esse grupo
+        Account empresa = new Account(
+            Name = 'Empresa Sem Id Externo',
+            AccountNumber = '11111111000111',
+            Hu7IdGrupo__c = null
+        );
+        insert empresa;
+
+        List<HU7_GetAccountIdsByCnpj_V1.Request> requests = new List<HU7_GetAccountIdsByCnpj_V1.Request>();
+        HU7_GetAccountIdsByCnpj_V1.Request req = new HU7_GetAccountIdsByCnpj_V1.Request();
+        req.accountCNPJ = '11111111000111';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetAccountIdsByCnpj_V1.Response> responses = HU7_GetAccountIdsByCnpj_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta');
+        System.assertEquals(0, responses[0].accountIds.size(), 'Sem ID externo, não deveria retornar grupo');
+    }
+
+    @IsTest
+    static void test_ListaVazia() {
+        List<HU7_GetAccountIdsByCnpj_V1.Request> requests = new List<HU7_GetAccountIdsByCnpj_V1.Request>();
+
+        Test.startTest();
+        List<HU7_GetAccountIdsByCnpj_V1.Response> responses = HU7_GetAccountIdsByCnpj_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Sem requisições, a lista de respostas deveria ser vazia');
+    }
+}

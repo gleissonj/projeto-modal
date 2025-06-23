@@ -1,0 +1,102 @@
+@IsTest
+private class HU7_GetGroupByContactInfo_V1_Test {
+
+    @TestSetup
+    static void setup() {
+        // Criar Account (Grupo Econômico)
+        Account grupo = new Account(Name = 'Grupo Teste');
+        insert grupo;
+
+        // Criar contato no objeto AccountContactRelation__c
+        AccountContactRelation__c contato = new AccountContactRelation__c(
+            Name = 'Carlos Silva',
+            Email__c = 'carlos.silva@teste.com',
+            CPF__c = '12345678900',
+            AccountId__c = grupo.Id
+        );
+        insert contato;
+    }
+
+    @IsTest
+    static void test_ContatoPorNome() {
+        List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
+        HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
+        req.contactName = 'Carlos';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar um grupo');
+        System.assertEquals('Grupo Teste', responses[0].groupName);
+    }
+
+    @IsTest
+    static void test_ContatoPorEmail() {
+        List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
+        HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
+        req.contactEmail = 'carlos.silva';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar um grupo por email');
+        System.assertEquals('Grupo Teste', responses[0].groupName);
+    }
+
+    @IsTest
+    static void test_ContatoPorCPF() {
+        List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
+        HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
+        req.contactCPF = '12345678900';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar um grupo por CPF');
+        System.assertEquals('Grupo Teste', responses[0].groupName);
+    }
+
+    @IsTest
+    static void test_ContatoNaoEncontrado() {
+        List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
+        HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
+        req.contactName = 'Inexistente';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Não deveria retornar grupo para contato inexistente');
+    }
+
+    @IsTest
+    static void test_RequestCamposNulos() {
+        List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
+        HU7_GetGroupByContactInfo_V1.Request req = new HU7_GetGroupByContactInfo_V1.Request();
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Sem filtros, a resposta deveria ser vazia');
+    }
+
+    @IsTest
+    static void test_RequestListaVazia() {
+        List<HU7_GetGroupByContactInfo_V1.Request> requests = new List<HU7_GetGroupByContactInfo_V1.Request>();
+
+        Test.startTest();
+        List<HU7_GetGroupByContactInfo_V1.Response> responses = HU7_GetGroupByContactInfo_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Lista de requests vazia, resposta deveria ser vazia');
+    }
+}

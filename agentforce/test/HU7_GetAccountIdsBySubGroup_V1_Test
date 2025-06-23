@@ -1,0 +1,106 @@
+@IsTest
+private class HU7_GetAccountIdsBySubGroup_V1_Test {
+
+    @TestSetup
+    static void setup() {
+        // Criar RecordType de Subgrupo e Grupo Econômico
+        RecordType rtSubGrupo = new RecordType(
+            DeveloperName = 'HU7_Sub_Grupo',
+            SobjectType = 'Account',
+            Name = 'HU7 Sub Grupo'
+        );
+        insert rtSubGrupo;
+
+        RecordType rtGrupo = new RecordType(
+            DeveloperName = 'HU7_Grupo_Economico',
+            SobjectType = 'Account',
+            Name = 'HU7 Grupo Econômico'
+        );
+        insert rtGrupo;
+
+        // Criar um Grupo Econômico (Account com RecordType correto)
+        Account grupoEconomico = new Account(
+            Name = 'Grupo Econômico Teste',
+            RecordTypeId = rtGrupo.Id,
+            Hu7IDExterno__c = 'GRUPO123'
+        );
+        insert grupoEconomico;
+
+        // Criar Subgrupo vinculado a este Grupo
+        Account subgrupo = new Account(
+            Name = 'Subgrupo Bebidas Teste',
+            RecordTypeId = rtSubGrupo.Id,
+            Hu7IdGrupo__c = 'GRUPO123'
+        );
+        insert subgrupo;
+    }
+
+    @IsTest
+    static void test_SubgrupoEncontrado() {
+        List<HU7_GetAccountIdsBySubGroup_V1.Request> requests = new List<HU7_GetAccountIdsBySubGroup_V1.Request>();
+
+        HU7_GetAccountIdsBySubGroup_V1.Request req = new HU7_GetAccountIdsBySubGroup_V1.Request();
+        req.accountSubGrupo = 'Bebidas';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetAccountIdsBySubGroup_V1.Response> responses = HU7_GetAccountIdsBySubGroup_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta');
+        System.assertEquals(1, responses[0].accountIds.size(), 'Deveria retornar um grupo vinculado ao subgrupo');
+        System.assertNotEquals(null, responses[0].accountIds[0], 'ID do grupo não deveria ser nulo');
+    }
+
+    @IsTest
+    static void test_SubgrupoNaoEncontrado() {
+        List<HU7_GetAccountIdsBySubGroup_V1.Request> requests = new List<HU7_GetAccountIdsBySubGroup_V1.Request>();
+
+        HU7_GetAccountIdsBySubGroup_V1.Request req = new HU7_GetAccountIdsBySubGroup_V1.Request();
+        req.accountSubGrupo = 'Inexistente';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetAccountIdsBySubGroup_V1.Response> responses = HU7_GetAccountIdsBySubGroup_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta');
+        System.assertEquals(0, responses[0].accountIds.size(), 'Não deveria retornar grupo para subgrupo inexistente');
+    }
+
+    @IsTest
+    static void test_ListaVazia() {
+        List<HU7_GetAccountIdsBySubGroup_V1.Request> requests = new List<HU7_GetAccountIdsBySubGroup_V1.Request>();
+
+        Test.startTest();
+        List<HU7_GetAccountIdsBySubGroup_V1.Response> responses = HU7_GetAccountIdsBySubGroup_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Sem requisições, a lista de respostas deveria ser vazia');
+    }
+
+    @IsTest
+    static void test_SubgrupoSemIdGrupo() {
+        // Criar um subgrupo sem Hu7IdGrupo__c
+        RecordType rtSubGrupo = [SELECT Id FROM RecordType WHERE DeveloperName = 'HU7_Sub_Grupo' AND SobjectType = 'Account' LIMIT 1];
+
+        Account subgrupoSemGrupo = new Account(
+            Name = 'Subgrupo Sem Grupo',
+            RecordTypeId = rtSubGrupo.Id
+        );
+        insert subgrupoSemGrupo;
+
+        List<HU7_GetAccountIdsBySubGroup_V1.Request> requests = new List<HU7_GetAccountIdsBySubGroup_V1.Request>();
+
+        HU7_GetAccountIdsBySubGroup_V1.Request req = new HU7_GetAccountIdsBySubGroup_V1.Request();
+        req.accountSubGrupo = 'Sem Grupo';
+        requests.add(req);
+
+        Test.startTest();
+        List<HU7_GetAccountIdsBySubGroup_V1.Response> responses = HU7_GetAccountIdsBySubGroup_V1.run(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deveria retornar uma resposta mesmo sem grupo');
+        System.assertEquals(0, responses[0].accountIds.size(), 'Sem IdGrupo, não deveria retornar grupo');
+    }
+}
