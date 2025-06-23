@@ -112,4 +112,5 @@ private class HU7_GetGroupByContactInfo_V1_Test {
 
         System.assertEquals(0, responses.size(), 'Lista de requests vazia, resposta deveria ser vazia');
     }
+    
 }
