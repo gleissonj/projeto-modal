@@ -6,22 +6,23 @@ private class HU7_GetGroupByContactInfo_V1_Test {
 
     @TestSetup
     static void setup() {
-        // Criar o Grupo Econômico
+        // Criar o Grupo Econômico (Account)
         Account grupo = new Account(Name = 'Grupo Teste');
         insert grupo;
         grupoId = grupo.Id;
 
-        // Criar o Contato
+        // Criar o Contato já vinculado ao grupo (para não ser Private Contact)
         Contact contato = new Contact(
             FirstName = 'Carlos',
             LastName = 'Silva',
             Email = 'carlos.silva@teste.com',
-            Hu7_CPF__c = '12345678900'
+            Hu7_CPF__c = '12345678900',
+            AccountId = grupo.Id
         );
         insert contato;
         contatoId = contato.Id;
 
-        // Criar o relacionamento AccountContactRelation__c
+        // Criar o relacionamento AccountContactRelation
         AccountContactRelation__c rel = new AccountContactRelation__c(
             ContactId__c = contato.Id,
             AccountId__c = grupo.Id
