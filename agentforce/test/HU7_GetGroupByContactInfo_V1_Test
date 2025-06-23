@@ -11,7 +11,7 @@ private class HU7_GetGroupByContactInfo_V1_Test {
         insert grupo;
         grupoId = grupo.Id;
 
-        // Criar o Contato já vinculado ao grupo (para não ser Private Contact)
+        // Criar o Contato
         Contact contato = new Contact(
             FirstName = 'Carlos',
             LastName = 'Silva',
@@ -22,7 +22,15 @@ private class HU7_GetGroupByContactInfo_V1_Test {
         insert contato;
         contatoId = contato.Id;
 
-        // NÃO PRECISA mais criar AccountContactRelation manual
+        // Criar o relacionamento AccountContactRelation__c, preenchendo os campos usados no filtro da Apex
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            ContactId__c = contato.Id,
+            AccountId__c = grupo.Id,
+            Name = 'Carlos Silva',               // Nome no relation
+            Email__c = 'carlos.silva@teste.com', // Email no relation
+            CPF__c = '12345678900'               // CPF no relation
+        );
+        insert rel;
     }
 
     @IsTest
