@@ -22,12 +22,7 @@ private class HU7_GetGroupByContactInfo_V1_Test {
         insert contato;
         contatoId = contato.Id;
 
-        // Criar o relacionamento AccountContactRelation
-        AccountContactRelation__c rel = new AccountContactRelation__c(
-            ContactId__c = contato.Id,
-            AccountId__c = grupo.Id
-        );
-        insert rel;
+        // NÃO PRECISA mais criar AccountContactRelation manual
     }
 
     @IsTest
@@ -112,5 +107,4 @@ private class HU7_GetGroupByContactInfo_V1_Test {
 
         System.assertEquals(0, responses.size(), 'Lista de requests vazia, resposta deveria ser vazia');
     }
-    
 }
