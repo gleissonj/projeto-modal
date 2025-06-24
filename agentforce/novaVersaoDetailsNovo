@@ -1,0 +1,115 @@
+public with sharing class HU7_GetContactDetailsByInfo_V1 {
+
+    public class Request {
+        @InvocableVariable(label = 'Nome do Contato', description = 'Parte ou nome completo do contato.', required = false)
+        public String contactName;
+
+        @InvocableVariable(label = 'Email do Contato', description = 'Parte ou email completo do contato.', required = false)
+        public String contactEmail;
+
+        @InvocableVariable(label = 'CPF do Contato', description = 'Parte ou CPF completo do contato.', required = false)
+        public String contactCPF;
+    }
+
+    public class Response {
+        @InvocableVariable(label = 'Prompt', description = 'Prompt', required = false)
+        public String Prompt;
+    }
+
+    @InvocableMethod(label = 'Buscar Detalhes de Contato por Nome, Email ou CPF', description = 'Retorna os detalhes do contato como um Prompt.')
+    public static List<Response> getDetailsContact(List<Request> requests) {
+        List<Response> results = new List<Response>();
+
+        if (requests == null || requests.isEmpty()) return results;
+
+        Request req = requests[0];
+        List<AccountContactRelation__c> contatos = buscarContatos(req);
+
+        Map<Id, String> grupoIdParaNome = buscarNomesDosGrupos(contatos);
+        String promptFinal = gerarPrompt(contatos, grupoIdParaNome);
+
+        Response res = new Response();
+        res.Prompt = promptFinal;
+        results.add(res);
+
+        return results;
+    }
+
+    private static List<AccountContactRelation__c> buscarContatos(Request req) {
+        Map<String, String> filtros = new Map<String, String>();
+
+        if (!String.isBlank(req.contactName))
+            filtros.put('Name', '%' + req.contactName + '%');
+
+        if (!String.isBlank(req.contactEmail))
+            filtros.put('Email__c', '%' + req.contactEmail + '%');
+
+        if (!String.isBlank(req.contactCPF))
+            filtros.put('CPF__c', '%' + req.contactCPF + '%');
+
+        if (filtros.isEmpty()) return new List<AccountContactRelation__c>();
+
+        String baseQuery = 'SELECT AccountId__c, Name, Email__c, Phone__c, CPF__c FROM AccountContactRelation__c WHERE ';
+        List<String> whereClauses = new List<String>();
+        Map<String, Object> bindParams = new Map<String, Object>();
+
+        Integer idx = 0;
+        for (String campo : filtros.keySet()) {
+            String paramName = 'param' + idx;
+            whereClauses.add(campo + ' LIKE :' + paramName);
+            bindParams.put(paramName, filtros.get(campo));
+            idx++;
+        }
+
+        String finalQuery = baseQuery + String.join(whereClauses, ' AND ');
+
+        // ✅ Execução com bind seguro
+        return Database.queryWithBinds(finalQuery, bindParams);
+    }
+
+    private static Map<Id, String> buscarNomesDosGrupos(List<AccountContactRelation__c> contatos) {
+        Set<Id> accountIds = new Set<Id>();
+        for (AccountContactRelation__c c : contatos) {
+            if (c.AccountId__c != null) accountIds.add(c.AccountId__c);
+        }
+
+        Map<Id, String> result = new Map<Id, String>();
+        if (!accountIds.isEmpty()) {
+            for (Account acc : [SELECT Id, Name FROM Account WHERE Id IN :accountIds]) {
+                result.put(acc.Id, acc.Name);
+            }
+        }
+        return result;
+    }
+
+    private static String gerarPrompt(List<AccountContactRelation__c> contatos, Map<Id, String> grupoIdParaNome) {
+        if (contatos.isEmpty()) {
+            return 'Nenhum contato encontrado com as informações fornecidas. Por favor, revise os dados e tente novamente.';
+        }
+
+        List<String> promptParts = new List<String>();
+
+        for (AccountContactRelation__c c : contatos) {
+            List<String> linhas = new List<String>{ 'Contato encontrado:', '' };
+
+            Map<String, String> campos = new Map<String, String>{
+                'Nome' => c.Name,
+                'Email' => c.Email__c,
+                'Telefone' => c.Phone__c,
+                'CPF' => c.CPF__c,
+                'Grupo Econômico' => grupoIdParaNome.get(c.AccountId__c)
+            };
+
+            for (String chave : campos.keySet()) {
+                String valor = campos.get(chave);
+                if (!String.isBlank(valor)) {
+                    linhas.add(chave + ': ' + valor);
+                }
+            }
+
+            promptParts.add(String.join(linhas, '\n'));
+        }
+
+        return String.join(promptParts, '\n\n');
+    }
+}
