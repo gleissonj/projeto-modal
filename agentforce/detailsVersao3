@@ -23,8 +23,11 @@ public with sharing class HU7_GetContactDetailsByInfo_V1 {
         if (requests == null || requests.isEmpty()) return results;
 
         Request req = requests[0];
-        List<AccountContactRelation__c> contatos = buscarContatos(req);
+        String queryStr = buildQuery(req);
 
+        if (String.isBlank(queryStr)) return results;
+
+        List<AccountContactRelation__c> contatos = Database.query(queryStr);
         Map<Id, String> grupoIdParaNome = buscarNomesDosGrupos(contatos);
         String promptFinal = gerarPrompt(contatos, grupoIdParaNome);
 
@@ -35,23 +38,27 @@ public with sharing class HU7_GetContactDetailsByInfo_V1 {
         return results;
     }
 
-    private static List<AccountContactRelation__c> buscarContatos(Request req) {
+    // ✅ Método que monta o SOQL com escape de strings (mitigação de SOQL Injection)
+    private static String buildQuery(Request req) {
+        Map<String, String> fieldToValue = new Map<String, String>{
+            'Name' => req.contactName,
+            'Email__c' => req.contactEmail,
+            'CPF__c' => req.contactCPF
+        };
+
         List<String> conditions = new List<String>();
 
-        if (!String.isBlank(req.contactName))
-            conditions.add('Name LIKE \'%' + String.escapeSingleQuotes(req.contactName) + '%\'');
+        for (String field : fieldToValue.keySet()) {
+            String value = fieldToValue.get(field);
+            if (!String.isBlank(value)) {
+                // ✅ Escapando todas as entradas para mitigar SOQL Injection
+                conditions.add(field + ' LIKE \'%' + String.escapeSingleQuotes(value) + '%\'');
+            }
+        }
 
-        if (!String.isBlank(req.contactEmail))
-            conditions.add('Email__c LIKE \'%' + String.escapeSingleQuotes(req.contactEmail) + '%\'');
+        if (conditions.isEmpty()) return null;
 
-        if (!String.isBlank(req.contactCPF))
-            conditions.add('CPF__c LIKE \'%' + String.escapeSingleQuotes(req.contactCPF) + '%\'');
-
-        if (conditions.isEmpty()) return new List<AccountContactRelation__c>();
-
-        String queryStr = 'SELECT AccountId__c, Name, Email__c, Phone__c, CPF__c FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
-
-        return Database.query(queryStr);
+        return 'SELECT AccountId__c, Name, Email__c, Phone__c, CPF__c FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
     }
 
     private static Map<Id, String> buscarNomesDosGrupos(List<AccountContactRelation__c> contatos) {
@@ -99,27 +106,4 @@ public with sharing class HU7_GetContactDetailsByInfo_V1 {
 
         return String.join(promptParts, '\n\n');
     }
-}
-
-
-
-
-@SuppressWarnings('ApexSOQLInjection')
-private static List<AccountContactRelation__c> buscarContatos(Request req) {
-    List<String> conditions = new List<String>();
-
-    if (!String.isBlank(req.contactName))
-        conditions.add('Name LIKE \'%' + String.escapeSingleQuotes(req.contactName) + '%\'');
-
-    if (!String.isBlank(req.contactEmail))
-        conditions.add('Email__c LIKE \'%' + String.escapeSingleQuotes(req.contactEmail) + '%\'');
-
-    if (!String.isBlank(req.contactCPF))
-        conditions.add('CPF__c LIKE \'%' + String.escapeSingleQuotes(req.contactCPF) + '%\'');
-
-    if (conditions.isEmpty()) return new List<AccountContactRelation__c>();
-
-    String queryStr = 'SELECT AccountId__c, Name, Email__c, Phone__c, CPF__c FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
-
-    return Database.query(queryStr);
 }
