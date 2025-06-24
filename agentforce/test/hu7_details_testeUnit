@@ -1,0 +1,94 @@
+@IsTest
+private class HU7_GetContactDetailsByInfo_V1_Test {
+
+    static Id grupoId;
+
+    @TestSetup
+    static void setup() {
+        // Criar um grupo (Account)
+        Account grupo = new Account(Name = 'Grupo Econômico Teste');
+        insert grupo;
+        grupoId = grupo.Id;
+
+        // Criar um contato vinculado ao grupo
+        Contact contato = new Contact(
+            FirstName = 'Maria',
+            LastName = 'Souza',
+            Email = 'maria.souza@teste.com',
+            Hu7_CPF__c = '98765432100',
+            AccountId = grupo.Id  // ✅ ESSENCIAL para evitar erro de Private Contact
+        );
+        insert contato;
+
+        // Criar a relação AccountContactRelation__c com os campos usados na consulta
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            ContactId__c = contato.Id,
+            AccountId__c = grupo.Id,
+            Name = contato.FirstName + ' ' + contato.LastName,
+            Email__c = contato.Email,
+            Phone__c = '11999998888',
+            CPF__c = contato.Hu7_CPF__c
+        );
+        insert rel;
+    }
+
+    @IsTest
+    static void test_PorNome() {
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+        req.contactName = 'Maria';
+
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(new List<HU7_GetContactDetailsByInfo_V1.Request>{ req });
+
+        System.assertEquals(1, responses.size(), 'Deve retornar uma resposta');
+        System.assert(responses[0].Prompt.contains('Maria Souza'), 'Prompt deve conter o nome');
+    }
+
+    @IsTest
+    static void test_PorEmail() {
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+        req.contactEmail = 'maria.souza';
+
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(new List<HU7_GetContactDetailsByInfo_V1.Request>{ req });
+
+        System.assertEquals(1, responses.size(), 'Deve retornar uma resposta por email');
+        System.assert(responses[0].Prompt.contains('Maria Souza'), 'Prompt deve conter o nome');
+    }
+
+    @IsTest
+    static void test_PorCPF() {
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+        req.contactCPF = '98765432100';
+
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(new List<HU7_GetContactDetailsByInfo_V1.Request>{ req });
+
+        System.assertEquals(1, responses.size(), 'Deve retornar uma resposta por CPF');
+        System.assert(responses[0].Prompt.contains('Maria Souza'), 'Prompt deve conter o nome');
+    }
+
+    @IsTest
+    static void test_ContatoNaoEncontrado() {
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+        req.contactName = 'Inexistente';
+
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(new List<HU7_GetContactDetailsByInfo_V1.Request>{ req });
+
+        System.assertEquals(1, responses.size(), 'Deve retornar uma resposta');
+        System.assert(responses[0].Prompt.contains('Nenhum contato encontrado'), 'Deveria indicar que não encontrou contato');
+    }
+
+    @IsTest
+    static void test_RequestCamposNulos() {
+        HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(new List<HU7_GetContactDetailsByInfo_V1.Request>{ req });
+
+        System.assertEquals(0, responses.size(), 'Sem filtros, deve retornar vazio');
+    }
+
+    @IsTest
+    static void test_RequestListaVazia() {
+        List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(new List<HU7_GetContactDetailsByInfo_V1.Request>());
+
+        System.assertEquals(0, responses.size(), 'Lista de requests vazia, deve retornar vazio');
+    }
+}
