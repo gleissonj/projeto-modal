@@ -1,0 +1,3 @@
+Executa o Prompt Flex responsável por consultar e apresentar os contatos de um grupo econômico. O Prompt irá receber o ID do grupo selecionado e, internamente, chamará a Apex responsável por buscar os dados reais de contato.
+
+
