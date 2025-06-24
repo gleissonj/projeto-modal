@@ -1,0 +1,46 @@
+@IsTest
+public class testeApexTest {
+ @IsTest
+    static void testBuscarContatos() {
+        // 🔹 Criando um grupo econômico fictício (Account)
+        Account grupo = new Account(
+            Name = 'Grupo Teste'
+        );
+        insert grupo;
+
+        // 🔹 Criando um contato fictício
+        Contact contato = new Contact(
+            FirstName = 'Maria',
+            LastName = 'Teste'
+        );
+        insert contato;
+
+        // 🔹 Criando uma AccountContactRelation fictícia
+        AccountContactRelation__c acr = new AccountContactRelation__c(
+            AccountId__c = grupo.Id,
+            Email__c = 'maria.teste@example.com'
+        );
+        insert acr;
+
+        // 🔹 Montando o Request de entrada
+        List<testeApex.Request> requests = new List<testeApex.Request>();
+        testeApex.Request req = new testeApex.Request();
+        req.groupName = grupo.Name;
+        req.groupId = grupo.Id;
+        requests.add(req);
+
+        // 🔹 Executando o método
+        Test.startTest();
+        List<testeApex.Response> responses = testeApex.buscarContatos(requests);
+        Test.stopTest();
+
+        // 🔹 Assertivas
+        System.assertNotEquals(null, responses, 'A lista de respostas não pode ser nula');
+        System.assertEquals(1, responses.size(), 'Deve retornar exatamente uma resposta');
+
+        testeApex.Response res = responses[0];
+        System.assertNotEquals(null, res.Prompt, 'O Prompt não pode ser nulo');
+        System.debug('Prompt gerado: ' + res.Prompt);
+        System.assert(res.Prompt.contains('Grupo Teste'), 'O Prompt deve conter o nome do grupo');
+    }
+}
