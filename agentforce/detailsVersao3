@@ -100,3 +100,26 @@ public with sharing class HU7_GetContactDetailsByInfo_V1 {
         return String.join(promptParts, '\n\n');
     }
 }
+
+
+
+
+@SuppressWarnings('ApexSOQLInjection')
+private static List<AccountContactRelation__c> buscarContatos(Request req) {
+    List<String> conditions = new List<String>();
+
+    if (!String.isBlank(req.contactName))
+        conditions.add('Name LIKE \'%' + String.escapeSingleQuotes(req.contactName) + '%\'');
+
+    if (!String.isBlank(req.contactEmail))
+        conditions.add('Email__c LIKE \'%' + String.escapeSingleQuotes(req.contactEmail) + '%\'');
+
+    if (!String.isBlank(req.contactCPF))
+        conditions.add('CPF__c LIKE \'%' + String.escapeSingleQuotes(req.contactCPF) + '%\'');
+
+    if (conditions.isEmpty()) return new List<AccountContactRelation__c>();
+
+    String queryStr = 'SELECT AccountId__c, Name, Email__c, Phone__c, CPF__c FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
+
+    return Database.query(queryStr);
+}
