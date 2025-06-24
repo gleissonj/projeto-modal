@@ -1,0 +1,92 @@
+@IsTest
+private class testeApex_Test {
+
+    @TestSetup
+    static void setup() {
+        // Criar um Grupo Econômico (Account)
+        Account grupo = new Account(Name = 'Grupo Teste');
+        insert grupo;
+
+        // Criar um Contato vinculado ao grupo
+        Contact contato = new Contact(
+            FirstName = 'Maria',
+            LastName = 'Souza',
+            AccountId = grupo.Id
+        );
+        insert contato;
+
+        // Criar a relação AccountContactRelation__c com os campos usados na consulta
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            ContactId__c = contato.Id,
+            AccountId__c = grupo.Id,
+            Name = contato.FirstName + ' ' + contato.LastName,
+            Email__c = 'maria.souza@teste.com'
+        );
+        insert rel;
+    }
+
+    @IsTest
+    static void test_ContatosEncontrados() {
+        // Buscar o grupo criado no setup
+        Account grupo = [SELECT Id, Name FROM Account WHERE Name = 'Grupo Teste' LIMIT 1];
+
+        // Criar o request
+        List<testeApex.Request> requests = new List<testeApex.Request>();
+        testeApex.Request req = new testeApex.Request();
+        req.groupId = grupo.Id;
+        req.groupName = grupo.Name;
+        requests.add(req);
+
+        Test.startTest();
+        List<testeApex.Response> responses = testeApex.buscarContatos(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deve retornar uma resposta');
+        System.assert(responses[0].Prompt.contains('Maria Souza'), 'O prompt deve conter o nome do contato');
+    }
+
+    @IsTest
+    static void test_GrupoSemContatos() {
+        // Criar um novo grupo sem contatos
+        Account grupoSemContato = new Account(Name = 'Grupo Sem Contato');
+        insert grupoSemContato;
+
+        List<testeApex.Request> requests = new List<testeApex.Request>();
+        testeApex.Request req = new testeApex.Request();
+        req.groupId = grupoSemContato.Id;
+        req.groupName = grupoSemContato.Name;
+        requests.add(req);
+
+        Test.startTest();
+        List<testeApex.Response> responses = testeApex.buscarContatos(requests);
+        Test.stopTest();
+
+        System.assertEquals(1, responses.size(), 'Deve retornar uma resposta mesmo sem contatos');
+        System.assert(responses[0].Prompt.contains('contatos'), 'O prompt deve ter a estrutura de contatos (mesmo que vazio)');
+    }
+
+    @IsTest
+    static void test_GroupIdVazio() {
+        List<testeApex.Request> requests = new List<testeApex.Request>();
+        testeApex.Request req = new testeApex.Request();
+        req.groupId = null;  // GroupId vazio
+        requests.add(req);
+
+        Test.startTest();
+        List<testeApex.Response> responses = testeApex.buscarContatos(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Request inválido com groupId vazio deve retornar vazio');
+    }
+
+    @IsTest
+    static void test_ListaVazia() {
+        List<testeApex.Request> requests = new List<testeApex.Request>();
+
+        Test.startTest();
+        List<testeApex.Response> responses = testeApex.buscarContatos(requests);
+        Test.stopTest();
+
+        System.assertEquals(0, responses.size(), 'Lista de requests vazia deve retornar vazio');
+    }
+}
