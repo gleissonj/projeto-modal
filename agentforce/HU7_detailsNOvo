@@ -106,3 +106,29 @@ public class HU7_GetContactDetailsByInfo_V1 {
         return String.join(promptParts, '\n\n');
     }
 }
+
+
+
+
+
+// Criando a lista de requests
+List<HU7_GetContactDetailsByInfo_V1.Request> requests = new List<HU7_GetContactDetailsByInfo_V1.Request>();
+
+// Criando um request de exemplo
+HU7_GetContactDetailsByInfo_V1.Request req = new HU7_GetContactDetailsByInfo_V1.Request();
+req.contactName = 'Maria';                // Nome parcial ou completo que exista no campo Name do AccountContactRelation__c
+req.contactEmail = null;                  // Pode preencher se quiser testar por email
+req.contactCPF = null;                    // Ou por CPF
+
+// Adicionando o request à lista
+requests.add(req);
+
+// Executando o método
+List<HU7_GetContactDetailsByInfo_V1.Response> responses = HU7_GetContactDetailsByInfo_V1.getDetailsContact(requests);
+
+// Fazendo debug dos resultados
+for (HU7_GetContactDetailsByInfo_V1.Response res : responses) {
+    System.debug('=========== PROMPT GERADO ===========');
+    System.debug(res.Prompt);
+}
+
