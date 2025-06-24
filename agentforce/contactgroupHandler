@@ -1,0 +1,95 @@
+public class testeApex {
+
+    @InvocableMethod(label='Buscar contatos do grupo (Dinâmico - Real)')
+    public static List<Response> buscarContatos(List<Request> requests) {
+        List<Response> responses = new List<Response>();
+
+        Map<Id, String> groupIdToName = new Map<Id, String>();
+        Set<Id> groupIds = validarEColetarGroupIds(requests, groupIdToName);
+
+        if (groupIds.isEmpty()) return responses;
+
+        Map<Id, List<AccountContactRelation__c>> contatosPorGrupo = buscarContatosPorGrupos(groupIds);
+        responses = montarRespostas(requests, groupIdToName, contatosPorGrupo);
+
+        return responses;
+    }
+
+    private static Set<Id> validarEColetarGroupIds(List<Request> requests, Map<Id, String> groupIdToName) {
+        Set<Id> groupIds = new Set<Id>();
+        for (Request req : requests) {
+            if (!String.isBlank(req.groupId) && !String.isBlank(req.groupName)) {
+                groupIds.add(req.groupId);
+                groupIdToName.put(req.groupId, req.groupName);
+            }
+        }
+        return groupIds;
+    }
+
+    private static Map<Id, List<AccountContactRelation__c>> buscarContatosPorGrupos(Set<Id> groupIds) {
+        Map<Id, List<AccountContactRelation__c>> result = new Map<Id, List<AccountContactRelation__c>>();
+
+        for (AccountContactRelation__c arc : [
+            SELECT AccountId__c, Contact.Name, Email__c
+            FROM AccountContactRelation__c
+            WHERE AccountId__c IN :groupIds
+        ]) {
+            if (arc.AccountId__c != null) {
+                if (!result.containsKey(arc.AccountId__c)) {
+                    result.put(arc.AccountId__c, new List<AccountContactRelation__c>());
+                }
+                result.get(arc.AccountId__c).add(arc);
+            }
+        }
+        return result;
+    }
+
+    private static List<Response> montarRespostas(List<Request> requests, Map<Id, String> groupIdToName, Map<Id, List<AccountContactRelation__c>> contatosPorGrupo) {
+        List<Response> responses = new List<Response>();
+
+        for (Request req : requests) {
+            if (String.isBlank(req.groupId) || String.isBlank(req.groupName)) continue;
+
+            Map<String, Object> payload = new Map<String, Object>();
+            payload.put('groupName', req.groupName);
+
+            List<Contato> listaContatos = new List<Contato>();
+            List<AccountContactRelation__c> contatosDoGrupo = contatosPorGrupo.get(req.groupId);
+
+            if (contatosDoGrupo != null) {
+                for (AccountContactRelation__c arc : contatosDoGrupo) {
+                    if (arc.Contact != null) {
+                        Contato contato = new Contato();
+                        contato.email = arc.Contact.Name;
+                        listaContatos.add(contato);
+                    }
+                }
+            }
+
+            payload.put('contatos', listaContatos);
+
+            Response r = new Response();
+            r.prompt = JSON.serializePretty(payload);
+            responses.add(r);
+        }
+
+        return responses;
+    }
+
+    public class Request {
+        @InvocableVariable(required=true)
+        public String groupName;
+
+        @InvocableVariable(required=true)
+        public String groupId;
+    }
+
+    public class Contato {
+        public String email;
+    }
+
+    public class Response {
+        @InvocableVariable(label='Prompt', description='Prompt')
+        public String Prompt;
+    }
+}
