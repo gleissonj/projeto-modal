@@ -93,3 +93,26 @@ public class testeApex {
         public String Prompt;
     }
 }
+
+
+
+
+// Criando a lista de requests
+List<testeApex.Request> requests = new List<testeApex.Request>();
+
+// Criando um request de exemplo
+testeApex.Request req = new testeApex.Request();
+req.groupName = 'Grupo Econômico Teste';  // Altere para um grupo válido da sua org
+req.groupId = '0017h00000XXXXXXAAQ';      // Substitua por um AccountId válido (do tipo Grupo Econômico)
+
+// Adicionando o request à lista
+requests.add(req);
+
+// Executando o método
+List<testeApex.Response> responses = testeApex.buscarContatos(requests);
+
+// Fazendo debug do resultado
+for (testeApex.Response res : responses) {
+    System.debug('=========== PROMPT GERADO ===========');
+    System.debug(res.Prompt);
+}
