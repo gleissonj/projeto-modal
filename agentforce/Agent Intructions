@@ -1,3 +1,9 @@
+what do you want this topic to do (optional)
+This topic handles user requests related to Grupo Econômico data, such as Contacts, Responsible parties, Subgroups, and Registration details.
+Initially, it is focused on responding to queries about the group’s contacts.
+The topic uses modular actions and flexible prompts to dynamically fetch and present the requested information.
+
+
 name topico: Grupo Econômico Data Management
 
 classification description:
