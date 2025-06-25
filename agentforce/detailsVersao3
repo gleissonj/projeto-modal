@@ -107,3 +107,31 @@ public with sharing class HU7_GetContactDetailsByInfo_V1 {
         return String.join(promptParts, '\n\n');
     }
 }
+
+
+
+
+
+
+private static String buildQuery(Request req) {
+    Map<String, String> fieldToValue = new Map<String, String>{
+        'Name' => req.contactName,
+        'Email__c' => req.contactEmail,
+        'CPF__c' => req.contactCPF
+    };
+
+    List<String> conditions = new List<String>();
+
+    // ✅ Condição fixa
+    conditions.add('Account.RecordType.DeveloperName = \'HU7GrupoEconomico\'');
+
+    // ✅ Condições dinâmicas
+    for (String field : fieldToValue.keySet()) {
+        String value = fieldToValue.get(field);
+        if (!String.isBlank(value)) {
+            conditions.add(field + ' LIKE \'%' + String.escapeSingleQuotes(value) + '%\'');
+        }
+    }
+
+    return 'SELECT AccountId__c, Name, Email__c, Phone__c, CPF__c FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
+}
