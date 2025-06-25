@@ -1,0 +1,18 @@
+1_ A arquitetura que estou usando é um único tópico genérico com múltiplas actions, cada uma chamando uma Apex 
+com responsabilidade única. Essa abordagem modular é recomendada? Existe alguma limitação ou risco 
+que devemos observar no médio prazo?”
+
+2_ o LLm do agente consegue interpretar uma intencao com like, por exemplo me trga todos as contas que comecam com magazine 
+
+
+
+3_ O que queriamos era msm ganhar tempo ,ao utilizar o agent defaul, q ele conseguisse relizar consultas em objetos nativos 
+sem precisar de instrucoes , topicos e actions. Que ele conseguisse entender as intencoes dos usuarios e detecta a informacao em objetos nativos automacitcamente 
+
+
+4 - Em casos de regras de negocios aq q utilizamos a estrtura das informçãoes com objetos relacionados. Pra conseguir instruir o agent seria somente com o uso de actions e flow ou apex msm ne´? 
+por exemplo:  o usuario pergunta  quem sao os contatos da magazine luiza. Se apenas por instrucoes eu falar com ele pegue de account todos os contatos q iniciam com magazine luize e tenha o recordtype de grupo enconomoico , se tiver mais de uma deixe o usuario esolher, apos isso pegue o id desse registro e busque no obejto account relacion seus contatos. Essas regras o LLM consegue tratar ou é melhor deixar na classe apex ou flows msm .
+
+5_ motivo de deixar a IA supor algo 
+
+
