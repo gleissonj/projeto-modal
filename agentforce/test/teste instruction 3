@@ -41,3 +41,36 @@ Caso o agente não saiba a resposta:
 Se, em qualquer situação, o agente não souber a resposta ou não encontrar dados dentro das consultas especificadas, não tente buscar informações externas (como dados da internet).
 
 O agente deve simplesmente informar ao usuário que não conseguiu obter a resposta.
+
+
+-------------------------
+
+
+
+
+
+Para descobrir os responsáveis de um grupo:
+Quando o usuário solicitar os responsáveis de um grupo, o agente deve primeiro realizar uma consulta no objeto Account para obter o valor do campo Id do grupo solicitado, utilizando os filtros RecordTypeDeveloperName__c = 'HU7_Grupo_Economico', IsExcluidoFinancas__c = false.
+
+A consulta deve ser feita da seguinte maneira:
+
+sql
+Copy
+SELECT Id 
+FROM Account 
+WHERE RecordTypeDeveloperName__c = 'HU7_Grupo_Economico' 
+  AND Name = 'Nome do Grupo'
+Se nenhum grupo for encontrado (ou seja, a consulta retornar nenhum resultado), o agente deve interromper a consulta e retornar a mensagem:
+"Grupo não encontrado."
+
+Após obter o valor de Id do grupo, o agente deve usar esse valor como filtro para realizar uma segunda consulta no objeto ObjectUserToTerriotio, utilizando o campo ObjectId para buscar os responsáveis associados ao grupo.
+
+A segunda consulta seria:
+
+sql
+Copy
+SELECT UserId, User.Name 
+FROM ObjectUserToTerriotio 
+WHERE ObjectId = 'Valor do Id Obtido'
+Se nenhum responsável for encontrado, o agente deve parar a consulta e retornar a mensagem:
+"Nenhum responsável encontrado para este grupo."
