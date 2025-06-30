@@ -1,0 +1,78 @@
+public with sharing class BuscarContatosPorGrupoENome2 {
+
+    public class Request {
+        @InvocableVariable(required=false)
+        public Id accountId;
+
+        @InvocableVariable(required=false)
+        public String nomeContato;
+    }
+
+    public class DadosContato {
+        @InvocableVariable public String nomeContato;
+        @InvocableVariable public String perfilContato;
+        @InvocableVariable public String telefoneContato;
+        @InvocableVariable public String emailContato;
+        @InvocableVariable public String nomeGrupo;
+        @InvocableVariable public String codigoGrupo;
+        @InvocableVariable public String cargoContato;
+    }
+
+    public class Response {
+        @InvocableVariable public List<DadosContato> dadoscontato;
+    }
+
+    @InvocableMethod(label='Buscar Contatos por Grupo e Nome2')
+    public static List<Response> run(List<Request> requisicoes) {
+        List<Response> resultados = new List<Response>();
+
+        for (Request req : requisicoes) {
+            if (req.accountId == null && String.isBlank(req.nomeContato)) {
+                continue;
+            }
+
+            List<String> filtros = new List<String>();
+
+            if (req.accountId != null) {
+                filtros.add('AccountId__c = \'' + String.escapeSingleQuotes(req.accountId) + '\'');
+            }
+
+            if (!String.isBlank(req.nomeContato)) {
+                String nomeLike = '%' + String.escapeSingleQuotes(req.nomeContato) + '%';
+                filtros.add('Name LIKE \'' + nomeLike + '\'');
+            }
+
+            String query = 'SELECT AccountId__r.Name, AccountId__r.Hu7IDExterno__c, ' +
+                           'Name, Email__c, CPF__c, Cargo__c, Perfil__c ' +
+                           'FROM AccountContactRelation__c';
+
+            if (!filtros.isEmpty()) {
+                query += ' WHERE ' + String.join(filtros, ' AND ');
+            }
+
+            List<AccountContactRelation__c> relacoes = Database.query(query);
+
+            List<DadosContato> listaContatos = new List<DadosContato>();
+
+            for (AccountContactRelation__c rel : relacoes) {
+                if (rel != null && rel.AccountId__r != null) {
+                    DadosContato contato = new DadosContato();
+                    contato.nomeContato = rel.Name;
+                    contato.emailContato = rel.Email__c;
+                    contato.telefoneContato = '123456'; // Ou usar um campo real se disponível
+                    contato.perfilContato = rel.Perfil__c;
+                    contato.nomeGrupo = rel.AccountId__r.Name;
+                    contato.codigoGrupo = rel.AccountId__r.Hu7IDExterno__c;
+                    contato.cargoContato = rel.Cargo__c;
+                    listaContatos.add(contato);
+                }
+            }
+
+            Response r = new Response();
+            r.dadoscontato = listaContatos;
+            resultados.add(r);
+        }
+		System.debug('Test' + resultados );
+        return resultados;
+    }
+}
