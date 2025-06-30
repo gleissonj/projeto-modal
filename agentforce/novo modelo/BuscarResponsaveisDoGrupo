@@ -1,0 +1,81 @@
+public with sharing class BuscarResponsaveisDoGrupo {
+
+    public class Request {
+        @InvocableVariable(required=true)
+        public Id accountId;
+    }
+
+    public class DadosResponsavel {
+        @InvocableVariable public String nome;
+        @InvocableVariable public String role;
+        @InvocableVariable public String territorio;
+    }
+
+    public class Response {
+        @InvocableVariable public List<DadosResponsavel> dadosresponsaveis;
+    }
+
+    @InvocableMethod(label='Buscar Responsáveis do Grupo')
+    public static List<Response> run(List<Request> requisicoes) {
+        Set<Id> accountIds = new Set<Id>();
+        for (Request req : requisicoes) {
+            if (req.accountId != null) accountIds.add(req.accountId);
+        }
+
+        Map<Id, List<DadosResponsavel>> responsaveisPorGrupo = buscarResponsaveis(accountIds);
+
+        List<Response> resultados = new List<Response>();
+        for (Request req : requisicoes) {
+            List<DadosResponsavel> lista = responsaveisPorGrupo.containsKey(req.accountId)
+                ? responsaveisPorGrupo.get(req.accountId)
+                : new List<DadosResponsavel>();
+
+            Response r = new Response();
+            r.dadosresponsaveis = lista;
+            resultados.add(r);
+        }
+		System.debug('Teste' + resultados);
+        return resultados;
+    }
+
+    private static Map<Id, List<DadosResponsavel>> buscarResponsaveis(Set<Id> grupoIds) {
+        Map<Id, List<DadosResponsavel>> resultado = new Map<Id, List<DadosResponsavel>>();
+
+        if (grupoIds.isEmpty()) return resultado;
+
+        List<ObjectUserTerritory2View__c> registros = [
+            SELECT Account__c, RoleTerritory2__c,
+                   Hu7_Id_Externo_c__c,
+                   Name__c
+            FROM ObjectUserTerritory2View__c
+            WHERE Account__c IN :grupoIds
+        ];
+
+        for (ObjectUserTerritory2View__c r : registros) {
+            Id grupoId = r.Account__c ;
+            if (grupoId == null) continue;
+
+            DadosResponsavel d = new DadosResponsavel();
+            d.nome = r.Name__c;
+            d.role = normalizarRole(r.RoleTerritory2__c);
+            d.territorio = r.Hu7_Id_Externo_c__c;
+
+            if (!resultado.containsKey(grupoId)) {
+                resultado.put(grupoId, new List<DadosResponsavel>());
+            }
+            resultado.get(grupoId).add(d);
+        }
+
+        return resultado;
+    }
+
+    private static String normalizarRole(String roleTecnico) {
+        Map<String, String> roleMap = new Map<String, String>{
+            'HU7_Responsavel' => 'Responsável',
+            'HU7_AC'          => 'AC',
+            'HU7_Hunter'      => 'Hunter',
+            'HU7_NEC'         => 'NEC'
+        };
+        return roleMap.containsKey(roleTecnico) ? roleMap.get(roleTecnico) : roleTecnico;
+    }
+}
