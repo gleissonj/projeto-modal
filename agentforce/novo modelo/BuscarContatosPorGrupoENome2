@@ -98,3 +98,16 @@ public with sharing class BuscarContatosPorGrupoENome2 {
         return resultado;
     }
 }
+
+
+
+// Criar entrada
+BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+req.accountId = null; // <-- Substitua pelo ID real do grupo
+req.nomeContato = 'marcela';             // Opcional (use null se quiser testar só por grupo)
+
+// Lista de entrada
+List<BuscarContatosPorGrupoENome2.Request> lista = new List<BuscarContatosPorGrupoENome2.Request>{ req };
+
+// Executar o método invocable
+List<BuscarContatosPorGrupoENome2.Response> resultados = BuscarContatosPorGrupoENome2.run(lista);
