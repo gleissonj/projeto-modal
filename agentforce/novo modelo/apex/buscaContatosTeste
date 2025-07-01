@@ -1,0 +1,87 @@
+
+@isTest
+public class BuscarContatosPorGrupoENome2Test {
+    @isTest
+    static void testBuscarContatosPorGrupoENome2_Completo() {
+        // Criar dados de conta (grupo econômico)
+        Account grupo = new Account(
+            Name = 'Grupo Teste',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP001',
+            IsExcluidoFinancas__c = false
+        );
+        insert grupo;
+
+        // Criar um contato relacionado à conta
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            AccountId__c = grupo.Id,
+            Name = 'João da Silva',
+            Email__c = 'joao@teste.com',
+            CPF__c = '123.456.789-00',
+            Cargo__c = 'Ceo',
+            Perfil__c = 'analista'
+        );
+        insert rel;
+
+        // Criar requisição com nome e ID da conta
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = grupo.Id;
+        req.nomeContato = 'João';
+
+        List<BuscarContatosPorGrupoENome2.Request> requisicoes = new List<BuscarContatosPorGrupoENome2.Request>{ req };
+
+        Test.startTest();
+        List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(requisicoes);
+        Test.stopTest();
+
+        // Verificações
+        System.assertEquals(1, respostas.size(), 'Deve retornar uma resposta');
+        System.assertEquals(1, respostas[0].dadoscontato.size(), 'Deve retornar um contato');
+        System.assertEquals('João da Silva', respostas[0].dadoscontato[0].nomeContato);
+        System.assertEquals('GRP001', respostas[0].dadoscontato[0].codigoGrupo);
+        System.assertEquals('Grupo Teste', respostas[0].dadoscontato[0].nomeGrupo);
+    }
+
+    @isTest
+    static void testBuscarContatosPorGrupoENome2_SemFiltros() {
+        // Teste com lista vazia
+        Test.startTest();
+        List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>());
+        Test.stopTest();
+
+        System.assertEquals(0, respostas.size(), 'Sem requisições deve retornar vazio');
+    }
+
+    @isTest
+    static void testBuscarContatosPorGrupoENome2_ContatoNaoBate() {
+        // Criar dados
+        Account grupo = new Account(
+            Name = 'Grupo X',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP123',
+            IsExcluidoFinancas__c = false
+        );
+        insert grupo;
+
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            AccountId__c = grupo.Id,
+            Name = 'Maria Oliveira',
+            Email__c = 'maria@teste.com',
+            CPF__c = '987.654.321-00',
+            Cargo__c = 'Gerente',
+            Perfil__c = 'financeiro'
+        );
+        insert rel;
+
+        // Requisição com nome que não bate
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = grupo.Id;
+        req.nomeContato = 'João';
+
+        List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+
+        System.assertEquals(1, respostas.size(), 'Mesmo sem contato compatível deve retornar resposta');
+        System.assertEquals(0, respostas[0].dadoscontato.size(), 'Contato com nome não compatível não deve ser retornado');
+    }
+
+}
