@@ -85,3 +85,40 @@ public class BuscarContatosPorGrupoENome2Test {
     }
 
 }
+
+
+
+
+@isTest
+static void testComApenasNome() {
+    BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+    req.nomeContato = 'João'; // sem accountId
+
+    List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+    System.assertEquals(1, respostas.size());
+}
+
+@isTest
+static void testComApenasAccountId() {
+    Account grupo = new Account(Name = 'Grupo X', Hu7IDExterno__c = 'G999', RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId());
+    insert grupo;
+
+    BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+    req.accountId = grupo.Id; // sem nomeContato
+
+    List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+    System.assertEquals(1, respostas.size());
+}
+
+@isTest
+static void testRequestVazia() {
+    BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request(); // sem nada
+    List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+    System.assertEquals(1, respostas.size());
+}
+
+@isTest
+static void testRequisicaoNula() {
+    List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(null);
+    System.assertEquals(0, respostas.size());
+}
