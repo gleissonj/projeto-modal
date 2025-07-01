@@ -1,0 +1,31 @@
+busca grupo e Nome
+
+
+Esta Action busca contatos vinculados a um grupo econômico com base no ID da conta do grupo (accountId) e/ou no nome parcial de um contato (nomeContato). Retorna uma lista de objetos de contato com informações como nome, e-mail, perfil, telefone e dados do grupo associado.
+
+accoutId
+ID da conta do grupo econômico. Deve ser obtido a partir de uma Action anterior com base no nome do grupo informado pelo usuário.
+
+
+
+*nomeContatoInstructions
+Nome do contato a ser buscado, conforme mencionado pelo usuário. Pode ser um nome parcial.
+
+
+dadoscontatoInstructions
+Lista de contatos relacionados ao grupo. Cada item contém os campos: - nomeContato: nome do contato - emailContato: e-mail do contato - telefoneContato: telefone do contato - perfilContato: perfil (ex: analista, financeiro) - nomeGrupo: nome da conta do grupo - codigoGrupo: código do grupo (campo Hu7IDExterno__c)
+
+
+
+
+
+responsaveis 
+
+Esta action busca os responsáveis como officers, ACs, Hunters, etc, dentro de um grupo econômico, com base no Id do grupo fornecido. A consulta deve ser realizada no objeto ObjectUserTerritory, utilizando o campo ObjectId para filtrar os responsáveis relacionados ao grupo solicitado. A action retornará os dados de responsáveis (nome, territorio que esta, etc.) que correspondem ao grupo.
+
+*accountIdInstructions
+O Id do grupo econômico para o qual os responsáveis devem ser recuperados. Este Id é obtido após a consulta no objeto Account utilizando o filtro RecordTypeDeveloperName__c = 'HU7_Grupo_Economico' e o nome do grupo.
+
+
+*dadosresponsaveisInstructions
+Dados dos responsáveis retornados para o grupo econômico solicitado. Esses dados incluem informações como nome, se é Responsável, AC, Hunter, etc.).
