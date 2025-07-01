@@ -43,12 +43,14 @@ public with sharing class BuscarResponsaveisDoGrupo {
 
         if (grupoIds.isEmpty()) return resultado;
 
+        Id primeiroGrupoId = grupoIds.iterator().next();
+
         List<ObjectUserTerritory2View__c> registros = [
             SELECT Account__c, RoleTerritory2__c,
                    Hu7_Id_Externo_c__c,
                    Name__c
             FROM ObjectUserTerritory2View__c
-            WHERE Account__c IN :grupoIds
+            WHERE Account__c = :primeiroGrupoId
         ];
 
         for (ObjectUserTerritory2View__c r : registros) {

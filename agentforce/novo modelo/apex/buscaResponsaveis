@@ -1,0 +1,100 @@
+@isTest
+private class BuscarResponsaveisDoGrupoTest {
+
+    @isTest
+    static void testComResponsavelValido() {
+        // Criar conta (grupo econômico)
+        Account grupo = new Account(
+            Name = 'Grupo Exemplo',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP100',
+            IsExcluidoFinancas__c = false
+        );
+        insert grupo;
+
+        // Inserir registro de ObjectUserTerritory2View__c associado ao grupo
+        ObjectUserTerritory2View__c rel = new ObjectUserTerritory2View__c(
+            Account__c = grupo.Id,
+            RoleTerritory2__c = 'HU7_AC',
+            Hu7_Id_Externo_c__c = 'SP123',
+            Name__c = 'Maria Analista'
+        );
+        insert rel;
+
+        // Criar requisição
+        BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
+        req.accountId = grupo.Id;
+
+        // Executar método
+        Test.startTest();
+        List<BuscarResponsaveisDoGrupo.Response> resposta = BuscarResponsaveisDoGrupo.run(new List<BuscarResponsaveisDoGrupo.Request>{ req });
+        Test.stopTest();
+
+        // Asserts
+        System.assertEquals(1, resposta.size(), 'Deve retornar uma resposta');
+        System.assertEquals(1, resposta[0].dadosresponsaveis.size(), 'Deve retornar um responsável');
+        System.assertEquals('Maria Analista', resposta[0].dadosresponsaveis[0].nome);
+        System.assertEquals('AC', resposta[0].dadosresponsaveis[0].role);
+        System.assertEquals('SP123', resposta[0].dadosresponsaveis[0].territorio);
+    }
+
+    @isTest
+    static void testSemAccountId() {
+        // Requisição nula ou sem ID
+        BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
+        req.accountId = null;
+
+        List<BuscarResponsaveisDoGrupo.Response> resposta = BuscarResponsaveisDoGrupo.run(new List<BuscarResponsaveisDoGrupo.Request>{ req });
+
+        System.assertEquals(1, resposta.size(), 'Mesmo sem ID, deve retornar lista de 1');
+        System.assertEquals(0, resposta[0].dadosresponsaveis.size(), 'Sem ID, lista deve estar vazia');
+    }
+
+    @isTest
+    static void testSemResponsavelParaGrupo() {
+        // Criar grupo sem dados na ObjectUserTerritory2View__c
+        Account grupo = new Account(
+            Name = 'Grupo Sem Responsável',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP200',
+            IsExcluidoFinancas__c = false
+        );
+        insert grupo;
+
+        BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
+        req.accountId = grupo.Id;
+
+        List<BuscarResponsaveisDoGrupo.Response> resposta = BuscarResponsaveisDoGrupo.run(new List<BuscarResponsaveisDoGrupo.Request>{ req });
+
+        System.assertEquals(1, resposta.size(), 'Deve retornar uma resposta mesmo sem responsáveis');
+        System.assertEquals(0, resposta[0].dadosresponsaveis.size(), 'Não deve haver responsáveis');
+    }
+
+    @isTest
+    static void testRoleNaoMapeada() {
+        // Criar grupo
+        Account grupo = new Account(
+            Name = 'Grupo Sem Role Mapeada',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP300',
+            IsExcluidoFinancas__c = false
+        );
+        insert grupo;
+
+        // Inserir um responsável com role não mapeada
+        ObjectUserTerritory2View__c rel = new ObjectUserTerritory2View__c(
+            Account__c = grupo.Id,
+            RoleTerritory2__c = 'HU7_ZonaObscura',
+            Hu7_Id_Externo_c__c = 'MG000',
+            Name__c = 'Fulano Misterioso'
+        );
+        insert rel;
+
+        BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
+        req.accountId = grupo.Id;
+
+        List<BuscarResponsaveisDoGrupo.Response> resposta = BuscarResponsaveisDoGrupo.run(new List<BuscarResponsaveisDoGrupo.Request>{ req });
+
+        System.assertEquals('HU7_ZonaObscura', resposta[0].dadosresponsaveis[0].role, 'Role não mapeada deve retornar original');
+    }
+}
