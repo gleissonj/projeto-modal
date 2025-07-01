@@ -89,3 +89,8 @@ List<BuscarResponsaveisDoGrupo.Request> entradas = new List<BuscarResponsaveisDo
 // 3. Chamar o método invocable
 List<BuscarResponsaveisDoGrupo.Response> respostas = BuscarResponsaveisDoGrupo.run(entradas);
 }
+
+
+
+
+Id primeiroGrupoId = grupoIds.iterator().next();
