@@ -9,30 +9,26 @@ private static List<AccountContactRelation__c> buscarContatos(List<Request> requ
 
     if (ids.isEmpty() && nomes.isEmpty()) return new List<AccountContactRelation__c>();
 
-    String baseQuery = 'SELECT AccountId__r.Name, AccountId__r.Hu7IDExterno__c, ' +
-                       'Name, Email__c, CPF__c, Cargo__c, Perfil__c ' +
-                       'FROM AccountContactRelation__c WHERE ';
+    List<AccountContactRelation__c> resultado = [SELECT 
+        AccountId__r.Name,
+        AccountId__r.Hu7IDExterno__c,
+        Name,
+        Email__c,
+        CPF__c,
+        Cargo__c,
+        Perfil__c
+        FROM AccountContactRelation__c
+        WHERE
+            (AccountId__c IN :ids OR :ids.isEmpty()) AND
+            (
+                :nomes.isEmpty() OR
+                (
+                    Name != null AND (
+                        Name LIKE :('' + nomes[0] + '%') // apenas 1 nome para evitar concatenação insegura
+                    )
+                )
+            )
+    ];
 
-    List<String> filtros = new List<String>();
-    Map<String, Object> bindParams = new Map<String, Object>();
-
-    if (!ids.isEmpty()) {
-        filtros.add('AccountId__c IN :ids');
-        bindParams.put('ids', ids);
-    }
-
-    if (!nomes.isEmpty()) {
-        List<String> nomeConditions = new List<String>();
-        Integer idx = 0;
-        for (String nome : nomes) {
-            String bindKey = 'nome' + idx;
-            nomeConditions.add('Name LIKE :' + bindKey);
-            bindParams.put(bindKey, nome + '%');
-            idx++;
-        }
-        filtros.add('(' + String.join(nomeConditions, ' OR ') + ')');
-    }
-
-    String finalQuery = baseQuery + String.join(filtros, ' AND ');
-    return Database.queryWithBinds(finalQuery, bindParams);
+    return resultado;
 }
