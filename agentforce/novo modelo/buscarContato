@@ -3,6 +3,8 @@ public with sharing class BuscarContatosPorGrupoENome2 {
     public class Request {
         @InvocableVariable public Id accountId;
         @InvocableVariable public String nomeContato;
+        @InvocableVariable public String emailContato;
+        @InvocableVariable public String cpfContato;
     }
 
     public class DadosContato {
@@ -22,63 +24,90 @@ public with sharing class BuscarContatosPorGrupoENome2 {
     @InvocableMethod(label='Buscar Contatos por Grupo e Nome2')
     public static List<Response> run(List<Request> requisicoes) {
         List<Response> respostas = new List<Response>();
-
         if (requisicoes == null || requisicoes.isEmpty()) return respostas;
 
         for (Request req : requisicoes) {
-            List<AccountContactRelation__c> contatos = buscarContatos(req);
-            List<DadosContato> contatosFiltrados = filtrarContatosParaRequest(contatos, req);
-
+            List<DadosContato> dados = buscarContatos(req);
             Response resp = new Response();
-            resp.dadoscontato = contatosFiltrados;
+            resp.dadoscontato = dados;
             respostas.add(resp);
         }
 
         return respostas;
     }
 
-    // Refatorado: cada request gera sua query com base nos filtros presentes
-    private static List<AccountContactRelation__c> buscarContatos(Request req) {
-        String query = buildQuery(req);
-        if (String.isBlank(query)) return new List<AccountContactRelation__c>();
-        return Database.query(query);
-    }
+    private static List<DadosContato> buscarContatos(Request req) {
+        if (req.accountId == null) return new List<DadosContato>();
 
-    // Método seguro para gerar a query dinamicamente
-    private static String buildQuery(Request req) {
-        List<String> conditions = new List<String>();
+        // Buscar ContactId relacionados à conta
+        List<AccountContactRelation> relacoes = [
+            SELECT ContactId
+            FROM AccountContactRelation
+            WHERE AccountId = :req.accountId
+        ];
 
-        if (!String.isBlank(req.nomeContato)) {
-            String nomeEscapado = String.escapeSingleQuotes(req.nomeContato);
-            conditions.add("Name LIKE '" + nomeEscapado + "%'");
+        Set<Id> contactIds = new Set<Id>();
+        for (AccountContactRelation rel : relacoes) {
+            if (rel.ContactId != null) contactIds.add(rel.ContactId);
         }
 
-        if (req.accountId != null) {
-            conditions.add("AccountId__c = '" + String.escapeSingleQuotes(String.valueOf(req.accountId)) + "'");
+        if (contactIds.isEmpty()) return new List<DadosContato>();
+
+        // Montar filtros dinâmicos
+        Map<String, String> filtros = new Map<String, String>{
+            'Name' => req.nomeContato,
+            'Email' => req.emailContato,
+            'CPF__c' => req.cpfContato
+        };
+
+        String query = buildContactQuery(filtros, contactIds);
+        if (String.isBlank(query)) return new List<DadosContato>();
+
+        List<Contact> contatos = Database.query(query);
+
+        // Buscar dados do grupo
+        Account grupo = [
+            SELECT Name, Hu7IDExterno__c
+            FROM Account
+            WHERE Id = :req.accountId
+            LIMIT 1
+        ];
+
+        List<DadosContato> resultado = new List<DadosContato>();
+        for (Contact c : contatos) {
+            DadosContato d = new DadosContato();
+            d.nomeContato     = c.Name;
+            d.emailContato    = c.Email;
+            d.telefoneContato = c.Phone;
+            d.perfilContato   = c.Perfil__c;
+            d.cargoContato    = c.Cargo__c;
+            d.nomeGrupo       = grupo.Name;
+            d.codigoGrupo     = grupo.Hu7IDExterno__c;
+
+            resultado.add(d);
+        }
+
+        return resultado;
+    }
+
+    // Monta a query dinamicamente com os filtros preenchidos
+    private static String buildContactQuery(Map<String, String> filtros, Set<Id> contactIds) {
+        List<String> conditions = new List<String>();
+
+        // Sempre restringe pelos ContactIds permitidos
+        conditions.add('Id IN (\'' + String.join(new List<String>(contactIds), '\',\'') + '\')');
+
+        // Filtros adicionais por nome/email/cpf
+        for (String campo : filtros.keySet()) {
+            String valor = filtros.get(campo);
+            if (!String.isBlank(valor)) {
+                conditions.add(campo + ' LIKE \'' + String.escapeSingleQuotes(valor) + '%\'');
+            }
         }
 
         if (conditions.isEmpty()) return null;
 
-        return 'SELECT AccountId__r.Name, AccountId__r.Hu7IDExterno__c, ' +
-               'Name, Email__c, CPF__c, Cargo__c, Perfil__c ' +
-               'FROM AccountContactRelation__c WHERE ' + String.join(conditions, ' AND ');
+        return 'SELECT Id, Name, Email, CPF__c, Phone, Perfil__c, Cargo__c FROM Contact WHERE ' +
+               String.join(conditions, ' AND ');
     }
-
-    private static List<DadosContato> filtrarContatosParaRequest(List<AccountContactRelation__c> contatos, Request req) {
-        List<DadosContato> resultado = new List<DadosContato>();
-
-        Boolean filtrarPorId = req.accountId != null;
-        Boolean filtrarPorNome = !String.isBlank(req.nomeContato);
-        String nomeInputLower = filtrarPorNome ? req.nomeContato.toLowerCase() : null;
-
-        for (AccountContactRelation__c rel : contatos) {
-            if (filtrarPorId && rel.AccountId__c != req.accountId) continue;
-            if (filtrarPorNome) {
-                if (rel.Name == null || !rel.Name.toLowerCase().startsWith(nomeInputLower)) continue;
-            }
-
-            DadosContato contato = new DadosContato();
-            contato.nomeContato     = rel.Name;
-            contato.emailContato    = rel.Email__c;
-            contato.telefoneContato = '123456'; // ⚠️ Ajuste aqui se tiver o campo real
-            contato.perfilContato
+}
