@@ -1,34 +1,29 @@
-private static List<AccountContactRelation__c> buscarContatos(List<Request> requisicoes) {
-    Set<Id> ids = new Set<Id>();
-    Set<String> nomes = new Set<String>();
+private static String buildQuery(Request req) {
+    Map<String, String> fieldToValue = new Map<String, String>{
+        'Name' => req.nomeContato,         // Corrigido para bater com sua classe real
+        'Email__c' => null,                // Adicione mais campos se quiser
+        'CPF__c' => null
+    };
 
-    for (Request req : requisicoes) {
-        if (req.accountId != null) ids.add(req.accountId);
-        if (!String.isBlank(req.nomeContato)) nomes.add(req.nomeContato);
+    List<String> conditions = new List<String>();
+
+    for (String field : fieldToValue.keySet()) {
+        String value = fieldToValue.get(field);
+        if (!String.isBlank(value)) {
+            // Escapa e força prefixo (mais seguro que '%'+var+'%')
+            String escaped = String.escapeSingleQuotes(value);
+            conditions.add(field + " LIKE '" + escaped + "%'");
+        }
     }
 
-    if (ids.isEmpty() && nomes.isEmpty()) return new List<AccountContactRelation__c>();
+    if (req.accountId != null) {
+        conditions.add("AccountId__c = '" + String.escapeSingleQuotes(req.accountId) + "'");
+    }
 
-    List<AccountContactRelation__c> resultado = [SELECT 
-        AccountId__r.Name,
-        AccountId__r.Hu7IDExterno__c,
-        Name,
-        Email__c,
-        CPF__c,
-        Cargo__c,
-        Perfil__c
-        FROM AccountContactRelation__c
-        WHERE
-            (AccountId__c IN :ids OR :ids.isEmpty()) AND
-            (
-                :nomes.isEmpty() OR
-                (
-                    Name != null AND (
-                        Name LIKE :('' + nomes[0] + '%') // apenas 1 nome para evitar concatenação insegura
-                    )
-                )
-            )
-    ];
+    if (conditions.isEmpty()) return null;
 
-    return resultado;
+    String query = 'SELECT AccountId__c, Name, Email__c, CPF__c FROM AccountContactRelation__c WHERE ' +
+                   String.join(conditions, ' AND ');
+
+    return query;
 }
