@@ -1,0 +1,38 @@
+private static List<AccountContactRelation__c> buscarContatos(List<Request> requisicoes) {
+    Set<Id> ids = new Set<Id>();
+    Set<String> nomes = new Set<String>();
+
+    for (Request req : requisicoes) {
+        if (req.accountId != null) ids.add(req.accountId);
+        if (!String.isBlank(req.nomeContato)) nomes.add(req.nomeContato);
+    }
+
+    if (ids.isEmpty() && nomes.isEmpty()) return new List<AccountContactRelation__c>();
+
+    String baseQuery = 'SELECT AccountId__r.Name, AccountId__r.Hu7IDExterno__c, ' +
+                       'Name, Email__c, CPF__c, Cargo__c, Perfil__c ' +
+                       'FROM AccountContactRelation__c WHERE ';
+
+    List<String> filtros = new List<String>();
+    Map<String, Object> bindParams = new Map<String, Object>();
+
+    if (!ids.isEmpty()) {
+        filtros.add('AccountId__c IN :ids');
+        bindParams.put('ids', ids);
+    }
+
+    if (!nomes.isEmpty()) {
+        List<String> nomeConditions = new List<String>();
+        Integer idx = 0;
+        for (String nome : nomes) {
+            String bindKey = 'nome' + idx;
+            nomeConditions.add('Name LIKE :' + bindKey);
+            bindParams.put(bindKey, nome + '%');
+            idx++;
+        }
+        filtros.add('(' + String.join(nomeConditions, ' OR ') + ')');
+    }
+
+    String finalQuery = baseQuery + String.join(filtros, ' AND ');
+    return Database.queryWithBinds(finalQuery, bindParams);
+}
