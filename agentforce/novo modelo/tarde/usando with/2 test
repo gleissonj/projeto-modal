@@ -1,0 +1,81 @@
+@isTest
+private class BuscarContatosPorGrupoENome2Test {
+
+    @isTest
+    static void deveRetornarContatosPorGrupoENome() {
+        // Criar uma Account (Grupo)
+        Account grupo = new Account(
+            Name = 'Grupo Ambev',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP001'
+        );
+        insert grupo;
+
+        // Criar um Contact
+        Contact contato = new Contact(
+            FirstName = 'João',
+            LastName = 'Silva',
+            Email = 'joao@ambev.com',
+            Phone = '(11) 99999-0000',
+            CPF__c = '123.456.789-00'
+        );
+        insert contato;
+
+        // Criar a relação AccountContactRelation__c
+        AccountContactRelation__c relacao = new AccountContactRelation__c(
+            AccountId__c = grupo.Id,
+            Contact__c = contato.Id,
+            Name = contato.FirstName + ' ' + contato.LastName,
+            Email__c = contato.Email,
+            CPF__c = contato.CPF__c,
+            Perfil__c = 'analista',
+            Cargo__c = 'CEO'
+        );
+        insert relacao;
+
+        // Criar a request para chamada do método
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = grupo.Id;
+        req.nomeContato = 'João';
+
+        List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+
+        System.assertEquals(1, respostas.size(), 'Deveria retornar 1 resposta');
+        System.assertEquals(1, respostas[0].dadoscontato.size(), 'Deveria retornar 1 contato');
+
+        BuscarContatosPorGrupoENome2.DadosContato contatoRetornado = respostas[0].dadoscontato[0];
+        System.assertEquals('João Silva', contatoRetornado.nomeContato);
+        System.assertEquals('analista', contatoRetornado.perfilContato);
+        System.assertEquals('GRP001', contatoRetornado.codigoGrupo);
+        System.assertEquals('Grupo Ambev', contatoRetornado.nomeGrupo);
+        System.assertEquals('joao@ambev.com', contatoRetornado.emailContato);
+        System.assertEquals('CEO', contatoRetornado.cargoContato);
+    }
+
+    @isTest
+    static void deveRetornarNadaSeNaoBaterFiltro() {
+        // Criar Account e Contact, mas com nome diferente
+        Account grupo = new Account(Name = 'Grupo B');
+        insert grupo;
+
+        Contact contato = new Contact(FirstName = 'Maria', LastName = 'Oliveira');
+        insert contato;
+
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            AccountId__c = grupo.Id,
+            Contact__c = contato.Id,
+            Name = contato.FirstName + ' ' + contato.LastName
+        );
+        insert rel;
+
+        // Request com nome que não bate
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = grupo.Id;
+        req.nomeContato = 'João';
+
+        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+
+        System.assertEquals(1, resp.size());
+        System.assertEquals(0, resp[0].dadoscontato.size(), 'Não deve retornar nenhum contato');
+    }
+}
