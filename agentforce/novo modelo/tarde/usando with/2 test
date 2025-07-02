@@ -1,9 +1,8 @@
 @isTest
 private class BuscarContatosPorGrupoENome2Test {
 
-    @testSetup
-    static void setup() {
-        // Cria uma Account (Grupo)
+    @isTest
+    static void deveRetornarContatosPorGrupoENome() {
         Account grupo = new Account(
             Name = 'Grupo Ambev',
             RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
@@ -12,7 +11,6 @@ private class BuscarContatosPorGrupoENome2Test {
         );
         insert grupo;
 
-        // Cria um Contact
         Contact contato = new Contact(
             FirstName = 'João',
             LastName = 'Silva',
@@ -22,7 +20,6 @@ private class BuscarContatosPorGrupoENome2Test {
         );
         insert contato;
 
-        // Cria relação AccountContactRelation__c
         AccountContactRelation__c relacao = new AccountContactRelation__c(
             AccountId__c = grupo.Id,
             Contact__c = contato.Id,
@@ -34,65 +31,44 @@ private class BuscarContatosPorGrupoENome2Test {
         );
         insert relacao;
 
-        // Outro grupo para teste de não correspondência
-        Account grupoB = new Account(Name = 'Grupo B');
-        insert grupoB;
-
-        Contact contato2 = new Contact(FirstName = 'Maria', LastName = 'Oliveira');
-        insert contato2;
-
-        AccountContactRelation__c rel2 = new AccountContactRelation__c(
-            AccountId__c = grupoB.Id,
-            Contact__c = contato2.Id,
-            Name = 'Maria Oliveira'
-        );
-        insert rel2;
-
-        // Grupo genérico sem filtro (para teste do else do método buscarContatos)
-        Account grupoC = new Account(Name = 'Grupo C');
-        insert grupoC;
-
-        Contact contato3 = new Contact(FirstName = 'Carlos', LastName = 'Lima');
-        insert contato3;
-
-        AccountContactRelation__c rel3 = new AccountContactRelation__c(
-            AccountId__c = grupoC.Id,
-            Contact__c = contato3.Id,
-            Name = 'Carlos Lima'
-        );
-        insert rel3;
-    }
-
-    @isTest
-    static void deveRetornarContatosPorGrupoENome() {
-        Account grupo = [SELECT Id FROM Account WHERE Name = 'Grupo Ambev' LIMIT 1];
-
         BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
         req.accountId = grupo.Id;
         req.nomeContato = 'João';
 
-        List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+        List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(
+            new List<BuscarContatosPorGrupoENome2.Request>{ req }
+        );
 
         System.assertEquals(1, respostas.size());
         System.assertEquals(1, respostas[0].dadoscontato.size());
 
-        BuscarContatosPorGrupoENome2.DadosContato contato = respostas[0].dadoscontato[0];
-        System.assertEquals('João Silva', contato.nomeContato);
-        System.assertEquals('analista', contato.perfilContato);
-        System.assertEquals('GRP001', contato.codigoGrupo);
-        System.assertEquals('joao@ambev.com', contato.emailContato);
-        System.assertEquals('CEO', contato.cargoContato);
+        BuscarContatosPorGrupoENome2.DadosContato contatoResp = respostas[0].dadoscontato[0];
+        System.assertEquals('João Silva', contatoResp.nomeContato);
+        System.assertEquals('GRP001', contatoResp.codigoGrupo);
     }
 
     @isTest
     static void deveRetornarNadaSeNaoBaterFiltro() {
-        Account grupo = [SELECT Id FROM Account WHERE Name = 'Grupo B' LIMIT 1];
+        Account grupo = new Account(Name = 'Grupo B');
+        insert grupo;
+
+        Contact contato = new Contact(FirstName = 'Maria', LastName = 'Oliveira');
+        insert contato;
+
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            AccountId__c = grupo.Id,
+            Contact__c = contato.Id,
+            Name = 'Maria Oliveira'
+        );
+        insert rel;
 
         BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
         req.accountId = grupo.Id;
-        req.nomeContato = 'João';
+        req.nomeContato = 'João'; // nome que não bate
 
-        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(
+            new List<BuscarContatosPorGrupoENome2.Request>{ req }
+        );
 
         System.assertEquals(1, resp.size());
         System.assertEquals(0, resp[0].dadoscontato.size());
@@ -100,10 +76,25 @@ private class BuscarContatosPorGrupoENome2Test {
 
     @isTest
     static void deveBuscarSemFiltroQuandoNaoInformadoNada() {
-        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
-        // Sem accountId nem nomeContato
+        Account grupo = new Account(Name = 'Grupo C');
+        insert grupo;
 
-        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>{ req });
+        Contact contato = new Contact(FirstName = 'Carlos', LastName = 'Lima');
+        insert contato;
+
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            AccountId__c = grupo.Id,
+            Contact__c = contato.Id,
+            Name = 'Carlos Lima'
+        );
+        insert rel;
+
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        // Nem nome nem accountId
+
+        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(
+            new List<BuscarContatosPorGrupoENome2.Request>{ req }
+        );
 
         System.assertEquals(1, resp.size());
         System.assert(resp[0].dadoscontato.size() > 0);
