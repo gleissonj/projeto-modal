@@ -1,0 +1,64 @@
+@isTest
+private class BuscarResponsaveisDoGrupoTest {
+
+    // Classe auxiliar interna, exclusiva para simular dados da view
+    private class TestHelper {
+        public static Map<Id, List<BuscarResponsaveisDoGrupo.DadosResponsavel>> simularDados(Set<Id> grupoIds) {
+            Map<Id, List<BuscarResponsaveisDoGrupo.DadosResponsavel>> resultado = new Map<Id, List<BuscarResponsaveisDoGrupo.DadosResponsavel>>();
+            for (Id id : grupoIds) {
+                BuscarResponsaveisDoGrupo.DadosResponsavel d = new BuscarResponsaveisDoGrupo.DadosResponsavel();
+                d.nome = 'Fulano Simulado';
+                d.role = 'NEC';
+                d.territorio = 'SP001';
+                resultado.put(id, new List<BuscarResponsaveisDoGrupo.DadosResponsavel>{ d });
+            }
+            return resultado;
+        }
+    }
+
+    @isTest
+    static void testComHelperInterno() {
+        // Criar conta simulada
+        Account grupo = new Account(
+            Name = 'Grupo Simulado',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+                .get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP123',
+            IsExcluidoFinancas__c = false
+        );
+        insert grupo;
+
+        // Chamar o helper interno
+        Set<Id> grupoIds = new Set<Id>{ grupo.Id };
+        Map<Id, List<BuscarResponsaveisDoGrupo.DadosResponsavel>> retorno =
+            TestHelper.simularDados(grupoIds);
+
+        // Asserts
+        System.assertEquals(1, retorno.size());
+        System.assertEquals('Fulano Simulado', retorno.get(grupo.Id)[0].nome);
+        System.assertEquals('NEC', retorno.get(grupo.Id)[0].role);
+        System.assertEquals('SP001', retorno.get(grupo.Id)[0].territorio);
+    }
+
+    @isTest
+    static void testRun_SemDadosDaView() {
+        Account grupo = new Account(
+            Name = 'Grupo Sem Responsáveis',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+                .get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP999',
+            IsExcluidoFinancas__c = false
+        );
+        insert grupo;
+
+        BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
+        req.accountId = grupo.Id;
+
+        Test.startTest();
+        List<BuscarResponsaveisDoGrupo.Response> resultado = BuscarResponsaveisDoGrupo.run(new List<BuscarResponsaveisDoGrupo.Request>{ req });
+        Test.stopTest();
+
+        System.assertEquals(1, resultado.size());
+        System.assertEquals(0, resultado[0].dadosresponsaveis.size());
+    }
+}
