@@ -1,4 +1,4 @@
-public with sharing class BuscarResponsaveisDoGrupo {
+public virtual with sharing class hu7_getResponsbileGroup_v1 {
 
     public class Request {
         @InvocableVariable(required=true)
@@ -17,10 +17,10 @@ public with sharing class BuscarResponsaveisDoGrupo {
 
     @InvocableMethod(label='Buscar Responsáveis do Grupo')
     public static List<Response> run(List<Request> requisicoes) {
-        return new BuscarResponsaveisDoGrupo().executar(requisicoes);
+        return new hu7_getResponsbileGroup_v1().executar(requisicoes);
     }
 
-    public List<Response> executar(List<Request> requisicoes) {
+    public virtual List<Response> executar(List<Request> requisicoes) {
         Set<Id> accountIds = new Set<Id>();
         for (Request req : requisicoes) {
             if (req.accountId != null) accountIds.add(req.accountId);
