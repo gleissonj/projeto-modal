@@ -55,3 +55,29 @@ private class hu7_getResponsbileGroup_v1Test {
         System.assertEquals(0, resposta[0].dadosresponsaveis.size());
     }
 }
+
+
+
+
+@isTest
+static void testRunChamadoDireto() {
+    Account grupo = new Account(
+        Name = 'Grupo Sem Responsável',
+        RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
+            .get('HU7_Grupo_Economico').getRecordTypeId(),
+        Hu7IDExterno__c = 'GRP000',
+        IsExcluidoFinancas__c = false
+    );
+    insert grupo;
+
+    hu7_getResponsbileGroup_v1.Request req = new hu7_getResponsbileGroup_v1.Request();
+    req.accountId = grupo.Id;
+
+    Test.startTest();
+    List<hu7_getResponsbileGroup_v1.Response> resposta =
+        hu7_getResponsbileGroup_v1.run(new List<hu7_getResponsbileGroup_v1.Request>{ req });
+    Test.stopTest();
+
+    // Mesmo que a resposta esteja vazia, esse teste serve para cobrir o método run()
+    System.assertEquals(1, resposta.size());
+}
