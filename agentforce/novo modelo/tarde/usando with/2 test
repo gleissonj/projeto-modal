@@ -1,114 +1,19 @@
-@isTest
-private class BuscarContatosPorGrupoENome2Test {
+Buscar e listar contatos vinculados a um Grupo Econômico.
 
-    @isTest
-    static void deveRetornarContatosPorGrupoENome() {
-        Account grupo = new Account(
-            Name = 'Grupo Ambev',
-            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
-                .get('HU7_Grupo_Economico').getRecordTypeId(),
-            Hu7IDExterno__c = 'GRP001'
-        );
-        insert grupo;
+Inclui:
 
-        Contact contato = new Contact(
-            FirstName = 'João',
-            LastName = 'Silva',
-            Email = 'joao@ambev.com',
-            Phone = '(11) 99999-0000',
-            CPF__c = '123.456.789-00'
-        );
-        insert contato;
+Buscar por nome de contato dentro de um grupo
 
-        AccountContactRelation__c relacao = new AccountContactRelation__c(
-            AccountId__c = grupo.Id,
-            Contact__c = contato.Id,
-            Name = 'João Silva',
-            Email__c = contato.Email,
-            CPF__c = contato.CPF__c,
-            Perfil__c = 'analista',
-            Cargo__c = 'CEO'
-        );
-        insert relacao;
+Listar todos os contatos do grupo
 
-        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
-        req.accountId = grupo.Id;
-        req.nomeContato = 'João';
+Buscar contatos com cargo ou perfil específico (ex: CEO, analista, financeiro)
 
-        List<BuscarContatosPorGrupoENome2.Response> respostas = BuscarContatosPorGrupoENome2.run(
-            new List<BuscarContatosPorGrupoENome2.Request>{ req }
-        );
+Trazer dados cadastrais dos contatos: nome, e-mail, telefone, CPF, cargo e perfil
 
-        System.assertEquals(1, respostas.size());
-        System.assertEquals(1, respostas[0].dadoscontato.size());
+Consultar responsáveis pelo grupo (officers, analistas, gestores)
 
-        BuscarContatosPorGrupoENome2.DadosContato contatoResp = respostas[0].dadoscontato[0];
-        System.assertEquals('João Silva', contatoResp.nomeContato);
-        System.assertEquals('GRP001', contatoResp.codigoGrupo);
-    }
+Não inclui:
 
-    @isTest
-    static void deveRetornarNadaSeNaoBaterFiltro() {
-        Account grupo = new Account(Name = 'Grupo B');
-        insert grupo;
+Busca de dados do grupo em si (usar tópico “Grupo Econômico”)
 
-        Contact contato = new Contact(FirstName = 'Maria', LastName = 'Oliveira');
-        insert contato;
-
-        AccountContactRelation__c rel = new AccountContactRelation__c(
-            AccountId__c = grupo.Id,
-            Contact__c = contato.Id,
-            Name = 'Maria Oliveira'
-        );
-        insert rel;
-
-        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
-        req.accountId = grupo.Id;
-        req.nomeContato = 'João'; // nome que não bate
-
-        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(
-            new List<BuscarContatosPorGrupoENome2.Request>{ req }
-        );
-
-        System.assertEquals(1, resp.size());
-        System.assertEquals(0, resp[0].dadoscontato.size());
-    }
-
-    @isTest
-    static void deveBuscarSemFiltroQuandoNaoInformadoNada() {
-        Account grupo = new Account(Name = 'Grupo C');
-        insert grupo;
-
-        Contact contato = new Contact(FirstName = 'Carlos', LastName = 'Lima');
-        insert contato;
-
-        AccountContactRelation__c rel = new AccountContactRelation__c(
-            AccountId__c = grupo.Id,
-            Contact__c = contato.Id,
-            Name = 'Carlos Lima'
-        );
-        insert rel;
-
-        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
-        // Nem nome nem accountId
-
-        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(
-            new List<BuscarContatosPorGrupoENome2.Request>{ req }
-        );
-
-        System.assertEquals(1, resp.size());
-        System.assert(resp[0].dadoscontato.size() > 0);
-    }
-
-    @isTest
-    static void deveTratarListaVazia() {
-        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(new List<BuscarContatosPorGrupoENome2.Request>());
-        System.assertEquals(0, resp.size());
-    }
-
-    @isTest
-    static void deveTratarListaNull() {
-        List<BuscarContatosPorGrupoENome2.Response> resp = BuscarContatosPorGrupoENome2.run(null);
-        System.assertEquals(0, resp.size());
-    }
-}
+Consulta de contratos ou oportunidades associadas ao contato (outros tópicos)

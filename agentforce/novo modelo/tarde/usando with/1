@@ -1,99 +1,21 @@
-public with sharing class BuscarContatosPorGrupoENome2 {
+Tópico responsável por retornar os contatos e responsáveis associados a um Grupo Econômico.
 
-    public class Request {
-        @InvocableVariable public Id accountId;
-        @InvocableVariable public String nomeContato;
-    }
+Este tópico permite ao agente consultar os contatos vinculados a um grupo econômico, incluindo perfis como CEO, analista, financeiro, sócio, gerente ou tomador de decisão. As informações vêm do objeto AccountContactRelation__c, relacionado à Account com RecordTypeDeveloperName__c = 'HU7_Grupo_Economico' e IsExcluidoFinancas__c = false.
 
-    public class DadosContato {
-        @InvocableVariable public String nomeContato;
-        @InvocableVariable public String perfilContato;
-        @InvocableVariable public String telefoneContato;
-        @InvocableVariable public String emailContato;
-        @InvocableVariable public String nomeGrupo;
-        @InvocableVariable public String codigoGrupo;
-        @InvocableVariable public String cargoContato;
-    }
+O agente deve retornar dados como:
 
-    public class Response {
-        @InvocableVariable public List<DadosContato> dadoscontato;
-    }
+Nome do contato
 
-    @InvocableMethod(label='Buscar Contatos por Grupo e Nome2')
-    public static List<Response> run(List<Request> requisicoes) {
-        List<Response> respostas = new List<Response>();
-        if (requisicoes == null || requisicoes.isEmpty()) return respostas;
+Cargo (Cargo__c)
 
-        List<AccountContactRelation__c> contatos = buscarContatos(requisicoes);
+Perfil (Perfil__c)
 
-        for (Request req : requisicoes) {
-            List<DadosContato> contatosFiltrados = filtrarContatosParaRequest(contatos, req);
-            Response resp = new Response();
-            resp.dadoscontato = contatosFiltrados;
-            respostas.add(resp);
-        }
+Telefone
 
-        return respostas;
-    }
+E-mail
 
-    private static List<AccountContactRelation__c> buscarContatos(List<Request> requisicoes) {
-        Set<Id> accountIds = new Set<Id>();
+CPF (se necessário)
 
-        for (Request req : requisicoes) {
-            if (req.accountId != null) {
-                accountIds.add(req.accountId);
-            }
-        }
+Nome e código do grupo
 
-        // Apenas filtro por accountId no SOQL
-        List<AccountContactRelation__c> resultados = new List<AccountContactRelation__c>();
-
-        if (!accountIds.isEmpty()) {
-            resultados = [
-                SELECT AccountId__r.Name, AccountId__r.Hu7IDExterno__c,
-                       AccountId__c, Name, Email__c, CPF__c, Cargo__c, Perfil__c
-                FROM AccountContactRelation__c
-                WHERE AccountId__c IN :accountIds
-            ];
-        } else {
-            // Se não tiver nenhum filtro de accountId, busca todos (com limite opcional)
-            resultados = [
-                SELECT AccountId__r.Name, AccountId__r.Hu7IDExterno__c,
-                       AccountId__c, Name, Email__c, CPF__c, Cargo__c, Perfil__c
-                FROM AccountContactRelation__c
-                LIMIT 500
-            ];
-        }
-
-        return resultados;
-    }
-
-    private static List<DadosContato> filtrarContatosParaRequest(List<AccountContactRelation__c> contatos, Request req) {
-        List<DadosContato> resultado = new List<DadosContato>();
-
-        Boolean filtrarPorId = req.accountId != null;
-        Boolean filtrarPorNome = !String.isBlank(req.nomeContato);
-        String nomeInputLower = filtrarPorNome ? req.nomeContato.toLowerCase() : null;
-
-        for (AccountContactRelation__c rel : contatos) {
-            if (filtrarPorId && rel.AccountId__c != req.accountId) continue;
-
-            if (filtrarPorNome) {
-                if (rel.Name == null || !rel.Name.toLowerCase().startsWith(nomeInputLower)) continue;
-            }
-
-            DadosContato contato = new DadosContato();
-            contato.nomeContato     = rel.Name;
-            contato.emailContato    = rel.Email__c;
-            contato.telefoneContato = '123456'; // Substitua se tiver campo real
-            contato.perfilContato   = rel.Perfil__c;
-            contato.nomeGrupo       = rel.AccountId__r != null ? rel.AccountId__r.Name : null;
-            contato.codigoGrupo     = rel.AccountId__r != null ? rel.AccountId__r.Hu7IDExterno__c : null;
-            contato.cargoContato    = rel.Cargo__c;
-
-            resultado.add(contato);
-        }
-
-        return resultado;
-    }
-}
+Se o usuário perguntar, por exemplo, “quem é o CEO do grupo Ambev”, o agente deve acionar a action apropriada para buscar o AccountId__c do grupo e, em seguida, consultar AccountContactRelation__c com os filtros adequados.
