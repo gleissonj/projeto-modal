@@ -41,3 +41,12 @@ if (!accountIds.isEmpty()) {
     String idsStr = '\'' + String.join(new List<String>(accountIds.stream().map(String.valueOf)), '\',\'') + '\'';
     condicoes.add('AccountId__c IN (' + idsStr + ')');
 }
+
+
+if (!accountIds.isEmpty()) {
+    List<String> idStrList = new List<String>();
+    for (Id id : accountIds) {
+        idStrList.add('\'' + String.valueOf(id) + '\'');
+    }
+    condicoes.add('AccountId__c IN (' + String.join(idStrList, ',') + ')');
+}
