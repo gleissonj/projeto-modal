@@ -11,42 +11,39 @@ public static List<AccountContactRelation__c> buscarContatos(List<Request> requi
         }
     }
 
-    if (accountIds.isEmpty() && String.isBlank(nomeFiltro)) {
-        return new List<AccountContactRelation__c>();
+    String nomeFiltroLike = !String.isBlank(nomeFiltro) ? nomeFiltro + '%' : null;
+
+    // Cenário 1: ambos filtros presentes
+    if (!accountIds.isEmpty() && !String.isBlank(nomeFiltro)) {
+        return [
+            SELECT Name, Email__c, Perfil__c, Cargo__c,
+                   AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c
+            FROM AccountContactRelation__c
+            WHERE AccountId__c IN :accountIds
+              AND Name LIKE :nomeFiltroLike
+        ];
     }
 
-    String query = 'SELECT Name, Email__c, Perfil__c, Cargo__c, AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c FROM AccountContactRelation__c';
-    List<String> condicoes = new List<String>();
-
+    // Cenário 2: apenas filtro por grupo
     if (!accountIds.isEmpty()) {
-        String idsStr = '(' + String.join(new List<String>(accountIds), '\',\'') + ')';
-        condicoes.add('AccountId__c IN (\'' + idsStr + '\')');
+        return [
+            SELECT Name, Email__c, Perfil__c, Cargo__c,
+                   AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c
+            FROM AccountContactRelation__c
+            WHERE AccountId__c IN :accountIds
+        ];
     }
 
+    // Cenário 3: apenas filtro por nome
     if (!String.isBlank(nomeFiltro)) {
-        String nomeEscapado = String.escapeSingleQuotes(nomeFiltro);
-        condicoes.add('Name LIKE \'' + nomeEscapado + '%\'');
+        return [
+            SELECT Name, Email__c, Perfil__c, Cargo__c,
+                   AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c
+            FROM AccountContactRelation__c
+            WHERE Name LIKE :nomeFiltroLike
+        ];
     }
 
-    if (!condicoes.isEmpty()) {
-        query += ' WHERE ' + String.join(condicoes, ' AND ');
-    }
-
-    return Database.query(query);
-}
-
-
-
-if (!accountIds.isEmpty()) {
-    String idsStr = '\'' + String.join(new List<String>(accountIds.stream().map(String.valueOf)), '\',\'') + '\'';
-    condicoes.add('AccountId__c IN (' + idsStr + ')');
-}
-
-
-if (!accountIds.isEmpty()) {
-    List<String> idStrList = new List<String>();
-    for (Id id : accountIds) {
-        idStrList.add('\'' + String.valueOf(id) + '\'');
-    }
-    condicoes.add('AccountId__c IN (' + String.join(idStrList, ',') + ')');
+    // Cenário 4: nenhum filtro (proteção extra)
+    return new List<AccountContactRelation__c>();
 }
