@@ -1,0 +1,48 @@
+public static List<AccountContactRelation__c> buscarContatos(List<Request> requisicoes) {
+    Set<Id> accountIds = new Set<Id>();
+    String nomeFiltro = null;
+
+    for (Request req : requisicoes) {
+        if (req.accountId != null) {
+            accountIds.add(req.accountId);
+        }
+        if (!String.isBlank(req.nomeContato)) {
+            nomeFiltro = req.nomeContato.trim();
+        }
+    }
+
+    List<AccountContactRelation__c> contatos = new List<AccountContactRelation__c>();
+
+    // Se não houver nenhum filtro, não execute a consulta
+    if (String.isBlank(nomeFiltro) && accountIds.isEmpty()) {
+        return contatos;
+    }
+
+    if (!String.isBlank(nomeFiltro)) {
+        // Busca por nome usando SOSL
+        String termo = String.escapeSingleQuotes(nomeFiltro) + '*';
+        String sosl = 'FIND {' + termo + '} IN ALL FIELDS RETURNING AccountContactRelation__c ' +
+                      '(Name, Email__c, Perfil__c, Cargo__c, AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c)';
+        List<List<SObject>> resultados = Search.query(sosl);
+
+        if (!resultados.isEmpty()) {
+            contatos = (List<AccountContactRelation__c>) resultados[0];
+        }
+    } else {
+        // Caso só tenha filtro por accountId, usa SOQL direto
+        contatos = [
+            SELECT Name, Email__c, Perfil__c, Cargo__c, AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c
+            FROM AccountContactRelation__c
+            WHERE AccountId__c IN :accountIds
+        ];
+    }
+
+    // Aplica filtro por grupo, se necessário
+    if (!accountIds.isEmpty()) {
+        contatos = contatos.stream()
+            .filter(c -> accountIds.contains(c.AccountId__c))
+            .collect();
+    }
+
+    return contatos;
+}
