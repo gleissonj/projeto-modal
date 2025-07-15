@@ -1,0 +1,101 @@
+@isTest
+public class TestBuscarContatosPorGrupoENome2 {
+
+    @isTest
+    static void testarBuscarContatos_semFiltros() {
+        List<BuscarContatosPorGrupoENome2.Request> requisicoes = new List<BuscarContatosPorGrupoENome2.Request>();
+
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = null;
+        req.nomeContato = null;
+
+        requisicoes.add(req);
+
+        Test.startTest();
+        List<AccountContactRelation__c> resultado = BuscarContatosPorGrupoENome2.buscarContatos(requisicoes);
+        Test.stopTest();
+
+        System.assertEquals(0, resultado.size(), 'Deve retornar vazio quando não há filtros');
+    }
+
+    @isTest
+    static void testarBuscarContatos_comAccountId() {
+        Account acc = new Account(Name = 'Grupo Teste');
+        insert acc;
+
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            Name = 'João da Silva',
+            Email__c = 'joao@teste.com',
+            Perfil__c = 'analista',
+            Cargo__c = 'CEO',
+            AccountId__c = acc.Id
+        );
+        insert rel;
+
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = acc.Id;
+        req.nomeContato = null;
+
+        List<BuscarContatosPorGrupoENome2.Request> requisicoes = new List<BuscarContatosPorGrupoENome2.Request>{ req };
+
+        Test.startTest();
+        List<AccountContactRelation__c> resultado = BuscarContatosPorGrupoENome2.buscarContatos(requisicoes);
+        Test.stopTest();
+
+        System.assertEquals(1, resultado.size(), 'Deve retornar 1 registro com filtro por accountId');
+    }
+
+    @isTest
+    static void testarBuscarContatos_comNomeContato() {
+        Account acc = new Account(Name = 'Grupo Alpha');
+        insert acc;
+
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            Name = 'Rodrigo Lima',
+            Email__c = 'rodrigo@teste.com',
+            Perfil__c = 'financeiro',
+            Cargo__c = 'Gerente',
+            AccountId__c = acc.Id
+        );
+        insert rel;
+
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = null;
+        req.nomeContato = 'Rodrigo';
+
+        List<BuscarContatosPorGrupoENome2.Request> requisicoes = new List<BuscarContatosPorGrupoENome2.Request>{ req };
+
+        Test.startTest();
+        List<AccountContactRelation__c> resultado = BuscarContatosPorGrupoENome2.buscarContatos(requisicoes);
+        Test.stopTest();
+
+        System.assertEquals(1, resultado.size(), 'Deve retornar 1 registro com filtro por nomeContato');
+    }
+
+    @isTest
+    static void testarBuscarContatos_comAmbosFiltros() {
+        Account acc = new Account(Name = 'Grupo Beta');
+        insert acc;
+
+        AccountContactRelation__c rel = new AccountContactRelation__c(
+            Name = 'Rodrigo Mendes',
+            Email__c = 'rm@teste.com',
+            Perfil__c = 'analista',
+            Cargo__c = 'Sócio',
+            AccountId__c = acc.Id
+        );
+        insert rel;
+
+        BuscarContatosPorGrupoENome2.Request req = new BuscarContatosPorGrupoENome2.Request();
+        req.accountId = acc.Id;
+        req.nomeContato = 'Rodrigo';
+
+        List<BuscarContatosPorGrupoENome2.Request> requisicoes = new List<BuscarContatosPorGrupoENome2.Request>{ req };
+
+        Test.startTest();
+        List<AccountContactRelation__c> resultado = BuscarContatosPorGrupoENome2.buscarContatos(requisicoes);
+        Test.stopTest();
+
+        System.assertEquals(1, resultado.size(), 'Deve retornar 1 registro com ambos filtros');
+    }
+}

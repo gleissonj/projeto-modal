@@ -1,0 +1,106 @@
+public with sharing class BuscarContatosPorGrupoENome2 {
+
+    public class Request {
+        @InvocableVariable public Id accountId;
+        @InvocableVariable public String nomeContato;
+    }
+
+    public class DadosContato {
+        @InvocableVariable public String nomeContato;
+        @InvocableVariable public String perfilContato;
+        @InvocableVariable public String telefoneContato;
+        @InvocableVariable public String emailContato;
+        @InvocableVariable public String nomeGrupo;
+        @InvocableVariable public String codigoGrupo;
+        @InvocableVariable public String cargoContato;
+    }
+
+    public class Response {
+        @InvocableVariable public List<DadosContato> dadoscontato;
+    }
+
+    @InvocableMethod(label='Buscar Contatos por Grupo e Nome2')
+    public static List<Response> run(List<Request> requisicoes) {
+        List<Response> respostas = new List<Response>();
+        if (requisicoes == null || requisicoes.isEmpty()) return respostas;
+
+        List<AccountContactRelation__c> contatos = buscarContatos(requisicoes);
+
+        for (Request req : requisicoes) {
+            List<DadosContato> contatosFiltrados = filtrarContatosParaRequest(contatos, req);
+            Response resp = new Response();
+            resp.dadoscontato = contatosFiltrados;
+            respostas.add(resp);
+        }
+
+        return respostas;
+    }
+
+    private static List<AccountContactRelation__c> buscarContatos(List<Request> requisicoes) {
+        Set<Id> accountIds = new Set<Id>();
+        String nomeFiltro = null;
+
+        for (Request req : requisicoes) {
+            if (req.accountId != null) {
+                accountIds.add(req.accountId);
+            }
+            if (!String.isBlank(req.nomeContato)) {
+                nomeFiltro = req.nomeContato.trim();
+            }
+        }
+
+        List<AccountContactRelation__c> resultados = new List<AccountContactRelation__c>();
+
+        if (accountIds.isEmpty() && String.isBlank(nomeFiltro)) {
+            // Proteção contra execução sem filtros
+            return resultados;
+        }
+
+        // Construção da query dinamicamente
+        String query = 'SELECT Name, Email__c, Perfil__c, Cargo__c, AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c FROM AccountContactRelation__c';
+        List<String> condicoes = new List<String>();
+
+        if (!accountIds.isEmpty()) {
+            condicoes.add('AccountId__c IN :accountIds');
+        }
+
+        String nomeFiltroLike = null;
+        if (!String.isBlank(nomeFiltro)) {
+            nomeFiltroLike = nomeFiltro + '%';
+            condicoes.add('Name LIKE :nomeFiltroLike');
+        }
+
+        if (!condicoes.isEmpty()) {
+            query += ' WHERE ' + String.join(condicoes, ' AND ');
+        }
+
+        return Database.query(query);
+    }
+
+    private static List<DadosContato> filtrarContatosParaRequest(List<AccountContactRelation__c> contatos, Request req) {
+        List<DadosContato> resultado = new List<DadosContato>();
+
+        Boolean filtrarPorId = req.accountId != null;
+        Boolean filtrarPorNome = !String.isBlank(req.nomeContato);
+        String nomeInputLower = filtrarPorNome ? req.nomeContato.toLowerCase() : null;
+
+        for (AccountContactRelation__c rel : contatos) {
+            if (filtrarPorId && rel.AccountId__c != req.accountId) continue;
+            if (filtrarPorNome && (rel.Name == null || !rel.Name.toLowerCase().startsWith(nomeInputLower))) continue;
+
+            DadosContato contato = new DadosContato();
+            contato.nomeContato   = rel.Name;
+            contato.emailContato  = rel.Email__c;
+            // contato.telefoneContato = rel.Phone__c; // Substitua aqui se houver campo válido
+            contato.telefoneContato = null;
+            contato.perfilContato = rel.Perfil__c;
+            contato.nomeGrupo     = rel.AccountId__r != null ? rel.AccountId__r.Name : null;
+            contato.codigoGrupo   = rel.AccountId__r != null ? rel.AccountId__r.Hu7IDExterno__c : null;
+            contato.cargoContato  = rel.Cargo__c;
+
+            resultado.add(contato);
+        }
+
+        return resultado;
+    }
+}

@@ -51,7 +51,7 @@ The user may reference the group in the following ways:
 ### 2. Determine what type of information the user is requesting:
 
 - **Contacts**
-- **Responsible parties**
+- **Specific role functions and profile (e.g., CEO, Analista, Gerente)**
 - **Subgroups**
 - **Registration data**
 - **Group identification based on contact information**
@@ -67,6 +67,8 @@ For now, ONLY handle queries related to:
 
 ### 3. Handling contact-related queries (when the user wants contact information about a group):
 
+Important: If the user's query explicitly asks for a responsible role (e.g., CEO, Diretor, Analista), do not follow this step.
+Instead, handle the query using Step 6: Responsible parties.
 - **If the user provides a group name:**  
    → Call the Apex Action: **Get_Accounts_IDs_By_Name_and_Economic_Group_V1**  
    → This will return the group IDs related to the provided name.
@@ -135,7 +137,27 @@ If the user asks for **a list of all contacts that match a name, email, or CPF p
 
 ---
 
-### 6. Handling queries outside the current scope (non-contact related requests):
+### 6. Handling queries about specific responsible parties (e.g., CEO, Analista):
+
+If the user asks "Quem é o CEO do grupo Ambev?" or "Quem é o Analista do grupo X?":
+
+- Call the Apex Action: Get_Accounts_IDs_By_Name_and_Economic_Group_V1, passing the group name.
+
+- If multiple groups are returned:
+→ Show the list and ask the user to choose one.
+
+- Once the group is selected (or only one returned), retrieve the AccountId__c from the result.
+
+- Query the object AccountContactRelation__c, filtering records by:
+  AccountId__c = selected AccountId
+  Cargo__c or Perfil__c that matches the role requested by the user (e.g., CEO, Analista)
+
+- Return the contact(s) found with structured details such as:
+  Name, Role, Email, Group Name, etc.
+
+
+
+### 7. Handling queries outside the current scope (non-contact related requests):
 
 If the user asks for any information that is **not related to contact details**, **not a list of contacts**, and **not group identification based on contact info (Name, Email, or CPF)**,  
 such as:
