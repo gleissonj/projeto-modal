@@ -34,3 +34,10 @@ public static List<AccountContactRelation__c> buscarContatos(List<Request> requi
 
     return Database.query(query);
 }
+
+
+
+if (!accountIds.isEmpty()) {
+    String idsStr = '\'' + String.join(new List<String>(accountIds.stream().map(String.valueOf)), '\',\'') + '\'';
+    condicoes.add('AccountId__c IN (' + idsStr + ')');
+}
