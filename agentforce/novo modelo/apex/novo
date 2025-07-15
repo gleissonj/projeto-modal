@@ -11,38 +11,26 @@ public static List<AccountContactRelation__c> buscarContatos(List<Request> requi
         }
     }
 
-    List<AccountContactRelation__c> contatos = new List<AccountContactRelation__c>();
+    if (accountIds.isEmpty() && String.isBlank(nomeFiltro)) {
+        return new List<AccountContactRelation__c>();
+    }
 
-    // Se não houver nenhum filtro, não execute a consulta
-    if (String.isBlank(nomeFiltro) && accountIds.isEmpty()) {
-        return contatos;
+    String query = 'SELECT Name, Email__c, Perfil__c, Cargo__c, AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c FROM AccountContactRelation__c';
+    List<String> condicoes = new List<String>();
+
+    if (!accountIds.isEmpty()) {
+        String idsStr = '(' + String.join(new List<String>(accountIds), '\',\'') + ')';
+        condicoes.add('AccountId__c IN (\'' + idsStr + '\')');
     }
 
     if (!String.isBlank(nomeFiltro)) {
-        // Busca por nome usando SOSL
-        String termo = String.escapeSingleQuotes(nomeFiltro) + '*';
-        String sosl = 'FIND {' + termo + '} IN ALL FIELDS RETURNING AccountContactRelation__c ' +
-                      '(Name, Email__c, Perfil__c, Cargo__c, AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c)';
-        List<List<SObject>> resultados = Search.query(sosl);
-
-        if (!resultados.isEmpty()) {
-            contatos = (List<AccountContactRelation__c>) resultados[0];
-        }
-    } else {
-        // Caso só tenha filtro por accountId, usa SOQL direto
-        contatos = [
-            SELECT Name, Email__c, Perfil__c, Cargo__c, AccountId__c, AccountId__r.Name, AccountId__r.Hu7IDExterno__c
-            FROM AccountContactRelation__c
-            WHERE AccountId__c IN :accountIds
-        ];
+        String nomeEscapado = String.escapeSingleQuotes(nomeFiltro);
+        condicoes.add('Name LIKE \'' + nomeEscapado + '%\'');
     }
 
-    // Aplica filtro por grupo, se necessário
-    if (!accountIds.isEmpty()) {
-        contatos = contatos.stream()
-            .filter(c -> accountIds.contains(c.AccountId__c))
-            .collect();
+    if (!condicoes.isEmpty()) {
+        query += ' WHERE ' + String.join(condicoes, ' AND ');
     }
 
-    return contatos;
+    return Database.query(query);
 }
