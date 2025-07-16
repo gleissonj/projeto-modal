@@ -1,0 +1,95 @@
+1. Contextualização do teste
+"Estamos atualmente explorando o Prompt Builder com entrada de imagem (formato PNG). A ideia é validar a capacidade do agente em extrair dados estruturados a partir de documentos com texto impresso, como contratos, propostas, prints de tela ou documentos escaneados."
+
+2. Objetivo do teste
+"Nosso objetivo é avaliar se o agente consegue interpretar o conteúdo visual, extrair informações chave como nome da empresa, CNPJ, datas, valores ou códigos, e retornar isso de forma estruturada — por exemplo, em formato JSON ou objeto de resposta."
+
+3. Exemplo de uso prático
+"Subimos um arquivo PNG com um texto de proposta comercial, e orientamos o agente via Prompt Template a retornar apenas campos específicos:
+
+Nome da empresa
+
+Data da proposta
+
+Código interno
+
+Valor total do documento
+
+Esse teste representa um cenário real onde clientes enviam documentos escaneados que precisam ser processados rapidamente."
+
+
+
+4. Resultados obtidos até agora
+O agente consegue identificar partes simples do texto se o OCR interpretar corretamente
+
+Campos como nomes e datas são extraídos com boa precisão
+
+Com imagens de boa qualidade, o modelo responde com dados estruturados corretamente
+
+5. Principais desafios
+"Alguns pontos ainda estão em avaliação técnica:"
+
+Quando a imagem tem baixa qualidade ou muito conteúdo, a extração falha ou retorna texto não estruturado
+
+Não temos certeza sobre o que exatamente o OCR do Agentforce está conseguindo 'ver'
+
+Falta feedback visual do que foi interpretado na imagem
+
+
+6. Próximos passos
+Realizar testes com outros formatos (ex: PDF convertido em imagem, prints de tela com formatação)
+
+Incluir instruções mais avançadas no Prompt Template (ex: "Ignore rodapés", "Considere apenas primeira linha com data")
+
+Testar integração da extração com uma Action que insira os dados em um objeto customizado no Salesforce
+
+❓ Perguntas técnicas para a Salesforce
+Existe alguma forma de visualizar o OCR bruto interpretado pelo modelo?
+
+O Prompt Builder reconhece tabelas em imagem ou só texto linear?
+
+Há planos para suporte a outros formatos além de PNG, como PDF ou imagens com múltiplas páginas?
+
+Qual a recomendação de resolução mínima e contraste ideal para imagens que serão processadas?
+
+O modelo de linguagem faz algum tipo de "correção" ou interpretação adicional, ou é 100% baseado no OCR?
+
+É possível combinar o input de imagem com uma Action Apex? (ex: extrair dados da imagem e chamar uma classe Apex com esses dados)
+
+OCR significa Optical Character Recognition, ou em português, Reconhecimento Óptico de Caracteres.
+
+
+❓O que significa:
+"Existe alguma forma de visualizar o OCR bruto interpretado pelo modelo?"
+
+Essa pergunta é uma dúvida técnica para a Salesforce que você pode levar na reunião.
+
+Ela quer dizer:
+
+"Tem como ver exatamente qual texto o Agentforce enxergou na imagem antes de interpretar a resposta?"
+
+🔍 Por que isso é importante?
+Imagine que você subiu uma imagem com o seguinte texto:
+
+makefile
+Copy
+Edit
+EMPRESA: AMBEV  
+DATA: 12/07/2025  
+VALOR: R$ 120.000
+E o agente não trouxe o nome da empresa corretamente.
+A dúvida que surge é:
+
+Será que o problema está no OCR, que não leu direito a palavra “AMBEV”?
+
+Ou o OCR leu certo, mas o modelo de linguagem entendeu errado ou ignorou?
+
+🛠️ Então, essa pergunta serve para isso:
+Ver o resultado puro da leitura da imagem, sem interpretação.
+Ou seja: o texto "cru" que foi extraído da imagem, linha por linha.
+
+Isso ajuda muito na validação de erros e na melhoria das instruções do Prompt.
+
+
+    Exemplo de como você pode perguntar na reunião:
+“Tem como a gente ver o conteúdo que o OCR leu da imagem antes de o modelo gerar a resposta? Seria interessante pra gente validar se o problema está na leitura da imagem ou na interpretação do prompt.”
