@@ -1,0 +1,14 @@
+var status = 'Em atraso'
+var recordtype = vars.dateCarga
+
+var numberContract = (vars.errosIntegracao != null and sizeOf(vars.errosIntegracao) > 0) ?
+	vars.errosIntegracao map ((item, index) -> {
+		related: "'" ++ item.NUM_CONTRATO ++ "'"
+	}) : []
+
+var ids = (numberContract map ($.related) filter ($ != null and $ != "")) joinBy ", "
+
+"SELECT Id from Asset where situacao = atraso and numcontrato not in (" ++ ids ++ ")"
+
+
+
