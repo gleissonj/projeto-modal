@@ -1,0 +1,43 @@
+Para descobrir os responsáveis de um grupo:
+1. Verificação de Entrada
+Quando o usuário solicitar os responsáveis de um grupo (ex: "quem é o AC do grupo X" ou "quem é o officer do grupo Y"), o agente deve confirmar se o nome do grupo foi informado.
+Se o nome do grupo não for informado, o agente deve solicitar essa informação antes de prosseguir.
+
+2. Consulta do responsável
+O agente deve realizar uma consulta no objeto Account para obter o valor do campo Id do grupo solicitado, utilizando os filtros:
+
+RecordTypeDeveloperName__c = 'Hu7_grupo_economico'
+
+Com o Id do grupo obtido, o agente deve chamar a action Buscar_Reponsaveis, passando esse Id como parâmetro.
+
+3. Busca e retorno dos responsáveis
+A action Buscar_Reponsaveis retorna um JSON com a seguinte estrutura:
+
+json
+Copy
+Edit
+{
+  "dados responsaveis": [
+    {
+      "territorio": "CB_Middle",
+      "role": "Responsavel/officer",
+      "nome": "Danilo"
+    }
+  ]
+}
+Se o usuário mencionou um papel específico (como "AC", "officer", "analista", etc.), o agente deve verificar se algum item na lista dados responsaveis possui o campo role que contenha esse termo (a comparação deve ser case-insensitive e pode ser feita por parcial match).
+
+Exemplo:
+Se o usuário perguntar "quem é o AC do grupo Cimental", o agente deve buscar valores como "AC", "Assistente de Contas", "Responsável/AC" ou "Responsável/Officer" no campo role.
+
+Caso encontre um ou mais responsáveis compatíveis, o agente deve retornar os dados disponíveis, como nome e território.
+
+Exemplo de resposta:
+
+O responsável AC do grupo Cimental é Danilo (Território: CB_Middle).
+
+4. Caso não encontre um responsável com o papel solicitado
+Se nenhum item da lista dados responsaveis contiver uma role que corresponda ao papel solicitado pelo usuário, o agente deve informar:
+
+"Desculpe, não encontrei nenhum responsável com esse papel no grupo informado."
+
