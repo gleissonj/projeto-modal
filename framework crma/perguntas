@@ -1,0 +1,37 @@
+Duvidas: 
+
+- auntenticacao, toke, escopo
+- a url pre assinada expira em 15 segundos se o file for mto grande vai dar tempo?
+- o ecs ele fica de pé passando na fila pra pegar e ver se tem mensagem. Com isso onde inicia ai no codigo o ECS , onde é o ponta a pé? é no service? 
+- onde ele faz o depara dos metadados para o dataset? tem isso aq ou ele só sobe la pra sales e a sales faz o resto?
+- onde q ele faz a quebra do arquivo em partes de 32mb?
+- onde é feito o download dos arquivos 
+- voce consegue debugar ai me mostrando como ele pega a mensagem da fila e faz todo o procedimento até a subida pra salesforce pro crma
+- onde ele faz a validacao desses dados do json que publica na fila?
+- no sql service tem a linha 96 e 97 ta certo ficar desse jeito 
+- dar um pull na develop
+- se tiver 20 files de 32 mb ele armazena os 20 temporarios?
+- pedir curl da chamada insomina
+- Saber como a API funciona tecnicamente: do início (mensagem na SQS) até o fim (envio ao Salesforce).
+
+PROBLEMAS:
+- nao consegui bater o erro publicando na fila pra aparecer no datadog
+
+FAZER :
+- dar um pull na develop
+
+
+
+DAILY
+
+- ajuda com time de contatos com a integração de contatos eles precisam desativar um fluxo
+- na quarta e ontem estava boa parte dando um help para o time do Edgar 
+- ontem tbm o time do Minoto, me ligou pra ve sobre um limite de um gtw q eles tavam tomando , não tive o erro , mas consegui achar 
+  uma doc e um cara aq q teve o msm problema e com a solução
+- tbm tava com o time da ntt realizando o deploy dos códigos do agente , tivemos alguns erros mas ai o Thiago tbm deu uma ajuda boa pra gente
+- na quarta não consegui falar com o Pedrao sobre o repasse do framework, ele agarrou em outras agendas q não conseguimos falar, ontem tivemos uma agenda, ele começou a me dar um overview, estou marcando uma recorrência diária com ele
+- conforme eu to falando com ele já estou escrevendo os fluxos conforme ele vai me passando para posteriormente documentar o framework
+- ontem tbm tive uma agenda com o Rempto, ele tava querendo saber sobre as migrações das apis do mule para a aws e digibee
+- hoje tenho reunião com o Pedrao
+- vou ta debrucçando tbm nos códigos pra entender o funcionamento, e configurar minha maquina pra rodar localmente 
+- Thiago pedi o grupo do sa7 mas fomos rejeitados 

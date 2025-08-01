@@ -1,0 +1,42 @@
+🧭 Visão Geral do Fluxo da API de Integração com o CRM (Salesforce)
+A API foi construída a partir de uma biblioteca Java e atua como um consumidor de mensagens de uma fila SQS. Sua principal responsabilidade é baixar arquivos a partir de URLs pré-assinadas e enviá-los ao Salesforce respeitando o limite de tamanho suportado.
+
+🔄 Fluxo Detalhado
+1. Recebimento da Requisição via Fila SQS
+A API escuta uma fila SQS continuamente.
+
+Cada mensagem recebida é um JSON contendo duas URLs pré-assinadas:
+
+Uma para o arquivo de metadados
+
+Outra para o arquivo de dados
+
+2. Download dos Arquivos
+A API realiza o download dos arquivos diretamente das URLs pré-assinadas.
+
+Ambos os arquivos (metadados e dados) são baixados e processados localmente.
+
+3. Divisão dos Arquivos
+Após o download, os arquivos são quebrados em partes de até 32 MB — limite máximo suportado pela plataforma CRM (Salesforce).
+
+Os fragmentos são armazenados em uma pasta temporária local no ambiente da API.
+
+4. Envio para o Salesforce
+A API inicia o processo de envio das partes para o CRM via requisições HTTP.
+
+Cada parte é enviada com controle de indexação (datepart ou similar), para garantir que o CRM consiga reconstituir os dados corretamente na outra ponta.
+
+⚙️ Comportamentos Técnicos Relevantes
+Fila de entrada: AWS SQS contendo JSONs com URLs assinadas.
+
+Formato de entrada: URLs apontando para arquivos de metadados e dados.
+
+Tamanho máximo por parte: 32 MB.
+
+Armazenamento temporário: Fragmentos salvos localmente antes do envio.
+
+Integração final: Requisições HTTP para endpoints do Salesforce com controle de partes (datepart).
+
+✅ Resumo Final
+A API age como um processador assíncrono, escutando mensagens na SQS e atuando como integrador entre o armazenamento temporário de arquivos e a plataforma CRM. Todo o processo é automatizado, com controle de tamanho, fragmentação e envio seguro.
+
