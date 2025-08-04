@@ -35,3 +35,16 @@ DAILY
 - hoje tenho reunião com o Pedrao
 - vou ta debrucçando tbm nos códigos pra entender o funcionamento, e configurar minha maquina pra rodar localmente 
 - Thiago pedi o grupo do sa7 mas fomos rejeitados 
+
+
+
+na sexta, estava configurando a maquina pra rodar local o projeto do framweork 
+já estou conseguindo rodar o projeto, porem qdo ele tenta conectar na salesforce estou tomando um erro de certificado pela IDE
+tbm na sexta estava debugando o código pra ir entendendo o funcionamento
+
+sexta dei suporte para dois membros la do time do Edgar 
+hoje vou ta olhando essa questão do erro de certificado q estou tendo na execução do framework
+vou ta ajudando o rapaz do time do Edgar a configurar o ambiente dele pq , na semana q ia ajudar ele precisou parar pra dar continuidade em outra demanda e ai não chegamos a finalizar a configuração na maquina dele 
+
+tbm do framwrokd, acho q o email não ta sendo disparado caso de algum erro no ececuacao da carga, então vou ta desenvolvendo essa parte do envio do email caso de alguma falha e posteriormente já ir criando a documentação do framework
+
