@@ -48,3 +48,42 @@ vou ta ajudando o rapaz do time do Edgar a configurar o ambiente dele pq , na se
 
 tbm do framwrokd, acho q o email não ta sendo disparado caso de algum erro no ececuacao da carga, então vou ta desenvolvendo essa parte do envio do email caso de alguma falha e posteriormente já ir criando a documentação do framework
 
+
+
+
+
+import javax.net.ssl.*;
+import java.security.cert.X509Certificate;
+import java.security.SecureRandom;
+
+@SpringBootApplication
+public class MicroserviceApplication {
+
+    public static void main(String[] args) {
+        // ⚠️ Somente para AMBIENTE DE TESTES!
+        try {
+            disableSslVerification();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        SpringApplication.run(MicroserviceApplication.class, args);
+    }
+
+    private static void disableSslVerification() throws Exception {
+        TrustManager[] trustAllCerts = new TrustManager[]{
+            new X509TrustManager() {
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+            }
+        };
+
+        SSLContext sc = SSLContext.getInstance("TLS");
+        sc.init(null, trustAllCerts, new SecureRandom());
+        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+        // Ignora verificação de hostname
+        HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+    }
+}
