@@ -137,3 +137,8 @@ public class MicroserviceApplication {
 
 
 keytool -import -alias aws-cert -keystore "$JAVA_HOME/lib/security/cacerts" -file aws.crt
+
+
+
+-Djavax.net.ssl.trustStore=C:/Users/Public/java/jdk-21/lib/security/cacerts
+-Djavax.net.ssl.trustStorePassword=changeit
