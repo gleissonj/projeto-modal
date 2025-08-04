@@ -133,3 +133,7 @@ public class MicroserviceApplication {
         HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
     }
 }
+
+
+
+keytool -import -alias aws-cert -keystore "$JAVA_HOME/lib/security/cacerts" -file aws.crt
