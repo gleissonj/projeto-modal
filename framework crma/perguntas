@@ -193,3 +193,6 @@ mvn clean install -Dmaven.repo.remote=https://repo.maven.apache.org/maven2
 
 set MAVEN_OPTS=-Djavax.net.ssl.trustStore="%JAVA_HOME%\lib\security\cacerts" -Djavax.net.ssl.trustStorePassword=changeit
 mvn clean install
+
+
+keytool -list -keystore "C:\Users\Public\java\jdk-21\lib\security\cacerts" -storepass changeit
