@@ -1,40 +1,44 @@
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 
-import java.io.File;
-import java.util.logging.Logger;
+public class MensagemFilaMap {
 
-public class DatasetCreator implements IDatasetCreator {
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final Tracer tracer = GlobalOpenTelemetry.getTracer("mensagemfila.parser");
 
-    private final Logger logger = Logger.getLogger(DatasetCreator.class.getName());
-    private static final Tracer tracer = GlobalOpenTelemetry.getTracer("dataset-creator");
+    public MensagemFila fromJson(String json) {
+        // Cria e ativa um novo span
+        Span span = tracer.spanBuilder("json.to.MensagemFila").startSpan();
 
-    public void upload(File aMetadataJson, MensagemFila mensagemFila) {
-        // Inicia o span
-        Span span = tracer.spanBuilder("dataset.upload").startSpan();
-
-        // Abre o contexto do span
         try (Scope scope = span.makeCurrent()) {
-            // Adiciona o atributo "email"
-            LogUtils.adicionarObjetoLog(mensagemFila);
+            JsonNode node = mapper.readTree(json);
 
-            // ---- Sua lógica original aqui ----
-            sql.client.delete(builder -> builder.queueUrl(queueUrl));
-            // -----------------------------------
+            String nomeDataset = node.get("nomeDataset").asText();
+            String emailTimeResponsavel = node.get("emailTimeResponsavel").asText();
+
+            if (!MensagemEmailValidator.isValid(emailTimeResponsavel)) {
+                throw new Exception("Email do time responsável inválido");
+            }
+
+            MensagemFila mensagemFila = new MensagemFila(nomeDataset, nomeApp, emailTimeResponsavel);
+
+            // Adiciona o email ao span como atributo
+            ServiceExceptionAspect.adicionarObjetoLog(mensagemFila);
+
+            return mensagemFila;
 
         } catch (Exception e) {
-            // Log com correlação ao span
-            logger.severe("Erro ao subir arquivo: " + e.getMessage());
-
-            // (Opcional) adiciona erro ao span para visibilidade no trace
             span.recordException(e);
             span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+
+            throw new RuntimeException("Falha não mapeada na conversão de JSON: " + e.getMessage(), e);
+
         } finally {
-            // Fecha o span e o SQS
-            span.end();
-            sqsClient.close();
+            span.end(); // Finaliza o span mesmo em caso de erro
         }
     }
 }
