@@ -1,0 +1,11 @@
+import io.opentelemetry.api.trace.Span;
+
+public class LogUtils {
+
+    public static void adicionarObjetoLog(MensagemFila mensagemFila) {
+        final Span span = Span.current();
+        if (span != null && span.getSpanContext().isValid()) {
+            span.setAttribute("email", mensagemFila.getEmailTimeResponsavel());
+        }
+    }
+}

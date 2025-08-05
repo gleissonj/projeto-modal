@@ -1,0 +1,26 @@
+<properties>
+  <otel.version>1.39.0</otel.version>
+</properties>
+
+<dependencies>
+  <!-- API principal do OpenTelemetry -->
+  <dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-api</artifactId>
+    <version>${otel.version}</version>
+  </dependency>
+
+  <!-- SDK para gerenciar e exportar spans -->
+  <dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-sdk</artifactId>
+    <version>${otel.version}</version>
+  </dependency>
+
+  <!-- Exportador para console (para testes locais) -->
+  <dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-logging</artifactId>
+    <version>${otel.version}</version>
+  </dependency>
+</dependencies>

@@ -1,0 +1,24 @@
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.exporter.logging.LoggingSpanExporter;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class MicroserviceApplication {
+
+    public static void main(String[] args) {
+        // Inicializa o OpenTelemetry com exportador de teste (console)
+        SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
+            .addSpanProcessor(SimpleSpanProcessor.create(new LoggingSpanExporter()))
+            .build();
+
+        OpenTelemetrySdk.builder()
+            .setTracerProvider(tracerProvider)
+            .buildAndRegisterGlobal();
+
+        // Roda a aplicação normalmente
+        SpringApplication.run(MicroserviceApplication.class, args);
+    }
+}
