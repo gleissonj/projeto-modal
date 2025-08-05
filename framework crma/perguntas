@@ -186,3 +186,6 @@ public class MicroserviceApplication {
   </dependency>
 </dependencies>
 
+
+
+mvn clean install -Dmaven.repo.remote=https://repo.maven.apache.org/maven2
