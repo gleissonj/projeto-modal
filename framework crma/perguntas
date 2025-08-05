@@ -142,3 +142,17 @@ keytool -import -alias aws-cert -keystore "$JAVA_HOME/lib/security/cacerts" -fil
 
 -Djavax.net.ssl.trustStore=C:/Users/Public/java/jdk-21/lib/security/cacerts
 -Djavax.net.ssl.trustStorePassword=changeit
+
+
+
+
+import io.opentelemetry.instrumentation.logging.jul.OpenTelemetryLogRecordExporter;
+
+public class MicroserviceApplication {
+    public static void main(String[] args) {
+        // Inicializa o bridge do java.util.logging para OpenTelemetry
+        OpenTelemetryLogRecordExporter.install();
+
+        SpringApplication.run(MicroserviceApplication.class, args);
+    }
+}
