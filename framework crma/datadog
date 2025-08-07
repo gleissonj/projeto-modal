@@ -1,0 +1,46 @@
+2. 🧭 Crie um Datadog Monitor (Logs ou APM)
+Monitore a condição de erro: ex. status:error AND message:"Erro ao enviar dataset"
+
+Ao invés de configurar o e-mail diretamente, vá até a aba:
+
+"Configure notification & automations" → Automate with a workflow
+
+3. 🔄 Crie um Datadog Workflow (Automation)
+Acesse: Automation → Workflows → New Workflow
+
+Etapas do workflow:
+Start: Recebe o payload do Monitor (log ou trace).
+
+Extract Attribute: Use o step “Extract Value from JSON” para pegar o emailTimeResponsavel do campo correto:
+
+Path: body.log.attributes.emailTimeResponsavel
+
+Send Email: Use o step “Send Email”
+
+Recipient email: {{steps.extract_attribute.value}}
+
+Subject: Erro ao enviar dataset
+
+Body: Com as informações do erro
+
+💡 Você pode usar outros steps para formatar, validar ou até transformar dados se necessário.
+
+4. 🔗 Vincule o Workflow ao Monitor
+Volte ao seu monitor.
+
+Em "Notification & Automations", selecione o workflow que você criou.
+
+✅ Benefícios dessa abordagem:
+Benefício	Por quê
+100% Datadog	Sem Lambda, sem API externa, sem manutenção de infraestrutura
+E-mail dinâmico	Você extrai dinamicamente o e-mail da trace/log
+Visual, fácil de manter	Workflows tem interface drag-and-drop
+Flexível	Pode adicionar regras por time, validações, formatações, condicional etc
+
+⚠️ Importante
+O atributo com o e-mail precisa realmente estar presente no log ou trace para que o Workflow consiga extrair.
+lk
+Você pode usar steps de fallback caso não haja e-mail disponível.
+
+fff
+

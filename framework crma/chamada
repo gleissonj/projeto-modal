@@ -27,11 +27,12 @@ public class MensagemFilaMap {
             MensagemFila mensagemFila = new MensagemFila(nomeDataset, nomeApp, emailTimeResponsavel);
 
             // Adiciona o email ao span como atributo
-            ServiceExceptionAspect.adicionarObjetoLog(mensagemFila);
+            // ServiceExceptionAspect.adicionarObjetoLog(mensagemFila);
 
             return mensagemFila;
 
         } catch (Exception e) {
+            ServiceExceptionAspect.adicionarObjetoLog(mensagemFila);
             span.recordException(e);
             span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
 
