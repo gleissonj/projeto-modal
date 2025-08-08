@@ -27,9 +27,57 @@ ENTRYPOINT ["java",
   <version>2.0.9</version>
 </dependency>
 
-<!-- Implementação: Logback -->
+<!-- Implementação: Logback --
+
 <dependency>
   <groupId>ch.qos.logback</groupId>
   <artifactId>logback-classic</artifactId>
   <version>1.4.11</version>
 </dependency>
+
+
+
+package br.teste.app;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class ServiceExceptionAspect {
+
+    private static final Logger logger = LoggerFactory.getLogger(ServiceExceptionAspect.class);
+
+    /**
+     * Adiciona atributos como `email`, `usuario`, etc. ao MDC (para logs do Datadog)
+     */
+    public static void adicionarObjetoLog(String nomeTag, String valorTag) {
+        MDC.put(nomeTag, valorTag); // ✅ Isso será capturado como Event Attribute
+    }
+
+    /**
+     * Envolve qualquer método anotado e loga exceções com contexto do MDC
+     */
+    @Around("@annotation(br.teste.app.annotations.Loggable)") // ou adapte para o seu ponto de corte
+    public Object catchServiceException(ProceedingJoinPoint joinPoint) throws Throwable {
+        try {
+            return joinPoint.proceed();
+
+        } catch (Exception ex) {
+            logger.error("Exceção em {}.{}: {}",
+                joinPoint.getSignature().getDeclaringTypeName(),
+                joinPoint.getSignature().getName(),
+                ex.getMessage(), ex);
+
+            throw new RuntimeException("Erro no service", ex);
+
+        } finally {
+            MDC.clear(); // 🧼 limpa o contexto para evitar vazamento em outras threads
+        }
+    }
+}
