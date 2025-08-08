@@ -3,3 +3,17 @@
     <artifactId>dd-opentelemetry-auto-instrumentation</artifactId>
     <version>1.32.0</version> <!-- ou versão mais recente -->
 </dependency>
+
+
+
+
+ENTRYPOINT ["java",
+  "-javaagent:/app/dd-java-agent.jar",
+  "-Ddd.service=microservice-app",
+  "-Ddd.env=homolog",                      # ambiente (opcional mas recomendado)
+  "-Ddd.version=1.0",                      # versão do serviço (opcional)
+  "-Ddd.logs.injection=true",             # para logs com trace_id
+  "-Dotel.instrumentation.enabled=true",  # ✅ necessário
+  "-Dotel.experimental.sdk.enabled=true", # ✅ importante p/ spans customizados
+  "-Dotel.javaagent.debug=false",         # opcional para debug
+  "-jar", "app.jar"]
