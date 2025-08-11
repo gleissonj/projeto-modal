@@ -81,3 +81,21 @@ public class ServiceExceptionAspect {
         }
     }
 }
+
+
+
+
+na sexta estava vendo a questão do incidente
+falei com o Edu e o david
+estava ttbm conhecendo a lambda q faz esse processo
+
+tive com com o time do Edgar 
+investigando um registro q deu erro em uma carga q eles estavam subindo 
+
+
+continuei trabalhando 
+abri um chamado para o time do datadog, pq o event atributes não estava caindo 
+encontrei um caso parecido com o meu no colaboratech falei om o rapaz e ele teve q abrir um chamado para o time do datadog msm
+hoje o chamado já esta sendo resolvido
+
+oq é um pouco chato, é q cada modificação q faço tenho q subir na esteira o ecs, e demora um pouquinho 
