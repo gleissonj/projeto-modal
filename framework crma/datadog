@@ -99,3 +99,7 @@ encontrei um caso parecido com o meu no colaboratech falei om o rapaz e ele teve
 hoje o chamado já esta sendo resolvido
 
 oq é um pouco chato, é q cada modificação q faço tenho q subir na esteira o ecs, e demora um pouquinho 
+
+
+aws sts assume-role --role-arn arn:aws:iam::ACCOUNT_ID:role/NOME_DA_ROLE_DO_LAMBDA --role-session-name test
+aws s3api get-object --bucket SEU_BUCKET --key CAMINHO/ARQUIVO /tmp/teste
