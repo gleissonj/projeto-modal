@@ -1,0 +1,141 @@
+teste 1 
+
+// src/test/java/seu/pacote/ServiceExceptionAspectTest.java
+package seu.pacote;
+
+import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
+import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.stereotype.Service;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ServiceExceptionAspectTest {
+
+    @Service // Necessário para casar com o pointcut within(@Service *)
+    static class ServicoQueFalha {
+        public String executar() {
+            throw new IllegalStateException("falhou de propósito");
+        }
+    }
+
+    @Test
+    void deveCairNoCatchReempacotarEFinalizarLimpandoMDC() {
+        // Arrange: target + aspecto aplicado via proxy
+        ServicoQueFalha target = new ServicoQueFalha();
+        AspectJProxyFactory factory = new AspectJProxyFactory(target);
+        factory.addAspect(new ServiceExceptionAspect());
+        ServicoQueFalha proxy = factory.getProxy();
+
+        // Pré-condição: algo no MDC para verificar o clear() do finally
+        ServiceExceptionAspect.adicionarObjetoLog("email", "time@empresa.com");
+
+        // Act + Assert: chama método que lança exceção => cai no catch do aspecto
+        RuntimeException thrown = assertThrows(RuntimeException.class, proxy::executar);
+
+        // Reempacotamento com causa original
+        assertEquals("Erro no service", thrown.getMessage());
+        assertNotNull(thrown.getCause());
+        assertEquals(IllegalStateException.class, thrown.getCause().getClass());
+        assertEquals("falhou de propósito", thrown.getCause().getMessage());
+
+        // MDC limpo no finally
+        assertNull(MDC.get("email"), "MDC deveria ter sido limpo no finally");
+    }
+}
+
+
+
+teste 2 
+
+// src/test/java/.../ServiceExceptionAspectSpringTest.java
+package br.seu.pacote;
+
+import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
+import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
+import org.springframework.context.annotation.*;
+import org.springframework.stereotype.Service;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringJUnitConfig(classes = ServiceExceptionAspectSpringTest.TestConfig.class)
+class ServiceExceptionAspectSpringTest {
+
+    @Configuration
+    @EnableAspectJAutoProxy(proxyTargetClass = true)
+    static class TestConfig {
+        @Bean ServiceExceptionAspect serviceExceptionAspect() { return new ServiceExceptionAspect(); }
+        @Bean TestService testService() { return new TestService(); }
+    }
+
+    @Service
+    static class TestService {
+        public String executar() {
+            throw new IllegalStateException("falhou no service");
+        }
+    }
+
+    @javax.annotation.Resource
+    TestService testService;
+
+    @Test
+    void deveCairNoCatchDoAspectoELimparMDC() {
+        ServiceExceptionAspect.adicionarObjetoLog("tag", "valor");
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> testService.executar());
+        assertEquals("Erro no service", ex.getMessage());
+        assertEquals("falhou no service", ex.getCause().getMessage());
+        assertNull(MDC.get("tag"));
+    }
+}
+
+
+teste 3
+
+
+// src/test/java/.../ServiceExceptionAspectTest.java
+package br.seu.pacote;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.MDC;
+import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
+import org.springframework.stereotype.Service;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ServiceExceptionAspectTest {
+
+    @Service // precisa da anotação para casar com o pointcut: within(@Service *)
+    static class ServicoQueFalha {
+        public String executar() {
+            throw new IllegalStateException("falhou de propósito");
+        }
+    }
+
+    @Test
+    void devePassarPeloCatchEAoFinalLimparMDC() {
+        // Arrange: cria o target e aplica o aspecto
+        ServicoQueFalha target = new ServicoQueFalha();
+        AspectJProxyFactory factory = new AspectJProxyFactory(target);
+        factory.addAspect(new ServiceExceptionAspect()); // seu aspecto @Component
+        ServicoQueFalha proxy = factory.getProxy();
+
+        // Coloca algo no MDC para verificar o clear() do finally
+        ServiceExceptionAspect.adicionarObjetoLog("email", "time@empresa.com");
+
+        // Act + Assert: chama o método para disparar a exception e cair no catch do aspecto
+        RuntimeException thrown = assertThrows(RuntimeException.class, proxy::executar);
+
+        // Verifica que o aspecto reempacotou mantendo a causa original
+        assertEquals("Erro no service", thrown.getMessage());
+        assertNotNull(thrown.getCause());
+        assertEquals(IllegalStateException.class, thrown.getCause().getClass());
+        assertEquals("falhou de propósito", thrown.getCause().getMessage());
+
+        // Verifica que o MDC foi limpo no finally
+        assertNull(MDC.get("email"), "MDC deveria ter sido limpo no finally");
+    }
+}
+

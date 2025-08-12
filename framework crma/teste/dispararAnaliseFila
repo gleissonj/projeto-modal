@@ -1,0 +1,17 @@
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+
+class AnaliseServiceTest {
+
+    @Test
+    void deveChamarBuscarMensagemQuandoDispararAnaliseFilaForExecutado() throws Exception {
+        // Arrange
+        AnaliseService service = spy(new AnaliseService());
+
+        // Act
+        service.dispararAnaliseFila();
+
+        // Assert
+        verify(service, times(1)).buscarMensagem();
+    }
+}
