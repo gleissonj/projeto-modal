@@ -196,3 +196,18 @@ mvn clean install
 
 
 keytool -list -keystore "C:\Users\Public\java\jdk-21\lib\security\cacerts" -storepass changeit
+
+
+
+
+- dei um apoio ao time do Edgar em 2 casos que eles precisavam 
+- ontem uma moça de dados me pingou pra ajudar a investigar pq um dado da base de democratizados não tava sendo extraído
+- tbm estava dando suporte para um pessoal q esta mexendo com agentforce
+- tbm o Alysson especialista me pingou para entender a solução do framework
+- sobre a integração do datadog com o service now , o monitor deve ser criado via esteira, então precisei criar um repo de infra do terraform
+  estou com um problema para gerar múltiplos incidentes, mas hoje já quero matar isso 
+- na api como tive que implementar um código, preciso finalizar a cobertura dos testes unitários q tbm consigo matar hoje
+- agora as 10:30 tenho uma reunião com o time do agro da sigla pm9 para alinhamento sobre uso do framework
+- Recebemos um incidente no inicio da semana, que temos algumas lambdas que estão com o python na versão 3.9 e que precisaríamos atualizar para a versão 3.12.
+   (vou levantar todos os lambdas nossos que estão nessa versão e iniciar a atualização)
+
