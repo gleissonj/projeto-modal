@@ -1,12 +1,4 @@
-<!-- pom.xml -->
-<dependency>
-  <groupId>org.mockito</groupId>
-  <artifactId>mockito-inline</artifactId>
-  <version>5.2.0</version>
-  <scope>test</scope>
-</dependency>
-
-
+package seu.pacote;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -16,18 +8,15 @@ import java.io.File;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-// Ajuste o nome do pacote/classe conforme o seu projeto
+// ✅ Requer mockito-inline no escopo de teste para mockar métodos estáticos
 class SqsServiceTest {
 
     @Test
-    void deveFazerUploadDataset_quandoValidacoesPassarem() {
-        // Dependência do service
+    void deveFazerUploadDataset_quandoValidacoesPassarem() throws Exception {
+        // Arrange
         CrmaDatasetUploader uploader = mock(CrmaDatasetUploader.class);
-
-        // Classe sob teste (injete o mock no construtor real)
         SqsService service = new SqsService(uploader);
 
-        // Mensagem de entrada
         MensagemFila msg = mock(MensagemFila.class);
         when(msg.getUrlArquivoMetadados()).thenReturn("s3://bucket/meta.json");
         when(msg.getUrlArquivoDados()).thenReturn("s3://bucket/dados.zip");
@@ -35,20 +24,18 @@ class SqsServiceTest {
         when(msg.getNomeApp()).thenReturn("appY");
         when(msg.getOperacao()).thenReturn("UPSERT");
 
-        // “Arquivos” simulados
         String caminhoMeta = "/tmp/meta.json";
         String caminhoDados = "/tmp/dados.zip";
 
         try (MockedStatic<ArquivoService> arqSvc = mockStatic(ArquivoService.class);
              MockedStatic<ArquivoValidator> arqVal = mockStatic(ArquivoValidator.class)) {
 
-            // Mock dos métodos estáticos
+            // Stubs dos estáticos
             arqSvc.when(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/meta.json"))
                   .thenReturn(caminhoMeta);
             arqSvc.when(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/dados.zip"))
                   .thenReturn(caminhoDados);
 
-            // Validadores: não fazem nada (apenas não lançar exceção)
             arqVal.when(() -> ArquivoValidator.validarArquivoMetadados(caminhoMeta))
                   .thenAnswer(inv -> null);
             arqVal.when(() -> ArquivoValidator.validarArquivoDados(caminhoDados))
@@ -57,17 +44,17 @@ class SqsServiceTest {
             // Act
             assertDoesNotThrow(() -> service.processarMensagemCrma(msg));
 
-            // Assert: verificamos os argumentos do upload
+            // Assert (✅ assinatura permite Exception)
             verify(uploader, times(1)).uploadDataset(
-                    argThat(f -> new File(caminhoMeta).getPath().equals(f.getPath())),
-                    argThat(f -> new File(caminhoDados).getPath().equals(f.getPath())),
-                    eq("datasetX"),
-                    eq("appY"),
-                    eq("UPSERT"),
-                    eq("Incremental")
+                argThat(f -> new File(caminhoMeta).getPath().equals(f.getPath())),
+                argThat(f -> new File(caminhoDados).getPath().equals(f.getPath())),
+                eq("datasetX"),
+                eq("appY"),
+                eq("UPSERT"),
+                eq("Incremental")
             );
 
-            // (opcional) verificar que os estáticos foram chamados
+            // (opcional) checagem de chamadas dos estáticos
             arqSvc.verify(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/meta.json"));
             arqSvc.verify(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/dados.zip"));
             arqVal.verify(() -> ArquivoValidator.validarArquivoMetadados(caminhoMeta));
@@ -76,7 +63,8 @@ class SqsServiceTest {
     }
 
     @Test
-    void naoDeveFazerUpload_quandoValidacaoMetadadosFalhar() {
+    void naoDeveFazerUpload_quandoValidacaoMetadadosFalhar() throws Exception {
+        // Arrange
         CrmaDatasetUploader uploader = mock(CrmaDatasetUploader.class);
         SqsService service = new SqsService(uploader);
 
@@ -92,15 +80,14 @@ class SqsServiceTest {
         try (MockedStatic<ArquivoService> arqSvc = mockStatic(ArquivoService.class);
              MockedStatic<ArquivoValidator> arqVal = mockStatic(ArquivoValidator.class)) {
 
-            // Baixa metadados “ok”
             arqSvc.when(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/meta.json"))
                   .thenReturn(caminhoMeta);
 
-            // Falha na validação de metadados → cai no catch do método
+            // Força exceção na validação → método cai no catch e apenas loga
             arqVal.when(() -> ArquivoValidator.validarArquivoMetadados(caminhoMeta))
                   .thenThrow(new IllegalArgumentException("JSON inválido"));
 
-            // Act: método não deve propagar (pelo seu código, só loga)
+            // Act
             assertDoesNotThrow(() -> service.processarMensagemCrma(msg));
 
             // Assert: upload NUNCA é chamado
