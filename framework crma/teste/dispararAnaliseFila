@@ -1,43 +1,110 @@
-import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.*;
-
-class AnaliseServiceTest {
-
-    @Test
-    void deveChamarBuscarMensagemQuandoDispararAnaliseFilaForExecutado() throws Exception {
-        // Arrange
-        AnaliseService service = spy(new AnaliseService());
-
-        // Act
-        service.dispararAnaliseFila();
-
-        // Assert
-        verify(service, times(1)).buscarMensagem();
-    }
-}
+<!-- pom.xml -->
+<dependency>
+  <groupId>org.mockito</groupId>
+  <artifactId>mockito-inline</artifactId>
+  <version>5.2.0</version>
+  <scope>test</scope>
+</dependency>
 
 
 
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import java.io.File;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+// Ajuste o nome do pacote/classe conforme o seu projeto
 class SqsServiceTest {
 
     @Test
-    void deveChamarBuscarMensagemQuandoDispararAnaliseFilaForExecutado() throws Exception {
-        // Mocks das dependências exigidas no construtor
-        CrmaDatasetUploader uploaderMock = mock(CrmaDatasetUploader.class);
+    void deveFazerUploadDataset_quandoValidacoesPassarem() {
+        // Dependência do service
+        CrmaDatasetUploader uploader = mock(CrmaDatasetUploader.class);
 
-        // Instância espiada (spy) da sua classe real
-        SqsService service = spy(new SqsService(uploaderMock));
+        // Classe sob teste (injete o mock no construtor real)
+        SqsService service = new SqsService(uploader);
 
-        // IMPORTANTÍSSIMO: evita chamada real à AWS dentro de buscarMensagem()
-        doNothing().when(service).buscarMensagem();
+        // Mensagem de entrada
+        MensagemFila msg = mock(MensagemFila.class);
+        when(msg.getUrlArquivoMetadados()).thenReturn("s3://bucket/meta.json");
+        when(msg.getUrlArquivoDados()).thenReturn("s3://bucket/dados.zip");
+        when(msg.getNomeDataset()).thenReturn("datasetX");
+        when(msg.getNomeApp()).thenReturn("appY");
+        when(msg.getOperacao()).thenReturn("UPSERT");
 
-        // Executa o método @Scheduled manualmente
-        service.dispararAnaliseFila();
+        // “Arquivos” simulados
+        String caminhoMeta = "/tmp/meta.json";
+        String caminhoDados = "/tmp/dados.zip";
 
-        // Verifica que buscarMensagem() foi invocado 1x
-        verify(service, times(1)).buscarMensagem();
+        try (MockedStatic<ArquivoService> arqSvc = mockStatic(ArquivoService.class);
+             MockedStatic<ArquivoValidator> arqVal = mockStatic(ArquivoValidator.class)) {
+
+            // Mock dos métodos estáticos
+            arqSvc.when(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/meta.json"))
+                  .thenReturn(caminhoMeta);
+            arqSvc.when(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/dados.zip"))
+                  .thenReturn(caminhoDados);
+
+            // Validadores: não fazem nada (apenas não lançar exceção)
+            arqVal.when(() -> ArquivoValidator.validarArquivoMetadados(caminhoMeta))
+                  .thenAnswer(inv -> null);
+            arqVal.when(() -> ArquivoValidator.validarArquivoDados(caminhoDados))
+                  .thenAnswer(inv -> null);
+
+            // Act
+            assertDoesNotThrow(() -> service.processarMensagemCrma(msg));
+
+            // Assert: verificamos os argumentos do upload
+            verify(uploader, times(1)).uploadDataset(
+                    argThat(f -> new File(caminhoMeta).getPath().equals(f.getPath())),
+                    argThat(f -> new File(caminhoDados).getPath().equals(f.getPath())),
+                    eq("datasetX"),
+                    eq("appY"),
+                    eq("UPSERT"),
+                    eq("Incremental")
+            );
+
+            // (opcional) verificar que os estáticos foram chamados
+            arqSvc.verify(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/meta.json"));
+            arqSvc.verify(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/dados.zip"));
+            arqVal.verify(() -> ArquivoValidator.validarArquivoMetadados(caminhoMeta));
+            arqVal.verify(() -> ArquivoValidator.validarArquivoDados(caminhoDados));
+        }
+    }
+
+    @Test
+    void naoDeveFazerUpload_quandoValidacaoMetadadosFalhar() {
+        CrmaDatasetUploader uploader = mock(CrmaDatasetUploader.class);
+        SqsService service = new SqsService(uploader);
+
+        MensagemFila msg = mock(MensagemFila.class);
+        when(msg.getUrlArquivoMetadados()).thenReturn("s3://bucket/meta.json");
+        when(msg.getUrlArquivoDados()).thenReturn("s3://bucket/dados.zip");
+        when(msg.getNomeDataset()).thenReturn("datasetX");
+        when(msg.getNomeApp()).thenReturn("appY");
+        when(msg.getOperacao()).thenReturn("UPSERT");
+
+        String caminhoMeta = "/tmp/meta.json";
+
+        try (MockedStatic<ArquivoService> arqSvc = mockStatic(ArquivoService.class);
+             MockedStatic<ArquivoValidator> arqVal = mockStatic(ArquivoValidator.class)) {
+
+            // Baixa metadados “ok”
+            arqSvc.when(() -> ArquivoService.baixarArquivoParaTemp("s3://bucket/meta.json"))
+                  .thenReturn(caminhoMeta);
+
+            // Falha na validação de metadados → cai no catch do método
+            arqVal.when(() -> ArquivoValidator.validarArquivoMetadados(caminhoMeta))
+                  .thenThrow(new IllegalArgumentException("JSON inválido"));
+
+            // Act: método não deve propagar (pelo seu código, só loga)
+            assertDoesNotThrow(() -> service.processarMensagemCrma(msg));
+
+            // Assert: upload NUNCA é chamado
+            verify(uploader, never()).uploadDataset(any(), any(), any(), any(), any(), any());
+        }
     }
 }
