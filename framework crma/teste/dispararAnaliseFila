@@ -15,3 +15,29 @@ class AnaliseServiceTest {
         verify(service, times(1)).buscarMensagem();
     }
 }
+
+
+
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+
+class SqsServiceTest {
+
+    @Test
+    void deveChamarBuscarMensagemQuandoDispararAnaliseFilaForExecutado() throws Exception {
+        // Mocks das dependências exigidas no construtor
+        CrmaDatasetUploader uploaderMock = mock(CrmaDatasetUploader.class);
+
+        // Instância espiada (spy) da sua classe real
+        SqsService service = spy(new SqsService(uploaderMock));
+
+        // IMPORTANTÍSSIMO: evita chamada real à AWS dentro de buscarMensagem()
+        doNothing().when(service).buscarMensagem();
+
+        // Executa o método @Scheduled manualmente
+        service.dispararAnaliseFila();
+
+        // Verifica que buscarMensagem() foi invocado 1x
+        verify(service, times(1)).buscarMensagem();
+    }
+}
