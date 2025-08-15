@@ -211,3 +211,13 @@ keytool -list -keystore "C:\Users\Public\java\jdk-21\lib\security\cacerts" -stor
 - Recebemos um incidente no inicio da semana, que temos algumas lambdas que estão com o python na versão 3.9 e que precisaríamos atualizar para a versão 3.12.
    (vou levantar todos os lambdas nossos que estão nessa versão e iniciar a atualização)
 
+
+- dei apoio ao time do Edgar 
+- a moça de dados q estava que estava precisando mexer em um job da democratizada me pingou ontem de novo pq estava tomando um erro na execução do job em des ai estava oljando com ela
+- subi a demanda do ecs com o datadog 
+- iniciei a demanda do iuconfia
+- esses novos serviços do framwerok foram criados usando o stackspot que gera a infra, e q as conffig fica tudo em um arquivo sdk, esse arquivo eles aconselha não mexer
+porem no portal eu não consigo ajusatar oq ta pedindo no iuconfia, com isso abri um chamado para o stackspot pra entender como eles estão fazendo nessas situações do iuconfia
+- e enquanto isso estou atuando nas outras infras 
+- e dpois vou mexer na atualizar do python dos lambdas
+
