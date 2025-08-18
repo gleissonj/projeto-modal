@@ -1,0 +1,206 @@
+# 📘 Documentação do Framework CRMA
+
+## 1. Visão Geral
+
+O **Framework CRMA** é um conjunto de serviços na **AWS** responsável por realizar a **carga de dados no CRM Analytics (CRMA) da Salesforce**, sob propriedade da conta **KN8**.  
+O objetivo principal é permitir a inserção de datasets no CRMA de forma **padronizada, automatizada e segura**.
+
+O framework utiliza:
+
+- **API Gateway** → responsável por expor o endpoint de entrada.  
+- **Amazon SQS** → responsável por orquestrar as mensagens enviadas pelos usuários.  
+- **Amazon ECS** → realiza o processamento das mensagens, faz a validação, leitura dos arquivos e executa a carga de dados no Salesforce CRMA.  
+
+---
+
+## 2. Fluxo de Operação
+
+1. O usuário que deseja utilizar o framework deve chamar o **endpoint interno da API**.  
+2. O payload (JSON) deve conter **obrigatoriamente** os seguintes campos:  
+
+```json
+{
+  "nome_dataset": "nomeDoSeuDataset",
+  "nome_app": "nomeDoSeuApp",
+  "url_arquivo_dados": "suaUrlPreAssinadaQueContemOzipDeDados",
+  "url_arquivo_metadados": "suaUrlPreAssinadaQueContemOJsondeMetadados",
+  "squad_responsavel": "nomeDaSuaSquad",
+  "operacao": "Overwrite"
+}
+```
+
+⚠️ **Todos os campos são obrigatórios.**
+
+---
+
+## 3. Descrição dos Campos
+
+- **nome_dataset**: Nome do dataset que será criado/atualizado no CRMA.  
+- **nome_app**: Nome do aplicativo no qual o dataset será armazenado.  
+- **url_arquivo_dados**: URL pré-assinada do **arquivo ZIP** contendo os dados a serem carregados.  
+- **url_arquivo_metadados**: URL pré-assinada do **arquivo JSON** com os metadados do dataset.  
+- **squad_responsavel**: Nome da squad responsável pela carga.  
+- **operacao**: Tipo de operação de carga.  
+  - `overwrite`: substitui completamente os dados existentes no dataset.  
+  - `append`: adiciona novos dados ao dataset existente.  
+
+---
+
+## 4. Como Utilizar o Framework
+
+### 4.1 Autenticação
+Para chamar a API é necessário possuir um **token STS interno**.
+
+- URLs do STS disponíveis:
+  - **DEV** → [www.devsts.com.br](http://www.devsts.com.br)  
+  - **HOM** → [www.homsts.com.br](http://www.homsts.com.br)  
+  - **PRD** → [www.sts.com.br](http://www.sts.com.br)  
+
+O token deve conter o **escopo**:  
+```
+framework.write.teste
+```
+
+Esse escopo precisa estar associado ao **Client ID** do solicitante.
+
+---
+
+### 4.2 Requisição
+
+- **Método HTTP**: `POST`  
+- **Endpoint**: `https://{api-gateway-host}/crma/upload` *(interno)*  
+- **Headers obrigatórios**:
+  - `Authorization: Bearer {TOKEN_STS}`
+  - `Content-Type: application/json`
+
+---
+
+## 5. Exemplo de Requisição
+
+```bash
+curl -X POST https://{api-gateway-host}/crma/upload -H "Authorization: Bearer eyJhbGciOi..." -H "Content-Type: application/json" -d '{
+  "nome_dataset": "vendas_2025",
+  "nome_app": "analise_comercial",
+  "url_arquivo_dados": "https://s3.amazonaws.com/bucket/arquivo_dados.zip?X-Amz-Signature=...",
+  "url_arquivo_metadados": "https://s3.amazonaws.com/bucket/metadados.json?X-Amz-Signature=...",
+  "squad_responsavel": "squad_dataops",
+  "operacao": "append"
+}'
+```
+
+---
+
+## 6. Fluxo Resumido
+
+1. Usuário obtém o **token STS** válido.  
+2. Realiza chamada ao **endpoint do API Gateway** com o payload obrigatório.  
+3. Mensagem é enfileirada no **SQS**.  
+4. **ECS** processa a mensagem:  
+   - Baixa arquivos do S3 a partir das URLs pré-assinadas.  
+   - Valida os arquivos (estrutura de dados e metadados).  
+   - Executa a carga dos dados no **CRMA Salesforce**.  
+5. Retorna logs e status da execução.  
+
+---
+
+## 7. Próximos Passos
+
+- 📌 Adicionar **exemplo de resposta da API**.  
+- 📌 Criar **diagrama de arquitetura**.  
+- 📌 Definir **tratamento de erros**.  
+- 📌 Documentar **monitoramento no Datadog**.  
+
+---
+
+## 8. Exemplo de Resposta da API
+
+```json
+{
+  "SendMessageResponse": {
+    "ResponseMetadata": {
+      "RequestId": "43424242423"
+    },
+    "SendMessageResult": {
+      "MD5OfMessageAttributes": null,
+      "MD5OfMessageBody": "dfsdfsfsd",
+      "MD5OfMessageSystemAttributes": null,
+      "MessageId": "3242342342",
+      "SequenceNumber": "4242423423"
+    }
+  }
+}
+```
+
+⚠️ Esta resposta **não significa que a carga foi concluída**, apenas que a mensagem foi publicada com sucesso na fila SQS para processamento posterior pelo ECS.  
+
+---
+
+## 9. Diagrama de Arquitetura
+
+🔗 [Clique aqui para visualizar o desenho da arquitetura](http://desenhoArquiteutra)
+
+---
+
+## 10. Tratamento de Erros
+
+### Possíveis Erros
+- **URL pré-assinada inválida ou expirada**  
+- **Nome do App não encontrado na Salesforce**  
+- **Arquivo JSON de metadados inválido**  
+- **Operação inválida (diferente de overwrite/append)**  
+- **Falha de autenticação com o CRMA (Salesforce)**  
+
+### Ação em Caso de Erro
+- Erros são registrados no **Datadog**.  
+- O **monitor de alertas** abre automaticamente um incidente.  
+- O incidente é atribuído à **squad responsável** informada em `squad_responsavel`.  
+
+---
+
+## 11. Monitoramento no Datadog
+
+### Logs
+- Os logs são centralizados no **painel de logs**.  
+- Para consultar, deve-se buscar pelo serviço:  
+  ```
+  service:service-framework-crma
+  ```
+- Exemplos de consultas comuns:  
+  - `service:service-framework-crma AND level:error` → somente erros.  
+  - `service:service-framework-crma AND squad_responsavel:squad_dataops` → erros filtrados por squad.  
+
+### Monitores e Incidentes
+- Detectam falhas críticas como:  
+  - Erros em URLs pré-assinadas.  
+  - Erros de payload/metadados.  
+  - Falhas na integração com CRMA.  
+- Cada incidente aberto é atribuído à **squad informada no payload**.  
+
+---
+
+## 12. Uso de URLs Pré-Assinadas
+
+### Por que utilizamos URLs Pré-Assinadas?
+O serviço do framework CRMA roda na conta **KN8**.  
+Os times consumidores utilizam **outras contas AWS**.  
+
+Por **questões de governança e segurança**, não é permitido o consumo direto de dados via **cross-account**.  
+Por isso:  
+- Cada time deve gerar **URLs pré-assinadas** dos seus arquivos.  
+- Essas URLs são enviadas no payload da requisição.  
+- O framework consome os arquivos temporariamente de forma segura.  
+
+### Tempo de Expiração
+- **Mínimo recomendado**: **3 horas**.  
+- Isso garante tempo suficiente para:  
+  - Leitura da mensagem pelo ECS.  
+  - Download e validação dos arquivos.  
+  - Execução da carga no CRMA.  
+
+### Benefícios
+- 🔒 Segurança → acesso temporário e controlado.  
+- 🏗️ Isolamento → sem dependência de cross-account.  
+- ⚡ Flexibilidade → cada squad controla seus arquivos.  
+- 📑 Governança → alinhado com boas práticas AWS.  
+
+---
