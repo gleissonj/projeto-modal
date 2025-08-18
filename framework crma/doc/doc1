@@ -204,3 +204,15 @@ Por isso:
 - 📑 Governança → alinhado com boas práticas AWS.  
 
 ---
+
+
+
+#### Hosts por ambiente
+
+| Ambiente | Host (base)                                              | Observação                     |
+| -------- | -------------------------------------------------------- | ------------------------------ |
+| DEV      | `https://abc123.execute-api.sa-east-1.amazonaws.com/dev` | Invoke URL (sem custom domain) |
+| HOM      | `https://def456.execute-api.sa-east-1.amazonaws.com/hom` | —                              |
+| PRD      | `https://api-crma.kn8.corp/prd`                          | Custom domain + base path      |
+
+---
