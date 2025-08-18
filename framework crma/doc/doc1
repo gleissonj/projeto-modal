@@ -244,3 +244,18 @@ Por isso:
 
 - **Posso usar o framework em ambientes DEV, HOM e PRD?**  
   Sim, cada ambiente tem seu host específico no API Gateway.
+
+
+
+
+# 13. FAQ (Perguntas Frequentes)
+
+| Pergunta | Resposta |
+|----------|----------|
+| **Posso utilizar esse framework para realizar cargas em objetos da Salesforce?** | Não. O framework é exclusivo para datasets do CRMA, não para objetos da Salesforce. |
+| **Qual o tamanho máximo dos arquivos que posso enviar?** | Recomendamos até **5 GB** por arquivo de dados. |
+| **Quanto tempo a URL pré-assinada deve permanecer válida?** | No mínimo **3 horas**. |
+| **Quem devo acionar em caso de erro no processamento?** | Consulte os logs no Datadog com `service:service-framework-crma`. |
+| **O framework realiza retries automaticamente?** | Sim, para erros temporários. Payload inválido ou URL expirada não são reprocessados. |
+| **Quais tipos de operação de carga são suportados?** | `overwrite`, `append`, `upsert`. |
+| **Posso usar o framework em ambientes DEV, HOM e PRD?** | Sim, cada ambiente tem seu host específico no API Gateway. |
