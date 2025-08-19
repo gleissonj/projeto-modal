@@ -1,0 +1,44 @@
+os agentes são compostos por 5 (componentes funcadmentais,para  o agenforce funcione) builder blocks,cada um tem um papel especifico na criação de interação inteligente
+
+AGENTE
+o Agente (Agent) é o ator principal, é o que interage com o usuário. Capaz de agir de maneira proativa, identificando oportunidade e execuções ações.
+
+TOPICOS
+ Eles são conjuntos que agrupam acoes especificcas, então vc faz um tópico pra colocar acoes dentro dele.
+ Entao um agente pode ter vários tópicos , cada um focado em um contexto diferente.
+Entao um tópico pode ter varias acoes e um agente pode ter vários topcios, e dentro do tópico podemos ter varias instruções 
+
+
+Entao a configuração dos tópicos inclue, vários campos chaves:
+* topic label: nome claro e direto
+* classification description: descrição breve para classificar solicitações do usuário 
+* scope: responsabilidades detalhadas e limites do tópico
+* instructions: orientações especificas de execução das acoes 
+
+
+ACTIONS
+sao tarefas executas no agente dentro de cada topico 
+ podem ser padrao ou customizadas para atender as necessidades especificas atraves de flow, apex, prompt template chama
+ 
+ 
+MOTOR DE RACIONCINIO
+é um cerebro por tras do agente
+ ele interepreta a solicitiacao da pessoa que ta interagindo com o agente, classifica em topicos essa interacao e coordena o passo a passo para alcancar o objetivo do usuario
+ 
+LLM
+é o motor de tudo o realizador de tudo o operario é o LLM  
+ lembrando que todo passo anterior é realemte de construcao dentro do salesfroce , quando vai para o LLM é um modelo de linguagem que vai definiri todos os requisotos com as 
+ regras ja incorporadas dentro do prompt pra ele responder e retronar para o usaurio 
+ é ele que entende o que o usuario quer dizer e gera as resposta que faz sentido no contexto da conversa 
+ 
+ FLUXO COMPLETO
+ 
+ Esse é o fluxo completo dos componente que entram em acao qdo vc aciona o agentfoce. 
+  Desde a solicitacao do usuario aq dentro , vai para o reasoning engine (que é o motor que roda), depois ele segmenta o topico -> as acoes que estao contidas dentro 
+ de cada topcio , manda para o LLM e assim o LLM volta com a resosta especifica sobre aquele assunto 
+ 
+ 
+  DA TEORIA A PRATICA
+ aqui agora vou ta mostrando algusn casos práticos, e em cada um deles eu vou mostrar primeiro o funcionamento real, através de um vídeo ou 
+ diretamente no Agent Builder, e depois mostro como foi feita a implementação por trás.
+Ou seja, vocês vão ver tanto o agente funcionando quanto os bastidores de como ele foi configurado.”
