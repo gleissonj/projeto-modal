@@ -1,0 +1,106 @@
+
+Aqui a gente vai ta apresentando um pouco sobre o agentforce
+
+Antes de entrar nos exemplos práticos, eu quero trazer um pouco de contexto teórico sobre o Agentforce, para que todos entendam a base de como ele funciona.
+
+O Agentforce se apoia em cinco componentes fundamentais: agent em si, os topicos, acoes motor de raciocionio e o modelo de linguagem
+
+
+
+vamos falar de cada um dos componentes e como eles  sao cruciais para construir os agentes 
+
+
+entao sao esses 5 topicos 
+
+vamos mostrar cada um deles 
+
+AGENTE
+o Agente (Agent) é o ator principal, é o que interage com o usuário. Capaz de agir de maneira proativa, identificando oportunidade e execuções ações.
+Na salesforce vc pode criar esses agentes tbm, por padrao(sao modelos prontos oferecidos pela salesforce) ou customizados, vc cria do zero utilizando suas necessidades especificas
+
+o proximos é
+
+TOPICOS
+ O conceito geral de topicos são conjuntos que agrupam acoes especificcas, então vc faz um tópico pra colocar acoes dentro dele.
+ Servem para “guiar” o agente em como agir diante de perguntas relacionadas a um domínio
+ Entao um agente pode ter vários tópicos , cada um focado em um contexto diferente.
+
+
+Entao vamos para o proximo slide
+
+Entao a configuração dos tópicos inclue, vários campos chaves:
+* o label: que precisa ser direto e objetivo, que é o nome claro e direto do topico
+* a classificacao: deve resumir em poucas frases como o agente vai identificar o contexto desse topico. entao sao poucas frases msm para o agente identifcar: ah esse topico
+  serve pra isso  
+* o escopo: é um detalhamento claro das tarefas permitidas é o limite de atuação , até onde o agente pode ir
+* e as instructions sao as regras especificas que determina a execucao das acoes  
+
+Entao vou mostrar aq um exemplo completo de uma construcao de topico com esses campos
+
+topico politica de reembolso , este topico responde exclusivamente questoes relacionadas a reembolsos
+
+o label é : politica de reembolso
+a classificacao desse topcio ficou: Responde duvidas e solicitacoes relacionadas a reembolso de clientes 
+o scope ficou apenas responder perguntas sobre a politica oficial e procedimentos de reembolso da empresa
+e esse topico contem duas instrucoes: sempre validar o pedido do cliente com email e numero do pedido antes de forncer detalhes
+                   Se solicitado reembolso, verificar se está dentro dos 30 dias.
+
+daqui a pouco vou ta mostrando dentro da plataforma como q eles sao configurados 
+
+ACTIONS
+sao tarefas executas no agente dentro de cada topico 
+ podem ser padrao ou customizadas para atender as necessidades especificas atraves de flow, apex, prompt template chama
+ 
+ 
+MOTOR DE RACIONCINIO
+é um cerebro por tras de todo o agente
+ ele interepreta a solicitiacao da pessoa que ta interagindo com o agente, classifica em topicos essa interacao e coordena o passo a passo para alcancar o objetivo do usuario
+ 
+LLM
+é o motor de tudo o realizador de tudo o operario é o LLM  
+Trabalha junto com o motor de raciocínio e os tópicos para formular a resposta.
+E é  o que permite ao agente ter uma conversa natural e contextualizada com os usuários.
+ 
+ 
+ Basicamente sao esses os compoentes fundamentias do agentforce
+ 
+ FLUXO COMPLETO
+ 
+ E aqui o fluxo geral da acao
+ Esse é o fluxo completo dos componente que entram em acao qdo vc aciona o agentfoce. 
+  Desde a solicitacao do usuario aq dentro , vai para o motor de raciocionio, depois ele segmenta o topico -> as acoes que estao contidas dentro 
+ de cada topcio , manda para o LLM e assim o LLM volta com a resosta especifica sobre aquele assunto 
+ 
+ 
+  DA TEORIA A PRATICA
+  
+  agora aqui vou ta mostrando algusn casos práticos, e em cada um deles eu vou mostrar primeiro o funcionamento real, através de um vídeo e depois mostro como
+  foi feita a implementação por trás.
+
+
+Agora que vimos o agente funcionando na prática, vou mostrar como ele foi construído dentro do Agent Builder.”
+
+
+
+-------------------------
+
+
+
+
+Agora que vimos o agente funcionando na prática, vou mostrar como ele foi construído dentro do Agent Builder.”
+
+explorar os 5 elementos que fazem parte dos blocos de construcao do agente force entnder suas funcoes e aprender a configurar na plataforma
+
+SLICE COM OS 5 
+os agentes são compostos por 5 (componentes funcadmentais,para  o agenforce funcione) builder blocks,cada um tem um papel especifico na criação de interação inteligente
+entao sao eles: 
+Agent em si 
+os topicos
+as acoes actions
+o motor de raciocionio
+e o LLM 
+
+
+lembrando que todo passo anterior é realemte de construcao dentro do salesfroce , quando vai para o LLM é um modelo de linguagem que vai definiri todos os requisotos com as 
+ regras ja incorporadas dentro do prompt pra ele responder e retronar para o usaurio 
+ é ele que entende o que o usuario quer dizer e gera as resposta que faz sentido no contexto da conversa 
