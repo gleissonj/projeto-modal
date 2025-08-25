@@ -159,3 +159,13 @@ Nos testes de ponta a ponta identifiquei erro de timeout no download via URL pr�
 - terminar curso esteira 
 - agentforce
 - fazer curso italo
+
+
+
+- Passei boa parte do dia em tratativas com o pessoal do chamado do Stackspot. Fizemos diversos testes complexos para validar os apontamentos das infraestruturas geradas automaticamente pelo Stackspot. Depois de várias tentativas, finalmente conseguimos
+ chegar a um cenário que deve refletir corretamente. Hoje mesmo vou realizar a subida em produção para confirmar se os ajustes
+- Na sexta-feira, realizei ajustes em 6 Glue Jobs que estavam com apontamentos pendentes no IUConfia. 
+- Identifiquei também que alguns Glue Jobs geram Security Groups automaticamente, os quais precisam de atualização. O time do Igor Vianna já está cuidando de parte dessas correções, mas outras ficarão sob minha responsabilidade, 
+  exigindo análise detalhada das permissões para evitar impacto em produção. Eu tenho até uma call com a moça do time dele agora as 10:30 pra entender oq eles estão fazendo 
+- Em paralelo, continuei investigando o erro de timeout na API do framework ao tentar baixar arquivos via URL pré-assinada rodando pela cloud da AWS. Para conseguir visibilidade, inseri diversos logs, mas nada fazia sentido. 
+Até pinguei o Pedrão, que também não tinha pistas. Mas ai fizemos uma call e descobrimos que não é possível utilizar URLs pré-assinadas diretamente no banco
