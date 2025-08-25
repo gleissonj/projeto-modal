@@ -1,0 +1,55 @@
+package br.com.itau.app.services;
+
+import org.junit.jupiter.api.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+class ArquivoServiceUnixTest {
+
+    @Test
+    void deveCriarDiretorioPosixEAArquivoComPermissoesRestritasNoUnix() throws Exception {
+        // Garante que estamos em ambiente UNIX; se não, pula o teste
+        assumeTrue(org.apache.commons.lang3.SystemUtils.IS_OS_UNIX,
+                "Teste do branch UNIX: execute em Linux/macOS ou isole para carregar SystemUtils como UNIX.");
+
+        // 1) Cria um arquivo origem real e usa esquema file:// (sem rede)
+        Path origem = Files.createTempFile("origem_", ".txt");
+        String conteudo = "conteudo-unix";
+        Files.writeString(origem, conteudo);
+        String uriFile = origem.toUri().toString(); // file://...
+
+        // 2) Executa o método alvo
+        String retorno = ArquivoService.baixarArquivoParaTemp(uriFile);
+        assertNotNull(retorno);
+
+        Path destino = Path.of(retorno);
+
+        // 3) Asserções básicas: existência e conteúdo copiado
+        assertTrue(Files.exists(destino), "Arquivo destino não foi criado");
+        assertEquals(conteudo, Files.readString(destino), "Conteúdo não foi copiado corretamente");
+
+        // 4) Verifica se o FS suporta POSIX; se sim, checa permissões do arquivo e do diretório
+        boolean suportaPosix = Files.getFileStore(destino).supportsFileAttributeView("posix");
+        assumeTrue(suportaPosix, "FS não suporta POSIX; pulando verificação de permissões.");
+
+        Set<PosixFilePermission> permsArquivo = Files.getPosixFilePermissions(destino);
+        Set<PosixFilePermission> permsDir = Files.getPosixFilePermissions(destino.getParent());
+
+        // Esperado: rwx apenas para owner (rwx------)
+        Set<PosixFilePermission> esperado = EnumSet.of(
+                PosixFilePermission.OWNER_READ,
+                PosixFilePermission.OWNER_WRITE,
+                PosixFilePermission.OWNER_EXECUTE
+        );
+
+        assertEquals(esperado, permsDir, "Diretório temporário não está com permissões rwx------");
+        assertEquals(esperado, permsArquivo, "Arquivo criado não está com permissões rwx------");
+    }
+}
