@@ -1,74 +1,37 @@
-package br.com.itau.app.services;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.MockedStatic;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.io.File;
-import java.nio.file.CopyOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Answers.CALLS_REAL_METHODS;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-class ArquivoServiceDefaultNomeWindowsTest {
-
-    private String originalOs;
-
-    @BeforeEach
-    void setUp() {
-        originalOs = System.getProperty("os.name");
-        System.setProperty("os.name", "Windows 10");
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (originalOs != null) System.setProperty("os.name", originalOs);
-        else System.clearProperty("os.name");
-    }
+class ArquivoServiceUnixTest {
 
     @Test
-    void deveUsarArquivoTempQuandoUltimoSegmentoVazio_Windows() throws Exception {
-        // URI com path terminando em barra (nomeArquivo vazio)
-        String uriFile = "file:///tmp/";
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    void deveCriarArquivoComPermissaoUnix() throws Exception {
+        // Arrange: cria um arquivo local de origem para usar com esquema file://
+        Path origem = Files.createTempFile("origem_unix_test_", ".txt");
+        Files.writeString(origem, "conteudo");
 
-        // Mocks do destino (Windows branch)
-        Path destinoMock = mock(Path.class);
-        File fileDestinoMock = mock(File.class);
+        String uri = origem.toUri().toString(); // ex: file:///tmp/origem_unix_test_xxx.txt
 
-        when(destinoMock.toFile()).thenReturn(fileDestinoMock);
-        when(destinoMock.toAbsolutePath()).thenReturn(destinoMock);
-        when(destinoMock.toString()).thenReturn("C:\\temp\\dados_crma__arquivo_temp"); // apenas para retorno
+        // Act
+        String destinoStr = ArquivoService.baixarArquivoParaTemp(uri);
+        Path destino = Path.of(destinoStr);
 
-        // Permissões OK
-        when(fileDestinoMock.setReadable(true, true)).thenReturn(true);
-        when(fileDestinoMock.setWritable(true, true)).thenReturn(true);
-        when(fileDestinoMock.setExecutable(true, true)).thenReturn(true);
-        // ESSENCIAL: evitar null quando chamar tempFile.toPath()
-        when(fileDestinoMock.toPath()).thenReturn(destinoMock);
+        // Assert
+        assertTrue(Files.exists(destino));
+        // Em Unix: verifica rwx------
+        Set<PosixFilePermission> perms = Files.getPosixFilePermissions(destino);
+        assertTrue(perms.contains(PosixFilePermission.OWNER_READ));
+        assertTrue(perms.contains(PosixFilePermission.OWNER_WRITE));
+        assertTrue(perms.contains(PosixFilePermission.OWNER_EXECUTE));
 
-        try (MockedStatic<Files> filesStatic = mockStatic(Files.class, CALLS_REAL_METHODS)) {
-            // Intercepta criação do arquivo temp no Windows
-            filesStatic.when(() -> Files.createTempFile(any(String.class), any(String.class)))
-                       .thenReturn(destinoMock);
-
-            // Esquema file:// → copy(Path, Path, ...)
-            filesStatic.when(() -> Files.exists(any(Path.class))).thenReturn(true);
-            filesStatic.when(() -> Files.copy(any(Path.class), eq(destinoMock), any(CopyOption[].class)))
-                       .thenAnswer(inv -> inv.getArgument(1, Path.class));
-
-            String retorno = ArquivoService.baixarArquivoParaTemp(uriFile);
-
-            assertNotNull(retorno);
-            assertTrue(retorno.contains("arquivo_temp"));
-
-            // ✅ Confirma que o sufixo foi "_arquivo_temp"
-            filesStatic.verify(() -> Files.createTempFile(eq("dados_crma_"), eq("_arquivo_temp")), times(1));
-        }
+        // (Opcional) conteúdo copiado
+        assertEquals("conteudo", Files.readString(destino));
     }
 }
