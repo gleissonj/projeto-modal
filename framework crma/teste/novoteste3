@@ -35,3 +35,64 @@ class ArquivoServiceUnixTest {
         assertEquals("conteudo", Files.readString(destino));
     }
 }
+
+
+
+------------------
+
+
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import java.nio.file.*;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ArquivoServiceUnixTest {
+
+    @Test
+    @EnabledOnOs({OS.LINUX, OS.MAC})
+    void deveCriarArquivoComPermissaoUnix() throws Exception {
+        // Arrange: cria arquivo local para usar com esquema file://
+        Path origem = Files.createTempFile("origem_unix_test_", ".txt");
+        Files.writeString(origem, "conteudo");
+        String uri = origem.toUri().toString(); // file:///...
+
+        // Act
+        String destinoStr = ArquivoService.baixarArquivoParaTemp(uri);
+        Path destino = Path.of(destinoStr);
+
+        // Assert básicos
+        assertTrue(Files.exists(destino), "Destino não existe");
+
+        // 1) Confirma que caiu no ramo UNIX: o pai deve ser um diretório temporário "dados_crma_*"
+        Path parent = destino.getParent();
+        assertNotNull(parent, "Destino sem diretório pai");
+        String parentName = parent.getFileName().toString();
+        assertTrue(parentName.startsWith("dados_crma_"),
+                "Não parece ter usado o diretório temporário UNIX (dados_crma_*). Nome do pai: " + parentName);
+        assertTrue(Files.isDirectory(parent), "Diretório pai não é diretório");
+
+        // 2) Checa POSIX somente se o FS suportar
+        boolean suportaPosix =
+                Files.getFileStore(destino).supportsFileAttributeView(PosixFileAttributeView.class);
+
+        if (suportaPosix) {
+            Set<PosixFilePermission> perms = Files.getPosixFilePermissions(destino);
+            assertTrue(perms.contains(PosixFilePermission.OWNER_READ), "Falta OWNER_READ");
+            assertTrue(perms.contains(PosixFilePermission.OWNER_WRITE), "Falta OWNER_WRITE");
+            assertTrue(perms.contains(PosixFilePermission.OWNER_EXECUTE), "Falta OWNER_EXECUTE");
+        } else {
+            // Se o FS não for POSIX (ex.: bind mount Docker/WSL), não falhe o teste por isso
+            System.out.println("Filesystem sem suporte POSIX; pulando verificação de permissões.");
+        }
+
+        // (Opcional) conteúdo copiado
+        assertEquals("conteudo", Files.readString(destino));
+    }
+}
