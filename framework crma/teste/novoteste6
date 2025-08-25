@@ -1,0 +1,34 @@
+import br.com.itau.app.exceptions.ArquivoNaoEncontradoException;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.jupiter.api.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ArquivoServiceHttpOkTest {
+
+    @Test
+    void deveBaixarArquivoQuandoHttpOk() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            // Arrange: prepara resposta 200 com corpo "conteudo"
+            server.enqueue(new MockResponse()
+                    .setResponseCode(200)
+                    .setBody("conteudo"));
+
+            server.start();
+            String url = server.url("/arquivo.txt").toString();
+
+            // Act
+            String destinoStr = ArquivoService.baixarArquivoParaTemp(url);
+
+            // Assert
+            Path destino = Path.of(destinoStr);
+            assertTrue(Files.exists(destino));
+            assertEquals("conteudo", Files.readString(destino));
+        }
+    }
+}

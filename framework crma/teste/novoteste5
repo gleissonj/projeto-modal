@@ -1,0 +1,17 @@
+import br.com.itau.app.exceptions.ArquivoNaoEncontradoException;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class ArquivoServiceUnsupportedSchemeTest {
+
+    @Test
+    void deveLancarExcecaoQuandoEsquemaNaoSuportado() {
+        // Arrange
+        String uri = "ftp://servidor.com/arquivo.txt"; // ftp não é suportado
+
+        // Act + Assert
+        assertThrows(ArquivoNaoEncontradoException.class,
+                () -> ArquivoService.baixarArquivoParaTemp(uri));
+    }
+}

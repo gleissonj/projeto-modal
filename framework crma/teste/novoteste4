@@ -1,0 +1,69 @@
+import br.com.itau.app.exceptions.ArquivoNaoEncontradoException;
+import org.junit.jupiter.api.Test;
+
+import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class ArquivoServiceHttpTimeoutTest {
+
+    @Test
+    void deveLancarExcecaoQuandoTimeoutAoBaixarArquivo() throws Exception {
+        // Arrange
+        // Cria um mock de HttpURLConnection que sempre dá timeout
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        when(mockConnection.getResponseCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(mockConnection.getInputStream()).thenThrow(new SocketTimeoutException("forçado pelo teste"));
+
+        // Mock de URL para retornar a conexão falsa
+        URL mockUrl = mock(URL.class);
+        when(mockUrl.openConnection()).thenReturn(mockConnection);
+
+        // Substitui o método toURL da URI via spy no objeto URL
+        // Aqui precisamos de um truque: encapsular criação de URL num helper ou usar PowerMockito.
+        // Como não pode mexer na classe de produção, o jeito é usar PowerMockito para mockar 'new URL()'.
+
+        // Act + Assert
+        ArquivoNaoEncontradoException ex = assertThrows(
+            ArquivoNaoEncontradoException.class,
+            () -> {
+                // Forçamos o fluxo http:// → cai no bloco SocketTimeoutException
+                ArquivoService.baixarArquivoParaTemp("http://qualquer-url.com/arquivo.txt");
+            }
+        );
+
+        assertTrue(ex.getMessage().contains("Timeout"));
+    }
+}
+
+
+----------------
+
+
+import br.com.itau.app.exceptions.ArquivoNaoEncontradoException;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class ArquivoServiceHttpTimeoutTest {
+
+    @Test
+    void deveLancarExcecaoTimeoutDeVerdade() throws Exception {
+        try (MockWebServer server = new MockWebServer()) {
+            // resposta sem corpo, mas com atraso grande
+            server.enqueue(new MockResponse()
+                    .setBody("teste")
+                    .setBodyDelay(10, java.util.concurrent.TimeUnit.SECONDS)); // maior que o timeout 3s
+
+            String url = server.url("/arquivo.txt").toString();
+
+            assertThrows(ArquivoNaoEncontradoException.class,
+                    () -> ArquivoService.baixarArquivoParaTemp(url));
+        }
+    }
+}
