@@ -1,4 +1,4 @@
-public class HU7_GetContactDetailsByInfo_V1 {
+public with sharing class HU7_GetContactDetailsByInfo_V1 {
 
     public class Request {
         @InvocableVariable(label = 'Nome do Contato', description = 'Parte ou nome completo do contato.', required = false)

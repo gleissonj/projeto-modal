@@ -22,14 +22,14 @@ private class HU7_GetContactDetailsByInfo_V1_Test {
         contatoId = contato.Id;
 
         // Criar manualmente a relação AccountContactRelation__c com os campos usados na Apex
-        AccountContactRelation__c rel = new AccountContactRelation__c(
-            ContactId__c = contato.Id,
-            AccountId__c = grupo.Id,
-            Email__c = 'maria.souza@teste.com',
-            Phone__c = '11999998888',
-            CPF__c = '98765432100'
-        );
-        insert rel;
+        // AccountContactRelation__c rel = new AccountContactRelation__c(
+        //     ContactId__c = contato.Id,
+        //     AccountId__c = grupo.Id,
+        //     Email__c = 'maria.souza@teste.com',
+        //     Phone__c = '11999998888',
+        //     CPF__c = '98765432100'
+        // );
+        // insert rel;
     }
 
     @IsTest

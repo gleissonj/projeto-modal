@@ -1,7 +1,7 @@
 Renovação de Limite - Correção de Identificador Raiz
 
-Atualizar o identificador de grupo econômico para garantir dados precisos na renovação de limite.
-pq antes com esse identificador desatualizado causava dados incorretos 
+onde foi preciso atualizar o identificador de grupo econômico para garantir dados precisos na renovação de limite.
+(talvez) pq antes com esse identificador desatualizado causava dados incorretos 
 
 Com isso o trabalho começou um pouco antes, no glue, onde o Will e a Celina que trouxeram esse campo do identificador raiz
 e realizei a inclusao desse novo valor no fluxo do renovacao de limite 
@@ -38,7 +38,7 @@ Ajustes específicos no MuleSoft: Pode ser útil destacar como a integração en
 Utilize ícones para representar ações, como uma chave inglesa para ajustes de configuração e uma seta para indicar fluxos de dados.
 
 
-O objetivo desta tarefa foi corrigir problemas de integração relacionados ao fluxo de dados de assets entre o MuleSoft e o sistema Salesforce.
+O objetivo desta tarefa foi relizar a integração dos dados do 4966 na salesforce.  problemas de integração relacionados ao fluxo de dados de assets entre o MuleSoft e o sistema Salesforce.
  Houve vários ajustes necessários ao longo do percurso, principalmente no fluxo do objeto Assets na Salesforce."
  
  obs: Fazer timeline

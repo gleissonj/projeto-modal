@@ -1,19 +1,29 @@
 public with sharing class ContactUpdateComparison {
     @AuraEnabled public String name { get; set; }
     @AuraEnabled public String cpf { get; set; }
+    @AuraEnabled public String idLead {get; set;}
     @AuraEnabled public List<ContactUpdateInfo> phones { get; set; }
     @AuraEnabled public List<ContactUpdateInfo> emails { get; set; }
     @AuraEnabled public Boolean leadInsert { get; set; }  // Para indicar se o lead foi inserido
     @AuraEnabled public Boolean leadUpdated { get; set; } // Para indicar se o lead foi encontrado e atualizado
 
-    public ContactUpdateComparison(String name, String cpf, List<ContactUpdateInfo> phones, List<ContactUpdateInfo> emails, Boolean leadUpdated) {
+    public ContactUpdateComparison(String name, String cpf, String idLead, List<ContactUpdateInfo> phones, List<ContactUpdateInfo> emails) {
         this.name = name;
         this.cpf = cpf;
+        this.idLead = idLead;
         this.phones = phones != null ? phones : new List<ContactUpdateInfo>();
         this.emails = emails != null ? emails : new List<ContactUpdateInfo>();
         this.leadInsert = false;  // Inicializa como false
-        this.leadUpdated = leadUpdated; // Indica se o lead foi atualizado
+        this.leadUpdated = false; // Indica se o lead foi atualizado
     }
+
+    public void addTelefone(String value, String type){
+        this.phones.add(new FS1_ContactUpdateInfo(value, type));
+        }
+
+    public void addEmail(String value, String type){
+        this.emails.add(new FS1_ContactUpdateInfo(value, type));
+        }
 
     // Método para setar o valor de leadInsert
     public void setLeadInsert(Boolean status) {

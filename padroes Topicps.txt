@@ -57,3 +57,39 @@ Suporte Técnico
 Ações: Reset de senhas, resolução de problemas técnicos em cursos.
 
 Cada tópico atua como uma instância técnica especializada do agente, com suas próprias regras e instruções específicas.
+
+
+-------------------------------------------
+
+
+Ao criar agentes no Salesforce, o LLM é ativado automaticamente nos bastidores, porém você pode aprimorar sua eficácia seguindo estas boas práticas:
+
+Instruções Claras e Diretas
+Quanto mais objetivas forem as instruções dos tópicos e ações, mais assertivo será o LLM nas respostas geradas.
+
+Exemplos de Inputs e Outputs
+Forneça exemplos de entradas (perguntas comuns) e saídas (respostas ideais), melhorando o entendimento do modelo sobre o que você espera.
+
+Segmentação Inteligente de Tópicos
+Use tópicos específicos e ações bem delimitadas para evitar respostas genéricas ou ambíguas pelo LLM.
+
+
+Aspectos Técnicos Avançados do LLM no Agentforce
+Integração com Atlas Reasoning Engine
+O Atlas Reasoning Engine chama o LLM dinamicamente durante interações. Quanto melhor estruturado estiverem os tópicos e ações, mais assertivas serão as decisões e respostas geradas.
+
+RAG (Retrieval-Augmented Generation)
+O LLM no Agentforce utiliza técnicas RAG, ou seja, primeiro recupera informações específicas da sua base (conhecimento estruturado no Salesforce) e, em seguida, gera respostas combinando esses dados com a capacidade generativa do modelo, evitando respostas incorretas ou descontextualizadas.
+
+
+Importância Estratégica do LLM nos Negócios
+Em termos de negócios, o uso avançado dos LLMs traz vantagens claras:
+
+Automação Eficaz: redução de esforço humano em tarefas repetitivas ou conversas padrão, liberando tempo para atividades estratégicas.
+
+Atendimento Personalizado em Escala: capacidade de manter diálogos personalizados e contextualizados com milhares de usuários simultaneamente.
+
+Melhora da Experiência do Cliente: clientes recebem respostas instantâneas, naturais e relevantes, aumentando a satisfação e fidelização.
+
+Redução de Custos Operacionais: economia direta, com menos necessidade de atendimento humano para questões recorrentes ou comuns.
+

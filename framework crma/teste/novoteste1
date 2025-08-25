@@ -1,0 +1,121 @@
+else {
+                // No Windows, cria o arquivo temporário diretamente
+                File tempFile = Files.createTempFile("dados_crma_", "_" + nomeArquivo).toFile();
+
+                boolean leitura = tempFile.setReadable(true, true);
+                boolean escrita = tempFile.setWritable(true, true);
+                boolean execucao = tempFile.setExecutable(true, true);
+
+                if (!leitura || !escrita || !execucao) {
+                    throw new Exception("Não foi possível definir as permissões do arquivo temporário.");
+                }
+
+                arquivoDestino = tempFile.toPath();
+				
+				
+				
+TESTES
+
+
+
+
+import br.com.itau.app.services.ArquivoService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ArquivoServiceWindowsPermissoesTest {
+
+    @Test
+    void deveLancarExcecaoQuandoNaoConseguirDefinirPermissoesNoWindows() throws Exception {
+        // --- Força ambiente "Windows" ANTES de qualquer referência ao SystemUtils ---
+        // (SystemUtils calcula flags na carga da classe com base em os.name)
+        System.setProperty("os.name", "Windows 10");
+
+        // URL qualquer (não será usada porque vamos falhar nas permissões antes do download)
+        String nome = URLEncoder.encode("arquivo.zip", StandardCharsets.UTF_8);
+        String url = "http://exemplo.com/" + nome;
+
+        // Mocka Files.createTempFile(...) para devolver um Path cujo toFile() é um File mockado
+        Path pathMock = mock(Path.class);
+        File fileMock = mock(File.class);
+
+        // toFile() retorna nosso File mockado
+        when(pathMock.toFile()).thenReturn(fileMock);
+
+        // Os 3 setters de permissão retornam "false" para simular falha
+        when(fileMock.setReadable(true, true)).thenReturn(false);
+        when(fileMock.setWritable(true, true)).thenReturn(false);
+        when(fileMock.setExecutable(true, true)).thenReturn(false);
+
+        try (MockedStatic<Files> filesStatic = mockStatic(Files.class)) {
+            // Intercepta a chamada específica do bloco do Windows:
+            // Files.createTempFile("dados_crma_", "_" + nomeArquivo)
+            filesStatic.when(() -> Files.createTempFile(any(String.class), any(String.class)))
+                       .thenReturn(pathMock);
+
+            // Não precisamos mockar Files.copy etc. porque a exceção acontece antes
+
+            Exception ex = assertThrows(Exception.class,
+                    () -> ArquivoService.baixarArquivoParaTemp(url));
+
+            assertTrue(ex.getMessage().contains("Não foi possível definir as permissões do arquivo temporário."));
+        }
+    }
+}
+
+
+
+
+
+
+@Test
+void devePassarPelasPermissoesNoWindowsEUsarEsquemaFile() throws Exception {
+    System.setProperty("os.name", "Windows 10");
+
+    // Cria um arquivo real de origem para esquema file://
+    Path origem = Files.createTempFile("origem_", ".dat");
+    Files.writeString(origem, "conteudo");
+
+    String uriFile = origem.toUri().toString(); // file://...
+
+    Path pathDestinoMock = mock(Path.class);
+    File fileDestinoMock = mock(File.class);
+
+    when(pathDestinoMock.toFile()).thenReturn(fileDestinoMock);
+    when(fileDestinoMock.setReadable(true, true)).thenReturn(true);
+    when(fileDestinoMock.setWritable(true, true)).thenReturn(true);
+    when(fileDestinoMock.setExecutable(true, true)).thenReturn(true);
+
+    try (MockedStatic<Files> filesStatic = mockStatic(Files.class)) {
+        filesStatic.when(() -> Files.createTempFile(any(String.class), any(String.class)))
+                   .thenReturn(pathDestinoMock);
+
+        // Precisaremos também mockar Files.copy(origem, destino, ...)
+        filesStatic.when(() -> Files.copy(any(java.nio.file.Path.class), any(java.nio.file.Path.class), any()))
+                   .thenReturn(0L);
+
+        // E como o seu método usa Path.resolve/createFile no UNIX apenas, no Windows ele só chama toPath():
+        when(pathDestinoMock.toAbsolutePath()).thenReturn(pathDestinoMock);
+        when(pathDestinoMock.toString()).thenReturn("C:\\temp\\dados_crma_algumarquivo");
+
+        String retorno = ArquivoService.baixarArquivoParaTemp(uriFile);
+        assertNotNull(retorno);
+        assertTrue(retorno.contains("dados_crma_")); // ou a asserção que preferir
+    }
+}
+
+.
+.

@@ -1,61 +1,28 @@
 public class GrupoHandler_Contatos_Dinamico {
-
-    public class Request {
-        @InvocableVariable(required=true)
-        public String groupName;
-
-        @InvocableVariable(required=true)
-        public String codGrupo;
-    }
-
-    public class Contato {
-        public String nome;
-        public String sobrenome;
-        public String cpf;
-        public String celular;
-        public String telefone;
-        public String email;
-        public String perfil;
-        public String cargo;
-    }
-
-    public class Response {
-        @InvocableVariable
-        public String prompt;
-    }
-
     @InvocableMethod(label='Buscar contatos do grupo (Dinâmico - Real)')
     public static List<Response> buscarContatos(List<Request> requests) {
         List<Response> responses = new List<Response>();
 
         for (Request req : requests) {
-            if (String.isBlank(req.groupName) || String.isBlank(req.codGrupo)) continue;
+            if (String.isBlank(req.groupName) || String.isBlank(req.groupId)) continue;
 
             Map<String, Object> payload = new Map<String, Object>();
-            payload.put('grupo_nome', req.groupName);
+            payload.put('groupName', req.groupName);
 
             List<Contato> listaContatos = new List<Contato>();
 
             // 🔔 Simulação de consulta real (substitua pela query correta para sua org)
             // Exemplo de como seria se o objeto fosse AccountRelationContact
-            List<AccountRelationContact> contatosEncontrados = [
-                SELECT Contact.Name, Contact.LastName, Contact.CPF__c, Contact.Phone, Contact.MobilePhone,
-                       Contact.Email, Contact.Perfil__c, Contact.Cargo__c
-                FROM AccountRelationContact
-                WHERE Account.IdExternoGroup__c = :req.codGrupo
+            List<AccountContactRelation__c> contatosEncontrados = [
+                SELECT Email__c 
+                FROM AccountContactRelation__c 
+                WHERE Account.IdExternoGroup__c = :req.groupId
             ];
 
-            for (AccountRelationContact arc : contatosEncontrados) {
+            for (AccountContactRelation__c  arc : contatosEncontrados) {
                 if (arc.Contact != null) {
                     Contato contato = new Contato();
                     contato.nome = arc.Contact.Name;
-                    contato.sobrenome = arc.Contact.LastName;
-                    contato.cpf = arc.Contact.CPF__c;
-                    contato.celular = arc.Contact.MobilePhone;
-                    contato.telefone = arc.Contact.Phone;
-                    contato.email = arc.Contact.Email;
-                    contato.perfil = arc.Contact.Perfil__c;
-                    contato.cargo = arc.Contact.Cargo__c;
                     listaContatos.add(contato);
                 }
             }
@@ -69,4 +36,23 @@ public class GrupoHandler_Contatos_Dinamico {
 
         return responses;
     }
+
+    public class Request {
+        @InvocableVariable(required=true)
+        public String groupName;
+
+        @InvocableVariable(required=true)
+        public String groupId;
+    }
+
+    public class Contato {
+        public String email;
+        
+    }
+
+    public class Response {
+        @InvocableVariable(label='Prompt' description='Prompt')
+        public String Prompt;
+    }
+
 }

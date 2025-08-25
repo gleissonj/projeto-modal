@@ -74,14 +74,14 @@ E é  o que permite ao agente ter uma conversa natural e contextualizada com os 
 
  PROMPT TEMPLATE
 
-Além desses cinco componentes fundamentais, existe também um recurso muito importante dentro do Agentforce: 
+Além desses cinco componentes fundamentais, existe também um recurso muito importante que é o 
     o Prompt Template.
 
-O Prompt Template funciona como um guia de instruções para o agente.
+
 É nele que a gente estrutura como o agente deve interpretar a pergunta do usuário, 
     quais informações ele precisa buscar e de que forma deve organizar a resposta.
 
-    Em outras palavras, ele garante que o agente não dependa apenas do modelo de linguagem, mas siga sempre
+    Entao ele garante que o agente não dependa apenas do modelo de linguagem, mas siga sempre
          um roteiro claro e consistente.
 Isso evita respostas fora de contexto e ajuda a padronizar a experiência do usuário.
  

@@ -1,0 +1,99 @@
+ try (InputStream in = connection.getInputStream()) {
+                        Files.copy(in, arquivoDestino, StandardCopyOption.REPLACE_EXISTING);
+                    }
+
+                } catch (SocketTimeoutException e) {
+                    throw new ArquivoNaoEncontradoException(
+                        "Tempo limite excedido ao tentar baixar o arquivo: " + urlArquivo),
+				} catch (IOException e) {
+                    throw new ArquivoNaoEncontradoException(
+                        "Não foi possível baixar o arquivo: " + uriArquivo),
+                }
+            } else {
+                throw new ArquivoNaoEncontradoException("Esquema de URL não suportado: " + scheme);
+            }
+			
+			
+			
+			testes
+			
+			
+import br.com.itau.app.exceptions.ArquivoNaoEncontradoException;
+import br.com.itau.app.services.ArquivoService;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLStreamHandler;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class ArquivoServiceTest {
+
+    @Test
+    void deveBaixarArquivoComSucesso() throws Exception {
+        // Mock do HttpURLConnection
+        HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getResponseCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(connection.getInputStream()).thenReturn(new ByteArrayInputStream("conteudo".getBytes()));
+
+        // Cria URL que sempre retorna o mock da connection
+        URLStreamHandler stubHandler = new URLStreamHandler() {
+            @Override
+            protected HttpURLConnection openConnection(URL u) {
+                return connection;
+            }
+        };
+        URL url = new URL(null, "http://fakeurl/arquivo.txt", stubHandler);
+
+        // Execução
+        String path = ArquivoService.baixarArquivoParaTemp(url.toString());
+
+        assertNotNull(path);
+        assertTrue(path.contains("arquivo.txt"));
+
+        // Verifica que tentou ler o inputStream
+        verify(connection, times(1)).getInputStream();
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoTimeout() throws Exception {
+        HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getResponseCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(connection.getInputStream()).thenThrow(new java.net.SocketTimeoutException("timeout"));
+
+        URLStreamHandler stubHandler = new URLStreamHandler() {
+            @Override
+            protected HttpURLConnection openConnection(URL u) {
+                return connection;
+            }
+        };
+        URL url = new URL(null, "http://fakeurl/arquivo.txt", stubHandler);
+
+        assertThrows(ArquivoNaoEncontradoException.class,
+                () -> ArquivoService.baixarArquivoParaTemp(url.toString()));
+    }
+
+    @Test
+    void deveLancarExcecaoQuandoIOException() throws Exception {
+        HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getResponseCode()).thenReturn(HttpURLConnection.HTTP_OK);
+        when(connection.getInputStream()).thenThrow(new java.io.IOException("falha IO"));
+
+        URLStreamHandler stubHandler = new URLStreamHandler() {
+            @Override
+            protected HttpURLConnection openConnection(URL u) {
+                return connection;
+            }
+        };
+        URL url = new URL(null, "http://fakeurl/arquivo.txt", stubHandler);
+
+        assertThrows(ArquivoNaoEncontradoException.class,
+                () -> ArquivoService.baixarArquivoParaTemp(url.toString()));
+    }
+}
+
+
+

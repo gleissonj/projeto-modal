@@ -82,7 +82,11 @@ public with sharing class BuscarResponsaveisDoGrupo {
     }
 
 
-    BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
+  
+}
+
+
+  BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
 req.accountId = '001gK00000AL6hPQAT'; // Substitua por um ID válido da Account do grupo
 
 // 2. Montar lista de entrada
@@ -90,9 +94,5 @@ List<BuscarResponsaveisDoGrupo.Request> entradas = new List<BuscarResponsaveisDo
 
 // 3. Chamar o método invocable
 List<BuscarResponsaveisDoGrupo.Response> respostas = BuscarResponsaveisDoGrupo.run(entradas);
-}
-
-
-
 
 Id primeiroGrupoId = grupoIds.iterator().next();

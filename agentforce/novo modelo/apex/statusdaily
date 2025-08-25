@@ -1,0 +1,8 @@
+4. O que estamos enfrentando como desafio
+Limites de OCR se o texto estiver com má qualidade
+
+Dificuldade de estruturar as respostas em JSON quando há muita ambiguidade visual
+
+Dependência de instruções bem específicas no Prompt Template
+
+“Percebemos que a qualidade da imagem influencia diretamente no desempenho da extração. Estamos avaliando até onde o OCR do Agentforce consegue interpretar bem o texto de imagens com ruído visual ou resolução baixa.”

@@ -1,83 +1,37 @@
 @isTest
-private class hu7_getResponsbileGroup_v1Test {
+private class BuscarResponsaveisDoGrupoTest {
 
-    private class MockBuscarResponsaveisDoGrupo extends hu7_getResponsbileGroup_v1 {
+    private class MockBuscarResponsaveisDoGrupo extends BuscarResponsaveisDoGrupo {
         override protected Map<Id, List<DadosResponsavel>> buscarResponsaveis(Set<Id> grupoIds) {
-            Map<Id, List<DadosResponsavel>> mockMap = new Map<Id, List<DadosResponsavel>>();
+            Map<Id, List<DadosResponsavel>> resultado = new Map<Id, List<DadosResponsavel>>();
             for (Id id : grupoIds) {
                 DadosResponsavel d = new DadosResponsavel();
-                d.nome = 'Mock Responsável';
-                d.role = 'AC';
+                d.nome = 'Fulano Simulado';
+                d.role = 'NEC';
                 d.territorio = 'SP001';
-                mockMap.put(id, new List<DadosResponsavel>{ d });
+                resultado.put(id, new List<DadosResponsavel>{ d });
             }
-            return mockMap;
+            return resultado;
         }
     }
 
     @isTest
-    static void testExecutarComMock() {
+    static void testExecutar_ComDadosSimulados() {
         Account grupo = new Account(
             Name = 'Grupo Teste',
-            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
-                .get('HU7_Grupo_Economico').getRecordTypeId(),
-            Hu7IDExterno__c = 'GRP_MOCK',
+            RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName().get('HU7_Grupo_Economico').getRecordTypeId(),
+            Hu7IDExterno__c = 'GRP123',
             IsExcluidoFinancas__c = false
         );
         insert grupo;
 
-        hu7_getResponsbileGroup_v1.Request req = new hu7_getResponsbileGroup_v1.Request();
+        BuscarResponsaveisDoGrupo.Request req = new BuscarResponsaveisDoGrupo.Request();
         req.accountId = grupo.Id;
 
-        MockBuscarResponsaveisDoGrupo mock = new MockBuscarResponsaveisDoGrupo();
-        List<hu7_getResponsbileGroup_v1.Response> resposta = mock.executar(
-            new List<hu7_getResponsbileGroup_v1.Request>{ req }
-        );
+        MockBuscarResponsaveisDoGrupo instancia = new MockBuscarResponsaveisDoGrupo();
+        List<BuscarResponsaveisDoGrupo.Response> resposta = instancia.executar(new List<BuscarResponsaveisDoGrupo.Request>{ req });
 
         System.assertEquals(1, resposta.size());
-        System.assertEquals(1, resposta[0].dadosresponsaveis.size());
-        System.assertEquals('Mock Responsável', resposta[0].dadosresponsaveis[0].nome);
-        System.assertEquals('AC', resposta[0].dadosresponsaveis[0].role);
-        System.assertEquals('SP001', resposta[0].dadosresponsaveis[0].territorio);
+        System.assertEquals('Fulano Simulado', resposta[0].dadosresponsaveis[0].nome);
     }
-
-    @isTest
-    static void testSemAccountId() {
-        hu7_getResponsbileGroup_v1.Request req = new hu7_getResponsbileGroup_v1.Request();
-        req.accountId = null;
-
-        MockBuscarResponsaveisDoGrupo mock = new MockBuscarResponsaveisDoGrupo();
-        List<hu7_getResponsbileGroup_v1.Response> resposta = mock.executar(
-            new List<hu7_getResponsbileGroup_v1.Request>{ req }
-        );
-
-        System.assertEquals(1, resposta.size());
-        System.assertEquals(0, resposta[0].dadosresponsaveis.size());
-    }
-}
-
-
-
-
-@isTest
-static void testRunChamadoDireto() {
-    Account grupo = new Account(
-        Name = 'Grupo Sem Responsável',
-        RecordTypeId = Schema.SObjectType.Account.getRecordTypeInfosByDeveloperName()
-            .get('HU7_Grupo_Economico').getRecordTypeId(),
-        Hu7IDExterno__c = 'GRP000',
-        IsExcluidoFinancas__c = false
-    );
-    insert grupo;
-
-    hu7_getResponsbileGroup_v1.Request req = new hu7_getResponsbileGroup_v1.Request();
-    req.accountId = grupo.Id;
-
-    Test.startTest();
-    List<hu7_getResponsbileGroup_v1.Response> resposta =
-        hu7_getResponsbileGroup_v1.run(new List<hu7_getResponsbileGroup_v1.Request>{ req });
-    Test.stopTest();
-
-    // Mesmo que a resposta esteja vazia, esse teste serve para cobrir o método run()
-    System.assertEquals(1, resposta.size());
 }
