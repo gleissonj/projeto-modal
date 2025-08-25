@@ -179,3 +179,52 @@ class ArquivoServiceWindowsPermissoesTest {
 }
 
 .
+-------------------------
+
+
+
+@Test
+    void devePassarPelasPermissoesNoWindowsEUsarEsquemaFile() throws Exception {
+        String originalOs = System.getProperty("os.name");
+        System.setProperty("os.name", "Windows 10"); // força o bloco do Windows
+
+        try {
+            // Origem real (file://) para não precisar mockar rede
+            Path origem = Files.createTempFile("origem_", ".dat");
+            Files.writeString(origem, "conteudo");
+            String uriFile = origem.toUri().toString(); // file://...
+
+            // Destino mockado (para interceptar permissões e retorno)
+            Path pathDestinoMock = mock(Path.class);
+            File fileDestinoMock = mock(File.class);
+
+            when(pathDestinoMock.toFile()).thenReturn(fileDestinoMock);
+            when(pathDestinoMock.toAbsolutePath()).thenReturn(pathDestinoMock);
+            when(pathDestinoMock.toString()).thenReturn("C:\\temp\\dados_crma_algumarquivo");
+
+            // Permissões OK
+            when(fileDestinoMock.setReadable(true, true)).thenReturn(true);
+            when(fileDestinoMock.setWritable(true, true)).thenReturn(true);
+            when(fileDestinoMock.setExecutable(true, true)).thenReturn(true);
+
+            // Mock estático com chamadas reais por padrão
+            try (MockedStatic<Files> filesStatic = mockStatic(Files.class, CALLS_REAL_METHODS)) {
+                // Só o que precisamos mudar:
+                filesStatic.when(() -> Files.createTempFile(any(String.class), any(String.class)))
+                           .thenReturn(pathDestinoMock);
+
+                filesStatic.when(() -> Files.copy(any(java.nio.file.Path.class),
+                                                  any(java.nio.file.Path.class),
+                                                  any()))
+                           .thenReturn(0L);
+
+                String retorno = ArquivoService.baixarArquivoParaTemp(uriFile);
+
+                assertNotNull(retorno);
+                assertTrue(retorno.contains("dados_crma_"));
+            }
+        } finally {
+            if (originalOs != null) System.setProperty("os.name", originalOs);
+            else System.clearProperty("os.name");
+        }
+    }
