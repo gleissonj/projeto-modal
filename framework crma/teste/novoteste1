@@ -119,3 +119,63 @@ void devePassarPelasPermissoesNoWindowsEUsarEsquemaFile() throws Exception {
 
 .
 .
+-------------------------------
+
+
+import br.com.itau.app.services.ArquivoService;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.io.File;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Answers.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ArquivoServiceWindowsPermissoesTest {
+
+    @Test
+    void deveLancarExcecaoQuandoNaoConseguirDefinirPermissoesNoWindows() throws Exception {
+        String originalOs = System.getProperty("os.name");
+        System.setProperty("os.name", "Windows 10"); // força caminho do Windows
+
+        try {
+            String nome = URLEncoder.encode("arquivo.zip", StandardCharsets.UTF_8);
+            String url = "http://exemplo.com/" + nome;
+
+            // Path e File mockados (somente o necessário)
+            Path pathMock = mock(Path.class);
+            File fileMock = mock(File.class);
+
+            when(pathMock.toFile()).thenReturn(fileMock);
+            when(fileMock.setReadable(true, true)).thenReturn(false);
+            when(fileMock.setWritable(true, true)).thenReturn(false);
+            when(fileMock.setExecutable(true, true)).thenReturn(false);
+
+            // IMPORTANTE: CALLS_REAL_METHODS evita quebrar outras chamadas a Files.*
+            try (MockedStatic<Files> filesStatic = mockStatic(Files.class, CALLS_REAL_METHODS)) {
+                filesStatic.when(() -> Files.createTempFile(any(String.class), any(String.class)))
+                           .thenReturn(pathMock);
+
+                Exception ex = assertThrows(Exception.class,
+                        () -> ArquivoService.baixarArquivoParaTemp(url));
+
+                assertTrue(ex.getMessage().contains("Não foi possível definir as permissões do arquivo temporário."));
+            }
+        } finally {
+            // restaura o os.name para não afetar outros testes
+            if (originalOs != null) System.setProperty("os.name", originalOs);
+            else System.clearProperty("os.name");
+        }
+    }
+}
+
+.
