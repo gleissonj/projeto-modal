@@ -15,9 +15,9 @@ class ArquivoServiceUnixTest {
 
     @Test
     void deveCriarDiretorioPosixEAArquivoComPermissoesRestritasNoUnix() throws Exception {
-        // Garante que estamos em ambiente UNIX; se não, pula o teste
+        // Garante que estamos num SO UNIX (Linux/macOS). Em Windows, o teste será "skipped".
         assumeTrue(org.apache.commons.lang3.SystemUtils.IS_OS_UNIX,
-                "Teste do branch UNIX: execute em Linux/macOS ou isole para carregar SystemUtils como UNIX.");
+                "Teste do branch UNIX: execute em Linux/macOS (ou rode via Docker).");
 
         // 1) Cria um arquivo origem real e usa esquema file:// (sem rede)
         Path origem = Files.createTempFile("origem_", ".txt");
@@ -25,24 +25,23 @@ class ArquivoServiceUnixTest {
         Files.writeString(origem, conteudo);
         String uriFile = origem.toUri().toString(); // file://...
 
-        // 2) Executa o método alvo
+        // 2) Executa o método alvo – deverá entrar no bloco UNIX
         String retorno = ArquivoService.baixarArquivoParaTemp(uriFile);
         assertNotNull(retorno);
 
         Path destino = Path.of(retorno);
 
-        // 3) Asserções básicas: existência e conteúdo copiado
+        // 3) Asserções básicas
         assertTrue(Files.exists(destino), "Arquivo destino não foi criado");
         assertEquals(conteudo, Files.readString(destino), "Conteúdo não foi copiado corretamente");
 
-        // 4) Verifica se o FS suporta POSIX; se sim, checa permissões do arquivo e do diretório
+        // 4) Verifica POSIX no filesystem e checa permissões
         boolean suportaPosix = Files.getFileStore(destino).supportsFileAttributeView("posix");
         assumeTrue(suportaPosix, "FS não suporta POSIX; pulando verificação de permissões.");
 
         Set<PosixFilePermission> permsArquivo = Files.getPosixFilePermissions(destino);
         Set<PosixFilePermission> permsDir = Files.getPosixFilePermissions(destino.getParent());
 
-        // Esperado: rwx apenas para owner (rwx------)
         Set<PosixFilePermission> esperado = EnumSet.of(
                 PosixFilePermission.OWNER_READ,
                 PosixFilePermission.OWNER_WRITE,
