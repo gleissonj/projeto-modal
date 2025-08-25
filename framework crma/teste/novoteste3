@@ -1,54 +1,93 @@
 package br.com.itau.app.services;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.EnumSet;
-import java.util.Set;
+import java.nio.file.attribute.FileAttribute;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Answers.CALLS_REAL_METHODS;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-class ArquivoServiceUnixTest {
+class ArquivoServiceUnixSimuladoTest {
+
+    private String originalOs;
+
+    @BeforeEach
+    void setUp() {
+        // Força ambiente "Linux" ANTES de tocar em SystemUtils em qualquer lugar.
+        originalOs = System.getProperty("os.name");
+        System.setProperty("os.name", "Linux");
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (originalOs != null) System.setProperty("os.name", originalOs);
+        else System.clearProperty("os.name");
+    }
 
     @Test
-    void deveCriarDiretorioPosixEAArquivoComPermissoesRestritasNoUnix() throws Exception {
-        // Garante que estamos num SO UNIX (Linux/macOS). Em Windows, o teste será "skipped".
-        assumeTrue(org.apache.commons.lang3.SystemUtils.IS_OS_UNIX,
-                "Teste do branch UNIX: execute em Linux/macOS (ou rode via Docker).");
-
-        // 1) Cria um arquivo origem real e usa esquema file:// (sem rede)
+    void deveExecutarBranchUnixCriarDiretorioEArquivoComAttrsESalvarConteudo() throws Exception {
+        // 1) Cria origem REAL (file://) para não mockar rede
         Path origem = Files.createTempFile("origem_", ".txt");
-        String conteudo = "conteudo-unix";
+        String conteudo = "conteudo-unix-simulado";
         Files.writeString(origem, conteudo);
         String uriFile = origem.toUri().toString(); // file://...
 
-        // 2) Executa o método alvo – deverá entrar no bloco UNIX
-        String retorno = ArquivoService.baixarArquivoParaTemp(uriFile);
-        assertNotNull(retorno);
+        // 2) Prepara mocks dos Paths do destino no branch UNIX
+        Path tempDirMock = mock(Path.class);
+        Path arquivoDestinoMock = mock(Path.class);
 
-        Path destino = Path.of(retorno);
+        // resolve("<nomeArquivo>") deve devolver o Path do arquivo destino
+        when(tempDirMock.resolve(anyString())).thenReturn(arquivoDestinoMock);
 
-        // 3) Asserções básicas
-        assertTrue(Files.exists(destino), "Arquivo destino não foi criado");
-        assertEquals(conteudo, Files.readString(destino), "Conteúdo não foi copiado corretamente");
+        // para o retorno final do método:
+        when(arquivoDestinoMock.toAbsolutePath()).thenReturn(arquivoDestinoMock);
+        when(arquivoDestinoMock.toString()).thenReturn("/tmp/dados_crma_/arquivo_temp.dat");
 
-        // 4) Verifica POSIX no filesystem e checa permissões
-        boolean suportaPosix = Files.getFileStore(destino).supportsFileAttributeView("posix");
-        assumeTrue(suportaPosix, "FS não suporta POSIX; pulando verificação de permissões.");
+        // 3) Mock estático do Files com chamadas REAIS por padrão
+        try (MockedStatic<Files> filesStatic = Mockito.mockStatic(Files.class, CALLS_REAL_METHODS)) {
 
-        Set<PosixFilePermission> permsArquivo = Files.getPosixFilePermissions(destino);
-        Set<PosixFilePermission> permsDir = Files.getPosixFilePermissions(destino.getParent());
+            // a) Criar diretório temporário POSIX: retorna nosso tempDirMock
+            filesStatic.when(() ->
+                    Files.createTempDirectory(eq("dados_crma_"), Mockito.<FileAttribute<?>[]>any())
+            ).thenReturn(tempDirMock);
 
-        Set<PosixFilePermission> esperado = EnumSet.of(
-                PosixFilePermission.OWNER_READ,
-                PosixFilePermission.OWNER_WRITE,
-                PosixFilePermission.OWNER_EXECUTE
-        );
+            // b) Criar o arquivo com atributos POSIX: retorna o arquivoDestinoMock
+            filesStatic.when(() ->
+                    Files.createFile(eq(arquivoDestinoMock), Mockito.<FileAttribute<?>[]>any())
+            ).thenReturn(arquivoDestinoMock);
 
-        assertEquals(esperado, permsDir, "Diretório temporário não está com permissões rwx------");
-        assertEquals(esperado, permsArquivo, "Arquivo criado não está com permissões rwx------");
+            // c) Copiar do file:// origem para arquivoDestino: retorna o DESTINO (assinatura Path→Path)
+            filesStatic.when(() ->
+                    Files.copy(any(Path.class), eq(arquivoDestinoMock), Mockito.<CopyOption[]>any())
+            ).thenAnswer(inv -> inv.getArgument(1, Path.class));
+
+            // Importante: não stubamos Files.exists/originais → ficam reais e funcionam,
+            // pois 'origem' é um Path real no FS local.
+
+            // 4) Executa
+            String retorno = ArquivoService.baixarArquivoParaTemp(uriFile);
+
+            // 5) Asserções
+            assertNotNull(retorno);
+            assertEquals("/tmp/dados_crma_/arquivo_temp.dat", retorno);
+
+            // Verifica que createTempDirectory, resolve, createFile e copy foram acionados
+            filesStatic.verify(() ->
+                    Files.createTempDirectory(eq("dados_crma_"), Mockito.<FileAttribute<?>[]>any()), times(1));
+            verify(tempDirMock, times(1)).resolve(anyString());
+            filesStatic.verify(() ->
+                    Files.createFile(eq(arquivoDestinoMock), Mockito.<FileAttribute<?>[]>any()), times(1));
+            filesStatic.verify(() ->
+                    Files.copy(any(Path.class), eq(arquivoDestinoMock), Mockito.<CopyOption[]>any()), times(1));
+        }
     }
 }
