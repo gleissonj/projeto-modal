@@ -114,3 +114,48 @@ class ArquivoValidatorTest {
         assertFalse(resultado);
     }
 }
+
+
+
+- ver incidentes
+- testes unitários, e subir código 
+- avisar lucas sobre mandate
+- ver com lucas como gera a url pre assinada
+- tentar falar com Luan sobre BG ou KMS
+- abrir gmud ecs
+- ver casos SG com Andressa pra ver se vai pegar, se não falar com rapaz de dados 
+- ver com Thiago sobre as contas devtools
+- ver sobre chamado para GT para uso da url pre assinada
+- ver com Luan sobre kms
+
+
+--------------------------
+
+na sexta 
+
+- passei boa parte do dia com o pessoal do chamado do stackspot, estávamos fazendo uns testes 
+parece q agora vai dar certo os apontamentos das infras geradas pelo stackspot
+Hoje já vou subir em prod pra ve se vai refletir certinho
+- na sexta tbm ajustei 6 glue Jobs com apontamentos q estvam pedindo no iuconfia
+- tem uns SG q são gerados por alguns glue Jobs, q precisa atualizar, vi q o time do igor vianna estavam mexendo neles, ai ele disse q o alguns ajustes o time dele vai ajustar
+e outros vou ter q ver aqui de ajustar
+- ia ate ver com vcs pq tem uns apontamentos em varias policys q precisam de ajustes, mas 
+- sobre o erro que estava tomando de timeout na api do framework ao baixar a url pre assinada rodando pela cloud da aws , coloquei vários logs pra ver oq tava acontecendo 
+nada fazia sentido, até perguntei o Pedrao se ele tinha algo em mente, ele tbm disse não , mas a gente pesquisando vimos q não é possível o uso de urls pre assinadas no banco, para fazer tem q levar no GT 
+- ajuda time Edgar com caso de nova integração que estão precisando fazer 
+- hoje vou ta atuando nessa subida pra prod com a correção dos apontamentos da stack do ecs
+- vou ta vendo esses security group com o time do do Igao
+
+
+
+
+
+
+Nos testes de ponta a ponta identifiquei erro de timeout no download via URL pré-assinada. Analisei bastante e vi que se trata de uma questão de governança, que precisa de aprovação do comitê antes de avançar.”
+
+
+
+- estudar inglês 
+- terminar curso esteira 
+- agentforce
+- fazer curso italo
