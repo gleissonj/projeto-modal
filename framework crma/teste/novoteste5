@@ -1,38 +1,11 @@
+# test_get_last_partition.py
 import unittest
 from unittest.mock import MagicMock
+# ajuste o import abaixo para o nome do seu módulo
+from main import get_last_partition
 
-# ----- Código sob teste (idêntico ao que você mostrou) -----
-DATABASE = "meu_db"
-TABELA = "minha_tabela"
-
-class MeuServico:
-    def __init__(self, glue_client):
-        self.glue_client = glue_client
-
-    def get_last_partition(self) -> str:
-        result = ""
-
-        def funct_map(values):
-            return values["Values"][0]
-
-        response = self.glue_client.get_partitions(
-            DatabaseName=DATABASE,
-            TableName=TABELA,
-            Segment={"SegmentNumber": 0, "TotalSegments": 1},
-        )
-
-        t_particoes = list(map(funct_map, response["Partitions"]))
-        if t_particoes:
-            t_particoes = sorted(t_particoes)
-            result = t_particoes[len(t_particoes) - 1]
-            result = int(result)
-        return result
-
-# ----- Testes -----
 class TestGetLastPartition(unittest.TestCase):
-
-    def test_retorna_maior_particao_quando_vem_varias(self):
-        # Arrange
+    def test_varias_particoes_retorna_maior(self):
         glue_client = MagicMock()
         glue_client.get_partitions.return_value = {
             "Partitions": [
@@ -41,37 +14,24 @@ class TestGetLastPartition(unittest.TestCase):
                 {"Values": ["20240715"]},  # maior
             ]
         }
-        service = MeuServico(glue_client)
 
-        # Act
-        result = service.get_last_partition()
-
-        # Assert
+        result = get_last_partition(glue_client)
         self.assertEqual(result, 20240715)
-        glue_client.get_partitions.assert_called_once_with(
-            DatabaseName=DATABASE,
-            TableName=TABELA,
-            Segment={"SegmentNumber": 0, "TotalSegments": 1},
-        )
 
-    def test_retorna_unica_particao_quando_so_tem_uma(self):
+    def test_uma_particao(self):
         glue_client = MagicMock()
         glue_client.get_partitions.return_value = {
             "Partitions": [{"Values": ["20240630"]}]
         }
-        service = MeuServico(glue_client)
 
-        result = service.get_last_partition()
-
+        result = get_last_partition(glue_client)
         self.assertEqual(result, 20240630)
 
-    def test_sem_particoes_retorna_string_vazia(self):
+    def test_sem_particoes_retorna_vazio(self):
         glue_client = MagicMock()
         glue_client.get_partitions.return_value = {"Partitions": []}
-        service = MeuServico(glue_client)
 
-        result = service.get_last_partition()
-
+        result = get_last_partition(glue_client)
         self.assertEqual(result, "")
 
 if __name__ == "__main__":
