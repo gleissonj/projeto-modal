@@ -36,3 +36,12 @@ class TestGetLastPartition(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+- bom tive umas agendas com o talles e o Rodrigo sobre a realização de cargas de dados de uma nova funcionalidade q eles vao inciar o desenvolvimento 
+- recebemos um email q possuímos um glue q esta com template legado, e q precisamos atualizar para o novo o qto antes, então puxei essa demanda 
+- sobre a reunião com o time do cbo, tentei marcar para hoje mas foi cancelada por eles, e remarcada para segunda feira, pq eles atendem só duas vezes na semana
+- hoje vou atuar nessa migração do glue job para o novo template
+- em paralelo peguei tbm a demanda pra inciar dos Jobs q estão rodando na codepipeline para a iupies
+
