@@ -1,0 +1,23 @@
+Configure variáveis de ambiente:
+
+TARGET_BUCKET (obrigatória)
+
+S3_PREFIX (opcional, ex.: framework-crma/uploads)
+
+HTTP_TIMEOUT_SECONDS (opcional, default 300)
+
+CHUNK_SIZE_BYTES (opcional, default 810241024 → 8 MB)
+
+
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PutToTargetBucket",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:AbortMultipartUpload", "s3:ListBucketMultipartUploads", "s3:ListMultipartUploadParts"],
+      "Resource": ["arn:aws:s3:::SEU_BUCKET_ALVO/*", "arn:aws:s3:::SEU_BUCKET_ALVO"]
+    }
+  ]
+}

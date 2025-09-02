@@ -1,0 +1,193 @@
+import os
+import json
+import time
+import uuid
+import logging
+import mimetypes
+from urllib.parse import urlparse
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+
+import urllib3
+from urllib3.util import Retry
+
+# ========= Config & Clients =========
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+s3 = boto3.client("s3")
+
+TARGET_BUCKET = os.environ.get("TARGET_BUCKET")
+S3_PREFIX = os.environ.get("S3_PREFIX", "").strip().strip("/")
+HTTP_TIMEOUT_SECONDS = int(os.environ.get("HTTP_TIMEOUT_SECONDS", "300"))
+CONNECT_TIMEOUT_SECONDS = int(os.environ.get("CONNECT_TIMEOUT_SECONDS", "10"))
+
+# Pool HTTP com retry para GET (idempotente)
+http = urllib3.PoolManager(
+    num_pools=16,
+    maxsize=16,
+    timeout=urllib3.Timeout(connect=CONNECT_TIMEOUT_SECONDS, read=HTTP_TIMEOUT_SECONDS),
+    retries=Retry(
+        total=3,
+        backoff_factor=0.8,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=frozenset(["GET"]),
+        raise_on_status=False,
+    ),
+    cert_reqs="CERT_REQUIRED",
+)
+
+# ========= Utils =========
+def _normalize_event(event):
+    """Aceita evento direto (dict) ou via API Gateway (event['body'])."""
+    if not isinstance(event, dict):
+        raise ValueError("Evento inválido, esperado dict.")
+    if "body" in event:
+        body = event["body"]
+        payload = json.loads(body) if isinstance(body, str) else body
+    else:
+        payload = event
+    if not isinstance(payload, dict):
+        raise ValueError("Payload inválido, esperado objeto JSON.")
+    return payload
+
+def _required(field, data):
+    v = data.get(field)
+    if v is None or (isinstance(v, str) and not v.strip()):
+        raise ValueError(f"Campo obrigatório ausente ou vazio: {field}")
+    return v
+
+def _guess_filename_from_url(url, fallback):
+    path = urlparse(url).path
+    base = os.path.basename(path) or fallback
+    return base or fallback
+
+def _ensure_ext_by_content_type(filename, content_type, default_ext=None):
+    """Se filename não tem extensão, tenta inferir por content-type."""
+    if "." in filename:
+        return filename
+    ext = mimetypes.guess_extension(content_type or "") or default_ext
+    return filename + (ext or "")
+
+def _s3_key(base_prefix, nome_app, nome_dataset, timestamp_ms, filename):
+    parts = [p for p in [base_prefix, nome_app, nome_dataset, str(timestamp_ms)] if p]
+    prefix = "/".join(parts)
+    return f"{prefix}/{filename}".lstrip("/")
+
+def _stream_url_to_s3(url, bucket, key):
+    """
+    Faz GET em modo streaming e envia o corpo direto para o S3.
+    Retorna content-type e bytes (se disponível no header; não contabiliza stream).
+    """
+    logger.info(f"Streaming URL → s3://{bucket}/{key}")
+    resp = http.request("GET", url, preload_content=False)
+    try:
+        if resp.status != 200:
+            # lê um pedacinho pra log
+            try:
+                snippet = resp.data[:512]
+            except Exception:
+                snippet = b""
+            raise RuntimeError(f"Falha no download (HTTP {resp.status}): {snippet!r}")
+
+        content_type = resp.headers.get("Content-Type") or "application/octet-stream"
+        extra = {"ContentType": content_type} if content_type else {}
+
+        # Envia o corpo da resposta (file-like) direto para o S3
+        s3.upload_fileobj(resp, bucket, key, ExtraArgs=extra)
+
+        return content_type, resp.headers.get("Content-Length")
+    finally:
+        try:
+            resp.release_conn()
+        except Exception:
+            pass
+
+# ========= Lambda Handler =========
+def handler(event, context):
+    """
+    Espera JSON:
+    {
+       "nome_dataset": "...",
+       "nome_app": "...",
+       "url_arquivo_metadados": "https://...",
+       "url_arquivo_dados": "https://...",
+       "squadResponsavel": "...",
+       "operacao": "overwrite" | "append" | ...
+    }
+    """
+    try:
+        if not TARGET_BUCKET:
+            raise RuntimeError("Variável de ambiente TARGET_BUCKET é obrigatória.")
+
+        payload = _normalize_event(event)
+
+        nome_dataset = _required("nome_dataset", payload)
+        nome_app = _required("nome_app", payload)
+        url_meta = _required("url_arquivo_metadados", payload)
+        url_dados = _required("url_arquivo_dados", payload)
+        operacao = _required("operacao", payload).lower()
+        squad = payload.get("squadResponsavel", "")
+
+        ts_ms = int(time.time() * 1000)
+
+        # --- METADADOS ---
+        meta_filename = _guess_filename_from_url(url_meta, "metadados.json")
+        # primeiro faz streaming -> sabemos o content-type depois
+        # mas precisamos do key antes: se o nome não tiver extensão, adicionamos após obter o CT
+        # solução: montar key provisória, descobrir CT, e ajustar nome antes do upload? Como já subiremos no upload, inferimos nome antes:
+        # 1) tentamos inferir ext pelo path; se não tiver, deixamos .json como padrão
+        if "." not in meta_filename:
+            meta_filename = meta_filename + ".json"
+        meta_key = _s3_key(S3_PREFIX, nome_app, nome_dataset, ts_ms, meta_filename)
+        meta_ct, _ = _stream_url_to_s3(url_meta, TARGET_BUCKET, meta_key)
+
+        # --- DADOS ---
+        dados_filename = _guess_filename_from_url(url_dados, "dados")
+        # Se não tem extensão, tentamos inferir pelo CT após um HEAD rápido (nem toda URL pré-assinada aceita HEAD).
+        # Para evitar HEAD que pode falhar, subiremos direto; se não tiver extensão, tentamos adivinhar com mimetypes pelo CT do GET.
+        # Truque: faremos um GET uma única vez e enviaremos direto; para definir a extensão, usamos CT depois do GET.
+        # Como já precisamos da key antes de abrir a conexão, aplicamos heurística:
+        default_ext = None  # deixe sem extensão para arquivos ZIP/Parquet, etc.
+        # Para evitar inconsistência de nome, inferimos extensão somente se Content-Type comum:
+        # (o caminho mais simples: não forçar extensão; o consumidor usa o key como path)
+        dados_key = _s3_key(S3_PREFIX, nome_app, nome_dataset, ts_ms, dados_filename)
+
+        # Faz o upload streaming para os dados
+        dados_ct, _ = _stream_url_to_s3(url_dados, TARGET_BUCKET, dados_key)
+
+        result = {
+            "status": "ok",
+            "bucket": TARGET_BUCKET,
+            "objects": {
+                "metadados": {"key": meta_key, "content_type": meta_ct},
+                "dados": {"key": dados_key, "content_type": dados_ct},
+            },
+            "operacao": operacao,
+            "squad": squad,
+            "timestamp_ms": ts_ms,
+        }
+
+        # Resposta para API Gateway (se aplicável)
+        if isinstance(event, dict) and "body" in event:
+            return {"statusCode": 200, "headers": {"Content-Type": "application/json"}, "body": json.dumps(result)}
+        return result
+
+    except (ValueError, RuntimeError) as e:
+        logger.exception("Erro de validação/execução")
+        msg = {"status": "erro", "mensagem": str(e)}
+        if isinstance(event, dict) and "body" in event:
+            return {"statusCode": 400, "headers": {"Content-Type": "application/json"}, "body": json.dumps(msg)}
+        return msg
+    except (BotoCoreError, ClientError) as e:
+        logger.exception("Erro S3")
+        msg = {"status": "erro", "mensagem": f"Falha ao enviar ao S3: {str(e)}"}
+        if isinstance(event, dict) and "body" in event:
+            return {"statusCode": 502, "headers": {"Content-Type": "application/json"}, "body": json.dumps(msg)}
+        return msg
+    except Exception as e:
+        logger.exception("Erro inesperado")
+        msg = {"status": "erro", "mensagem": f"Erro inesperado: {str(e)}"}
+        if isinstance(event, dict) and "body" in event:
+            return {"statusCode": 500, "headers": {"Content-Type": "application/json"}, "body": json.dumps(msg)}
+        return msg
