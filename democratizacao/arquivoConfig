@@ -1,0 +1,66 @@
+version: 1
+
+job:
+  name: GlueGenericOpportunity
+  database: db_corp_gestaocomercial_governancasalesforceibba_sor_01
+  table: tb_ibba360_evento_oportunidade
+
+paths:
+  bucket_raw: s3://meu-raw
+  folder_raw: raw/opportunity
+  bucket_sor: s3://meu-sor
+  folder_sor: sor/opportunity
+
+window:
+  force: true                # ou false para automático
+  start_date: 2025-03-13     # usado se force=true
+  end_date: 2025-09-04
+  days_retro: 1              # usado no modo automático
+  max_days_back: 720
+
+read:
+  input_format: csv
+  csv:
+    delimiter: ";"
+    header: true
+    encoding: utf-8
+    multiline: true
+    quote_mode: STOP_AT_CLOSING_QUOTE
+
+schema:
+  # você pode embutir o schema aqui (nome->SparkType)
+  columns:
+    AccountId: StringType
+    Amount: DoubleType
+    Budget_Confirmed__c: BooleanType
+    CloseDate: StringType
+    SystemModstamp: StringType
+    # ... complete com suas colunas
+  optional_columns: [ ]
+
+time:
+  partition_source_col: SystemModstamp
+  partition_source_fmt: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+  partition_target_col: cod_patc
+  partition_target_fmt: yyyyMMdd
+  timezone_target: America/Sao_Paulo
+
+transform:
+  # mapeamento origem -> destino (alias final na SOR)
+  alias_map:
+    AccountId: num_idt_cont
+    Amount: vlr_esmd_vend
+    Budget_Confirmed__c: ind_orcm_cfmd_c
+    CloseDate: dat_fecm
+    # ... complete com seu dicionário de dados
+  hash_ignore_cols: [ des_arq, dat_hor_psst, cod_patc ]
+
+write:
+  output_format: parquet
+  overwrite_mode: dynamic
+  show_counts: false
+
+dq:
+  enable: true
+  # Se você tiver regras pré-definidas:
+  # rules_path: s3://meu-bucket-config/glue/dq/opportunity_rules.json

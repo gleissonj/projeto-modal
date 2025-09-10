@@ -1,0 +1,377 @@
+import sys, json, uuid, logging, boto3
+from datetime import datetime, timedelta
+from urllib.parse import urlparse
+
+import pyspark.sql.functions as F
+import pyspark.sql.types as T
+from pyspark.sql import DataFrame
+from pyspark.context import SparkContext
+from functools import reduce, partial
+
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from awsglue.utils import getResolvedOptions
+
+# ========== Logging ==========
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(filename)s:%(lineno)d | %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+# ========== Helpers para S3/Config ==========
+def s3_parse(s3_uri: str):
+    """Retorna (bucket, key) a partir de s3://bucket/key"""
+    u = urlparse(s3_uri)
+    if u.scheme != "s3":
+        raise ValueError(f"URI inválida (esperado s3://): {s3_uri}")
+    return u.netloc, u.path.lstrip("/")
+
+def s3_read_text(s3_uri: str) -> str:
+    bkt, key = s3_parse(s3_uri)
+    s3 = boto3.client("s3")
+    return s3.get_object(Bucket=bkt, Key=key)["Body"].read().decode("utf-8")
+
+def load_config(s3_uri: str) -> dict:
+    text = s3_read_text(s3_uri)
+    if s3_uri.endswith((".yml", ".yaml")):
+        import yaml
+        return yaml.safe_load(text)
+    return json.loads(text)
+
+def parse_bool(v, default=False):
+    if v is None: return default
+    return str(v).lower() in ("1","true","t","yes","y")
+
+def get_spark_type(type_name: str):
+    """Converte nome textual em tipo Spark (ex.: 'StringType' -> T.StringType())."""
+    if not type_name:
+        return None
+    if not hasattr(T, type_name):
+        raise ValueError(f"Tipo Spark inválido no schema: {type_name}")
+    return getattr(T, type_name)()
+
+def get_bucket_only(s3_uri: str) -> str:
+    return s3_parse(s3_uri)[0]
+
+# ========== Classe do Job ==========
+class GlueGenericJob:
+    def __init__(self, cfg: dict, job_args: dict):
+        self.cfg = cfg
+        self.job_args = job_args
+
+        # ---- Extrai config principal ----
+        self.database = cfg["job"]["database"]
+        self.table    = cfg["job"]["table"]
+        self.job_name = job_args.get("JOB_NAME", cfg["job"].get("name", "GlueGenericJob"))
+
+        paths = cfg["paths"]
+        self.bucket_raw = paths["bucket_raw"]           # s3://...
+        self.folder_raw = paths["folder_raw"]           # prefixo
+        self.bucket_sor = paths["bucket_sor"]           # s3://...
+        self.folder_sor = paths["folder_sor"]           # prefixo
+
+        window = cfg.get("window", {})
+        self.force        = parse_bool(str(window.get("force", "false")))
+        self.start_date   = window.get("start_date")  # YYYY-MM-DD
+        self.end_date     = window.get("end_date")    # YYYY-MM-DD
+        self.days_retro   = int(window.get("days_retro", 1))
+        self.max_days_back= int(window.get("max_days_back", 720))
+
+        read = cfg.get("read", {})
+        self.input_format = read.get("input_format", "csv")
+        csv = read.get("csv", {})
+        self.csv_delim    = csv.get("delimiter", ";")
+        self.csv_header   = str(csv.get("header", True)).lower()
+        self.csv_encoding = csv.get("encoding", "utf-8")
+        self.csv_multiline= str(csv.get("multiline", True)).lower()
+        self.csv_quote    = csv.get("quote_mode", "STOP_AT_CLOSING_QUOTE")
+
+        schema_cfg = cfg.get("schema", {})
+        self.schema_cols = schema_cfg.get("columns") or {}
+        if "path" in schema_cfg and schema_cfg["path"]:
+            self.schema_cols = json.loads(s3_read_text(schema_cfg["path"]))
+        self.optional_cols = set(schema_cfg.get("optional_columns") or [])
+
+        time_cfg = cfg.get("time", {})
+        self.part_src_col = time_cfg.get("partition_source_col", "SystemModstamp")
+        self.part_src_fmt = time_cfg.get("partition_source_fmt", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+        self.part_tgt_col = time_cfg.get("partition_target_col", "cod_patc")
+        self.part_tgt_fmt = time_cfg.get("partition_target_fmt", "yyyyMMdd")
+        self.tz_target    = time_cfg.get("timezone_target")  # ex.: America/Sao_Paulo
+
+        tr = cfg.get("transform", {})
+        self.alias_map = tr.get("alias_map") or {}
+        if tr.get("alias_map_path"):
+            self.alias_map = json.loads(s3_read_text(tr["alias_map_path"]))
+        self.hash_ignore = set(tr.get("hash_ignore_cols", ["des_arq", "dat_hor_psst", "cod_patc"]))
+
+        write_cfg = cfg.get("write", {})
+        self.output_format = write_cfg.get("output_format", "parquet")
+        self.overwrite_mode = write_cfg.get("overwrite_mode", "dynamic")
+        self.show_counts = parse_bool(write_cfg.get("show_counts", False))
+
+        dq = cfg.get("dq", {})
+        self.enable_dq = parse_bool(dq.get("enable", True))
+        self.dq_rules_path = dq.get("rules_path")  # opcional
+
+        # ---- Spark/Glue ----
+        sc = SparkContext.getOrCreate()
+        self.glue_context = GlueContext(sc)
+        self.spark = self.glue_context.spark_session
+        # overwrite dinâmico por partição
+        self.spark.conf.set("spark.sql.sources.partitionOverwriteMode", self.overwrite_mode)
+
+        self.glue_client = boto3.client("glue")
+        self.job = Job(self.glue_context)
+        self.job.init(self.job_name, job_args)
+
+        self.processed_partitions = []  # yyyymmdd de cada dia processado
+
+        logger.info(f"Config carregada para tabela {self.database}.{self.table}")
+
+    # --------- Janela de datas ---------
+    def get_date_range(self):
+        today_br = (datetime.utcnow() - timedelta(hours=3)).date()
+        if self.force:
+            if not (self.start_date and self.end_date):
+                raise ValueError("force=true requer start_date e end_date no config.")
+            ini = datetime.strptime(self.start_date, "%Y-%m-%d").date()
+            fim = datetime.strptime(self.end_date, "%Y-%m-%d").date()
+            if ini > fim:
+                raise ValueError("start_date não pode ser maior que end_date.")
+            return ini, fim
+
+        # automático: última partição -> hoje_BR
+        last = self.get_last_partition()
+        if not last:
+            ini = today_br - timedelta(days=self.max_days_back)
+        else:
+            ini = datetime.strptime(str(last), "%Y%m%d").date()
+        return ini, today_br
+
+    def get_last_partition(self):
+        """Retorna última partição (YYYYMMDD) como string, ou ''."""
+        paginator = self.glue_client.get_paginator("get_partitions")
+        pages = paginator.paginate(DatabaseName=self.database, TableName=self.table)
+        vals = []
+        for page in pages:
+            for p in page.get("Partitions", []):
+                if p.get("Values"):
+                    v = p["Values"][0]
+                    if isinstance(v, str) and v.isdigit() and len(v) == 8:
+                        vals.append(v)
+        return max(vals) if vals else ""
+
+    # --------- Leitura RAW de um dia ---------
+    def read_day(self, day: datetime) -> DataFrame | None:
+        ymd = day.strftime("%Y%m%d")
+        raw_bkt = get_bucket_only(self.bucket_raw)
+        prefix = f"{self.folder_raw}/{ymd}"
+        s3 = boto3.client("s3")
+
+        # lista objetos
+        objects = []
+        token = None
+        while True:
+            kw = dict(Bucket=raw_bkt, Prefix=prefix, MaxKeys=1000)
+            if token: kw["ContinuationToken"] = token
+            resp = s3.list_objects_v2(**kw)
+            objects.extend([c["Key"] for c in resp.get("Contents", [])])
+            token = resp.get("NextContinuationToken")
+            if not token: break
+
+        if not objects:
+            logger.info(f"Pasta vazia: {prefix}")
+            return None
+
+        self.processed_partitions.append(ymd)
+        dfs = []
+        for key in objects:
+            path = f"s3://{raw_bkt}/{key}"
+            logger.info(f"Lendo: {path}")
+            reader = self.spark.read
+            if self.input_format == "csv":
+                reader = (reader
+                          .option("encoding", self.csv_encoding)
+                          .option("delimiter", self.csv_delim)
+                          .option("header", self.csv_header)
+                          .option("multiline", self.csv_multiline)
+                          .option("unescapedQuoteHandling", self.csv_quote))
+                df = reader.csv(path)
+            else:
+                df = reader.format(self.input_format).load(path)
+
+            # aplica schema (cast + cria faltantes)
+            df = self.apply_schema(df)
+
+            # colunas técnicas
+            df = df.withColumn("descricao_arquivo", F.lit(path))
+            df = df.withColumn("data_hora_processamento", F.current_timestamp())
+            dfs.append(df)
+
+        if not dfs:
+            return None
+        union_by_name = partial(type(dfs[0]).unionByName, allowMissingColumns=True)
+        return reduce(union_by_name, dfs) if len(dfs) > 1 else dfs[0]
+
+    def apply_schema(self, df: DataFrame) -> DataFrame:
+        if not self.schema_cols:
+            return df
+        for col_name, type_name in self.schema_cols.items():
+            spark_type = get_spark_type(type_name)
+            if col_name in df.columns:
+                df = df.withColumn(col_name, F.col(col_name).cast(spark_type))
+            else:
+                df = df.withColumn(col_name, F.lit(None).cast(spark_type))
+        return df
+
+    # --------- Transformação / Partição / Alias ---------
+    def transform(self, df: DataFrame) -> DataFrame:
+        # partição a partir da coluna origem
+        df = df.withColumn(
+            "codigo_particao",
+            F.date_format(F.to_timestamp(F.col(self.part_src_col), self.part_src_fmt), self.part_tgt_fmt)
+        )
+
+        # timezone alvo (opcional) para campos principais conhecidos
+        time_cols = [
+            "CreatedDate","LastModifiedDate","SystemModstamp",
+            "LastActivityDate","LastStageChangeDate","LastViewedDate","LastReferencedDate"
+        ]
+        if self.tz_target:
+            for c in time_cols:
+                if c in df.columns:
+                    df = df.withColumn(c + "_adj",
+                        F.from_utc_timestamp(F.to_timestamp(F.col(c), self.part_src_fmt), self.tz_target))
+
+        # select final com mapeamento (alias_map)
+        selects = []
+        for src, dst in self.alias_map.items():
+            if src in df.columns:
+                selects.append(F.col(src).alias(dst))
+            elif src.endswith("_adj") and src in df.columns:
+                selects.append(F.col(src).alias(dst))
+            else:
+                # se schema definiu o tipo, cria coluna nula tipada
+                if src in self.schema_cols:
+                    selects.append(F.lit(None).cast(get_spark_type(self.schema_cols[src])).alias(dst))
+
+        # partição e colunas técnicas
+        selects.append(F.col("codigo_particao").cast(T.IntegerType()).alias(self.part_tgt_col))
+        if "descricao_arquivo" in df.columns:
+            selects.append(F.col("descricao_arquivo").cast(T.StringType()).alias("des_arq"))
+        if "data_hora_processamento" in df.columns:
+            selects.append(F.col("data_hora_processamento").cast(T.TimestampType()).alias("dat_hor_psst"))
+
+        return df.select(*selects)
+
+    # --------- Hash / Dedup ---------
+    def add_hash(self, df: DataFrame) -> DataFrame:
+        cols = sorted([c for c in df.columns if c not in self.hash_ignore])
+        pieces = [F.coalesce(F.col(c).cast("string"), F.lit("∅")) for c in cols]
+        return df.withColumn("des_ctrl_alter", F.sha2(F.concat_ws("", *pieces), 256))
+
+    def remove_duplicates(self, df: DataFrame) -> DataFrame:
+        return df.dropDuplicates(["des_ctrl_alter"])
+
+    # --------- Escrita + DQ ---------
+    def write(self, df: DataFrame):
+        if df is None or df.rdd.isEmpty():
+            logger.warning("Nada para escrever.")
+            return
+        bucket_sor = get_bucket_only(self.bucket_sor)
+        dest = f"s3://{bucket_sor}/{self.folder_sor}/{self.table}"
+        logger.info(f"Escrevendo em: {dest}")
+        (df.write
+           .mode("overwrite")
+           .partitionBy(self.part_tgt_col)
+           .format(self.output_format)
+           .save(dest))
+
+        if self.enable_dq:
+            self.write_dq_rules()
+
+    def write_dq_rules(self):
+        # Caso você já tenha um JSON de regras, apenas copie-o para o caminho padrão
+        if self.dq_rules_path:
+            logger.info(f"Copiando regras DQ de {self.dq_rules_path}")
+            s3 = boto3.resource("s3")
+            src_bkt, src_key = s3_parse(self.dq_rules_path)
+            dst_bkt = get_bucket_only(self.bucket_sor)
+            dst_key = f"motor_data_quality/{self.database}/{self.table}/{self.table}.json"
+            s3.Object(dst_bkt, dst_key).copy_from(CopySource={"Bucket": src_bkt, "Key": src_key})
+            logger.info(f"Regras DQ escritas em s3://{dst_bkt}/{dst_key}")
+            return
+
+        # Regras básicas geradas automaticamente (exemplo)
+        rules = {
+            "database": self.database,
+            "table": self.table,
+            "format": self.output_format,
+            "partitions": [f"{self.part_tgt_col}={p}" for p in self.processed_partitions],
+            "rules": [
+                {"type": "RowCount", "operator": ">=", "expression": 1},
+                {"type": "IsComplete", "column": "des_ctrl_alter"},
+            ]
+        }
+        dst_bkt = get_bucket_only(self.bucket_sor)
+        dst_key = f"motor_data_quality/{self.database}/{self.table}/{self.table}.json"
+        s3 = boto3.client("s3")
+        s3.put_object(Bucket=dst_bkt, Key=dst_key, Body=json.dumps(rules).encode("utf-8"))
+        logger.info(f"Regras DQ básicas escritas em s3://{dst_bkt}/{dst_key}")
+
+    # --------- Run / Commit ---------
+    def run(self):
+        ini, fim = self.get_date_range()
+        logger.info(f"Janela de processamento: {ini} a {fim}")
+
+        dfs = []
+        d = ini
+        while d <= fim:
+            logger.info(f"Processando dia: {d}")
+            df_day = self.read_day(datetime(d.year, d.month, d.day))
+            if df_day is not None:
+                dfs.append(df_day)
+            d += timedelta(days=1)
+
+        if not dfs:
+            logger.warning("Sem dados no intervalo. Encerrando.")
+            return
+
+        union_by_name = partial(type(dfs[0]).unionByName, allowMissingColumns=True)
+        df = reduce(union_by_name, dfs) if len(dfs) > 1 else dfs[0]
+        if self.show_counts:
+            logger.info(f"Linhas brutas: {df.count()}")
+
+        df = self.transform(df)
+        df = self.add_hash(df)
+        df = self.remove_duplicates(df)
+
+        if self.show_counts:
+            logger.info(f"Linhas pós-distinct: {df.count()}")
+
+        self.write(df)
+
+    def commit(self): 
+        self.job.commit()
+
+# ========== main ==========
+def main():
+    # recebemos CONFIG_PATH (obrigatório) e JOB_NAME (opcional)
+    args = getResolvedOptions(sys.argv, ["CONFIG_PATH", "JOB_NAME"])
+    cfg = load_config(args["CONFIG_PATH"])
+    job = GlueGenericJob(cfg, args)
+
+    try:
+        job.run()
+        job.commit()
+        logger.info("Job concluído com sucesso.")
+    except Exception:
+        logger.exception("Falha na execução do job.")
+        raise
+    finally:
+        logger.info("Fim do processamento.")
+
+if __name__ == "__main__":
+    main()
