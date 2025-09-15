@@ -1,0 +1,40 @@
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.core.sync.ResponseInputStream;
+
+// ...
+
+@Test
+void deveBaixarComSucessoESalvarConteudo() throws Exception {
+    String s3Uri = "s3://meu-bucket/pasta/arquivo.txt";
+    byte[] conteudo = "hello s3".getBytes();
+
+    S3Client mockS3 = mock(S3Client.class);
+    S3Client.Builder mockBuilder = mock(S3Client.Builder.class, RETURNS_SELF);
+
+    try (MockedStatic<S3Client> mocked = mockStatic(S3Client.class)) {
+        mocked.when(S3Client::builder).thenReturn(mockBuilder);
+        when(mockBuilder.build()).thenReturn(mockS3);
+
+        // simula stream vindo do S3
+        GetObjectResponse resp = GetObjectResponse.builder().contentLength((long) conteudo.length).build();
+        ResponseInputStream<GetObjectResponse> responseStream = mock(ResponseInputStream.class);
+
+        // quando chamarem getObject, devolve o nosso stream mockado
+        when(mockS3.getObject(any(GetObjectRequest.class))).thenReturn(responseStream);
+
+        // mocka comportamento do InputStream (read)
+        when(responseStream.read(any(byte[].class), anyInt(), anyInt()))
+            .thenAnswer(invocation -> {
+                byte[] buf = invocation.getArgument(0);
+                int len = conteudo.length;
+                System.arraycopy(conteudo, 0, buf, 0, len);
+                return len; // bytes lidos
+            })
+            .thenReturn(-1); // fim do stream
+
+        String caminho = ArquivoService.baixarArquivoParaTemp(s3Uri);
+        ultimoArquivoGerado = Path.of(caminho);
+
+        assertThat(Files.readAllBytes(ultimoArquivoGerado)).isEqualTo(conteudo);
+    }
+}
