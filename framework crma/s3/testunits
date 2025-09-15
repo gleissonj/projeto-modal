@@ -1,0 +1,151 @@
+package br.com.itau.app.services;
+
+import br.com.itau.app.exceptions.ArquivoNaoEncontradoException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.internal.util.AbortableInputStream;
+import software.amazon.awssdk.core.sync.ResponseInputStream;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+
+import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+/**
+ * Testa ArquivoService.baixarArquivoParaTemp(String s3Uri)
+ * mockando S3Client.builder() para injetar um S3Client falso.
+ */
+@ExtendWith(MockitoExtension.class)
+class ArquivoServiceTest {
+
+    // Mantemos referência ao caminho retornado para limpar no @AfterEach
+    Path ultimoArquivoGerado;
+
+    @AfterEach
+    void cleanup() throws Exception {
+        if (ultimoArquivoGerado != null) {
+            try {
+                Files.deleteIfExists(ultimoArquivoGerado);
+                if (ultimoArquivoGerado.getParent() != null) {
+                    Files.deleteIfExists(ultimoArquivoGerado.getParent());
+                }
+            } finally {
+                ultimoArquivoGerado = null;
+            }
+        }
+    }
+
+    @Test
+    void deveBaixarComSucessoESalvarConteudo() throws Exception {
+        // given
+        String s3Uri = "s3://meu-bucket/pasta/arquivo.txt";
+        byte[] conteudo = "hello s3".getBytes();
+
+        // mocka S3Client.builder() e a chain do builder
+        S3Client mockS3 = mock(S3Client.class);
+        S3Client.Builder mockBuilder = mock(S3Client.Builder.class, RETURNS_SELF);
+
+        try (MockedStatic<S3Client> mocked = mockStatic(S3Client.class)) {
+            mocked.when(S3Client::builder).thenReturn(mockBuilder);
+            when(mockBuilder.region(any(Region.class))).thenReturn(mockBuilder);
+            when(mockBuilder.credentialsProvider(any(DefaultCredentialsProvider.class))).thenReturn(mockBuilder);
+            when(mockBuilder.build()).thenReturn(mockS3);
+
+            // ResponseInputStream com bytes do nosso teste
+            var resp = GetObjectResponse.builder().contentLength((long) conteudo.length).build();
+            var is = new ResponseInputStream<>(resp, AbortableInputStream.create(new ByteArrayInputStream(conteudo)));
+
+            when(mockS3.getObject(any(GetObjectRequest.class))).thenReturn(is);
+
+            // when
+            String caminho = ArquivoService.baixarArquivoParaTemp(s3Uri);
+            ultimoArquivoGerado = Path.of(caminho);
+
+            // then
+            assertThat(Files.exists(ultimoArquivoGerado)).isTrue();
+            assertThat(Files.readAllBytes(ultimoArquivoGerado)).isEqualTo(conteudo);
+
+            // garante que chamou o S3 com bucket/key esperados
+            verify(mockS3, times(1)).getObject(argThat(req ->
+                    "meu-bucket".equals(req.bucket()) && "pasta/arquivo.txt".equals(req.key())));
+            verify(mockS3, times(1)).close();
+        }
+    }
+
+    @Test
+    void deveLancarIllegalArgument_quandoBucketAusente() {
+        // given
+        String s3UriSemBucket = "s3:///pasta/arquivo.txt"; // host vazio
+
+        // when/then
+        assertThatThrownBy(() -> ArquivoService.baixarArquivoParaTemp(s3UriSemBucket))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("bucket ausente");
+    }
+
+    @Test
+    void deveLancarIllegalArgument_quandoKeyAusente() {
+        // given
+        String s3UriSemKey = "s3://meu-bucket/"; // sem path/key
+
+        // when/then
+        assertThatThrownBy(() -> ArquivoService.baixarArquivoParaTemp(s3UriSemKey))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("key ausente");
+    }
+
+    @Test
+    void deveMapearNoSuchKeyParaArquivoNaoEncontrado() throws Exception {
+        // given
+        String s3Uri = "s3://meu-bucket/pasta/inexistente.txt";
+
+        S3Client mockS3 = mock(S3Client.class);
+        S3Client.Builder mockBuilder = mock(S3Client.Builder.class, RETURNS_SELF);
+
+        try (MockedStatic<S3Client> mocked = mockStatic(S3Client.class)) {
+            mocked.when(S3Client::builder).thenReturn(mockBuilder);
+            when(mockBuilder.build()).thenReturn(mockS3);
+
+            when(mockS3.getObject(any(GetObjectRequest.class)))
+                    .thenThrow(NoSuchKeyException.builder().message("no such key").build());
+
+            assertThatThrownBy(() -> ArquivoService.baixarArquivoParaTemp(s3Uri))
+                    .isInstanceOf(ArquivoNaoEncontradoException.class)
+                    .hasMessageContaining("Objeto não encontrado");
+        }
+    }
+
+    @Test
+    void deveMapearS3ExceptionGenericaParaArquivoNaoEncontrado() throws Exception {
+        // given
+        String s3Uri = "s3://meu-bucket/pasta/arquivo.txt";
+
+        S3Client mockS3 = mock(S3Client.class);
+        S3Client.Builder mockBuilder = mock(S3Client.Builder.class, RETURNS_SELF);
+
+        try (MockedStatic<S3Client> mocked = mockStatic(S3Client.class)) {
+            mocked.when(S3Client::builder).thenReturn(mockBuilder);
+            when(mockBuilder.build()).thenReturn(mockS3);
+
+            when(mockS3.getObject(any(GetObjectRequest.class)))
+                    .thenThrow(S3Exception.builder().message("throttle/timeout").statusCode(500).build());
+
+            assertThatThrownBy(() -> ArquivoService.baixarArquivoParaTemp(s3Uri))
+                    .isInstanceOf(ArquivoNaoEncontradoException.class)
+                    .hasMessageContaining("Não foi possível baixar do S3");
+        }
+    }
+}
