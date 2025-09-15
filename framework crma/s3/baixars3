@@ -1,0 +1,147 @@
+package br.com.itau.app.services;
+
+import br.com.itau.app.exceptions.ArquivoNaoEncontradoException;
+import org.apache.commons.lang3.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
+
+public class ArquivoService {
+    private static final Logger logger = LoggerFactory.getLogger(ArquivoService.class);
+
+    /**
+     * Baixa APENAS de S3 usando caminho no formato s3://bucket/key
+     * Mantém a mesma lógica de criação de arquivo temporário e tratamento de erros.
+     *
+     * Requisitos:
+     * - Task Role do ECS com s3:GetObject (e kms:Decrypt se SSE-KMS).
+     * - Região: usa AWS_REGION se setada; senão fallback "sa-east-1".
+     */
+    public static String baixarArquivoParaTemp(String s3Url) throws Exception {
+        Path arquivoDestino = null;
+
+        try {
+            // -------- valida e extrai bucket/key --------
+            URI uri = new URI(s3Url);
+            String scheme = uri.getScheme();
+            if (!"s3".equalsIgnoreCase(scheme)) {
+                throw new ArquivoNaoEncontradoException("Somente esquema s3:// é suportado neste método.");
+            }
+
+            String bucket = uri.getHost();               // s3://<bucket>/<key>
+            String key = uri.getPath();
+            if (bucket == null || bucket.isBlank()) {
+                throw new IllegalArgumentException("URL s3 inválida: bucket ausente (ex.: s3://meu-bucket/pasta/arq.csv)");
+            }
+            if (key == null || key.isBlank() || "/".equals(key)) {
+                throw new IllegalArgumentException("URL s3 inválida: key ausente (ex.: s3://meu-bucket/pasta/arq.csv)");
+            }
+            if (key.startsWith("/")) key = key.substring(1);
+
+            // -------- nome do arquivo como no original --------
+            String nomeArquivo = key.substring(key.lastIndexOf('/') + 1);
+            if (nomeArquivo.isEmpty()) {
+                nomeArquivo = "arquivo_temp";
+            }
+
+            // -------- cria arquivo temporário (mesma lógica) --------
+            arquivoDestino = criarArquivoTemporarioPreservandoNome(nomeArquivo);
+
+            // -------- baixa do S3 via streaming --------
+            String regionEnv = System.getenv("AWS_REGION");
+            Region region = Region.of((regionEnv != null && !regionEnv.isBlank()) ? regionEnv : "sa-east-1");
+
+            try (S3Client s3 = S3Client.builder()
+                    .region(region)
+                    .credentialsProvider(DefaultCredentialsProvider.create())
+                    .httpClientBuilder(UrlConnectionHttpClient.builder())
+                    .build()) {
+
+                GetObjectRequest req = GetObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        // .checksumMode(ChecksumMode.ENABLED) // opcional: valida integridade quando suportado
+                        .build();
+
+                s3.getObject(req, ResponseTransformer.toFile(
+                        arquivoDestino,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING
+                ));
+            } catch (NoSuchKeyException e) {
+                throw new ArquivoNaoEncontradoException("Objeto não encontrado: s3://" + bucket + "/" + key);
+            } catch (S3Exception e) {
+                logger.error("Erro S3 ao baixar s3://{}/{}: {} ({})",
+                        bucket, key,
+                        (e.awsErrorDetails() != null ? e.awsErrorDetails().errorMessage() : e.getMessage()),
+                        e.statusCode());
+                throw new ArquivoNaoEncontradoException("Não foi possível baixar do S3: s3://" + bucket + "/" + key);
+            }
+
+            return arquivoDestino.toAbsolutePath().toString();
+
+        } catch (ArquivoNaoEncontradoException e) {
+            logger.error("Erro ao baixar arquivo: {}", e.getMessage());
+            tentarApagar(arquivoDestino);
+            throw e;
+
+        } catch (Exception e) {
+            logger.error("Erro ao processar download do S3: {}", e.getMessage());
+            tentarApagar(arquivoDestino);
+            throw e;
+        }
+    }
+
+    // ----------------- helpers (mesma lógica de temporários) -----------------
+
+    private static Path criarArquivoTemporarioPreservandoNome(String nomeArquivo) throws IOException {
+        if (SystemUtils.IS_OS_UNIX) {
+            FileAttribute<Set<PosixFilePermission>> attr =
+                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------"));
+            Path tempDir = Files.createTempDirectory("dados_crma_", attr);
+            Path destino = tempDir.resolve(nomeArquivo);
+            Files.createFile(destino, attr);
+            return destino;
+        } else {
+            // Windows: cria diretório + arquivo; execute geralmente desnecessário para dados
+            Path tempDir = Files.createTempDirectory("dados_crma_");
+            Path destino = tempDir.resolve(nomeArquivo);
+            Files.createFile(destino);
+
+            File f = destino.toFile();
+            boolean leitura  = f.setReadable(true, true);
+            boolean escrita  = f.setWritable(true, true);
+            boolean execucao = f.setExecutable(false, true);
+
+            if (!leitura || !escrita) {
+                throw new IOException("Não foi possível definir as permissões do arquivo temporário no Windows.");
+            }
+            return destino;
+        }
+    }
+
+    private static void tentarApagar(Path p) {
+        if (p == null) return;
+        try {
+            Files.deleteIfExists(p);
+            Path parent = p.getParent();
+            if (parent != null) Files.deleteIfExists(parent); // remove o dir temp se vazio
+        } catch (Exception ignore) {}
+    }
+}
