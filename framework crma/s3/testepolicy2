@@ -1,0 +1,34 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "ConfiaNaTaskRoleDaContaA",
+    "Effect": "Allow",
+    "Principal": { "AWS": "arn:aws:iam::<ID_CONTA_A>:role/<EcsTaskRoleA>" },
+    "Action": "sts:AssumeRole"
+  }]
+}
+
+
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListRestritoPorPrefixo",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::meu-bucket-b",
+      "Condition": {
+        "StringLike": { "s3:prefix": ["vendas/*", "financeiro/*"] }
+      }
+    },
+    {
+      "Sid": "GetObjetosPermitidos",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": [
+        "arn:aws:s3:::meu-bucket-b/vendas/*",
+        "arn:aws:s3:::meu-bucket-b/financeiro/*"
+      ]
+    }
+  ]
+}
