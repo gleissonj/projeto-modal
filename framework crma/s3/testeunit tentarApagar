@@ -1,0 +1,80 @@
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class FileUtilsTest {
+
+    // Método a ser testado
+    private static void tentarApagar(Path p) {
+        if (p == null) return;
+        try {
+            Files.deleteIfExists(p);
+            Path parent = p.getParent();
+            if (parent != null) Files.deleteIfExists(parent); // remove o dir temp se vazio
+        } catch (Exception ignore) {}
+    }
+
+    @Test
+    void deveIgnorarQuandoPathForNull() {
+        // não deve lançar exceção
+        assertDoesNotThrow(() -> tentarApagar(null));
+    }
+
+    @Test
+    void deveApagarArquivo(@TempDir Path tempDir) throws IOException {
+        Path arquivo = tempDir.resolve("teste.txt");
+        Files.createFile(arquivo);
+
+        assertTrue(Files.exists(arquivo));
+
+        tentarApagar(arquivo);
+
+        assertFalse(Files.exists(arquivo), "Arquivo deveria ter sido apagado");
+    }
+
+    @Test
+    void deveApagarArquivoEDiretorioVazio(@TempDir Path tempDir) throws IOException {
+        Path subDir = tempDir.resolve("sub");
+        Files.createDirectories(subDir);
+
+        Path arquivo = subDir.resolve("teste.txt");
+        Files.createFile(arquivo);
+
+        assertTrue(Files.exists(arquivo));
+        assertTrue(Files.exists(subDir));
+
+        tentarApagar(arquivo);
+
+        assertFalse(Files.exists(arquivo), "Arquivo deveria ser apagado");
+        assertFalse(Files.exists(subDir), "Diretório vazio deveria ser apagado");
+    }
+
+    @Test
+    void naoDeveApagarDiretorioQuandoNaoEstiverVazio(@TempDir Path tempDir) throws IOException {
+        Path subDir = tempDir.resolve("sub");
+        Files.createDirectories(subDir);
+
+        Path arquivo1 = subDir.resolve("teste1.txt");
+        Path arquivo2 = subDir.resolve("teste2.txt");
+        Files.createFile(arquivo1);
+        Files.createFile(arquivo2);
+
+        assertTrue(Files.exists(arquivo1));
+        assertTrue(Files.exists(arquivo2));
+
+        // Apaga só o arquivo1
+        tentarApagar(arquivo1);
+
+        assertFalse(Files.exists(arquivo1), "Arquivo1 deveria ser apagado");
+        assertTrue(Files.exists(arquivo2), "Arquivo2 deve continuar existindo");
+        assertTrue(Files.exists(subDir), "Diretório não deveria ser apagado pois não está vazio");
+    }
+}
+
+.
+.

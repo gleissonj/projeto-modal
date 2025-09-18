@@ -1,0 +1,33 @@
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ArquivoServiceDestinoWindowsTest {
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    void deveCriarDiretorioComPrefixoEPathDoArquivo() throws Exception {
+        String nomeArquivo = "meu.txt";
+
+        Path destino = ArquivoService.prepararDestinoTemporario(nomeArquivo);
+
+        // O arquivo ainda não existe
+        assertFalse(Files.exists(destino), "Arquivo não deveria existir ainda");
+
+        // Diretório pai existe e usa o prefixo
+        Path parent = destino.getParent();
+        assertNotNull(parent, "Deve haver diretório pai");
+        assertTrue(Files.exists(parent), "Diretório temporário deve existir");
+        assertTrue(parent.getFileName().toString().startsWith("dados_crma_"),
+                "Diretório deve usar prefixo 'dados_crma_'");
+
+        // Nome do arquivo no destino
+        assertEquals(nomeArquivo, destino.getFileName().toString(),
+                "Path retornado deve terminar com o nome do arquivo informado");
+    }
+}

@@ -1,0 +1,30 @@
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class ArquivoServicePermissoesWindowsTest {
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    void deveAjustarFlagsBasicasEmWindows(@TempDir Path tempDir) throws IOException {
+        Path destino = tempDir.resolve("arquivo.txt");
+        Files.writeString(destino, "conteudo");
+
+        // Act
+        ArquivoService.ajustarPermissoesPosCopia(destino);
+
+        // Assert (Windows não expõe POSIX; validamos flags de File)
+        File f = destino.toFile();
+        assertTrue(f.canRead(), "Em Windows, arquivo deve ficar legível para o dono.");
+        assertTrue(f.canWrite(), "Em Windows, arquivo deve ficar gravável para o dono.");
+        assertFalse(f.canExecute(), "Em Windows, execução deve estar desabilitada para o dono.");
+    }
+}
