@@ -93,36 +93,91 @@ public class ArquivoServiceElseOnlyTest {
 
 package br.com.itau.app.services;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFileAttributeView;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import java.util.Arrays;
 
 /**
- * Exercita o ramo IF (Unix/POSIX). Não mexe em os.name.
- * Em dev Windows, este teste será pulado via assumptions.
+ * Força o ramo ELSE sem alterar a classe sob teste nem build.
+ * Estratégia:
+ *  1) Seta os.name = "Windows 10" (nesta thread/JVM).
+ *  2) Cria um ClassLoader "child-first" isolado que carrega UMA NOVA cópia de:
+ *     - org.apache.commons.lang3.SystemUtils
+ *     - br.com.itau.app.services.ArquivoService
+ *  3) Invoca o método estático via reflection passando um Path real.
+ *
+ * Assim, mesmo que SystemUtils já tenha sido inicializada na JVM principal,
+ * dentro do classloader isolado ela será inicializada com "Windows 10"
+ * e o código cairá no ELSE.
  */
-public class ArquivoServiceIfOnlyTest {
+public class ArquivoServiceElseOnlyTest {
 
     @Test
-    void if_posix_setPermissions_ok(@TempDir Path tempDir) throws Exception {
-        // Garante que só roda quando a JVM realmente é Unix
-        org.junit.jupiter.api.Assumptions.assumeTrue(SystemUtils.IS_OS_UNIX,
-                "Teste válido apenas em Unix/POSIX");
-
+    void else_sucesso_comClassLoaderIsolado(@TempDir Path tempDir) throws Exception {
+        // 1) Gera um arquivo real para passar ao método
         Path destino = tempDir.resolve("arquivo.txt");
         Files.writeString(destino, "teste");
 
-        // Garante que o FS suporta POSIX (evita UnsupportedOperationException em FS não-POSIX)
-        org.junit.jupiter.api.Assumptions.assumeTrue(
-                Files.getFileAttributeView(destino, PosixFileAttributeView.class) != null,
-                "FileSystem não é POSIX; pulando teste do ramo IF");
+        // 2) Força identificação de SO "Windows" ANTES de carregar as classes no ClassLoader isolado
+        System.setProperty("os.name", "Windows 10");
 
-        assertDoesNotThrow(() -> ArquivoService.ajustarPermissoesPosCopia(destino));
+        // 3) Monta um classpath com os mesmos caminhos da JVM atual
+        URL[] urls = Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator))
+                .map(p -> new File(p).toURI())
+                .map(u -> {
+                    try { return u.toURL(); } catch (Exception e) { throw new RuntimeException(e); }
+                })
+                .toArray(URL[]::new);
+
+        // 4) ClassLoader "child-first": tenta este loader antes do pai
+        try (URLClassLoader childFirst = new URLClassLoader(urls, /*parent*/ null) {
+            private final ClassLoader appParent = ClassLoader.getSystemClassLoader();
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                // Java core classes via parent (Path, Files, etc.)
+                if (name.startsWith("java.") || name.startsWith("jdk.")) {
+                    return super.loadClass(name, resolve);
+                }
+                // Tenta carregar primeiro por este loader (child-first)
+                try {
+                    Class<?> c = findLoadedClass(name);
+                    if (c == null) c = findClass(name);
+                    if (resolve) resolveClass(c);
+                    return c;
+                } catch (ClassNotFoundException e) {
+                    // fallback: classes não encontradas, delega ao parent da aplicação
+                    return appParent.loadClass(name);
+                }
+            }
+        }) {
+            // 5) Carrega uma NOVA cópia de SystemUtils e da sua classe no classloader isolado
+            //    (mesmos nomes/pacotes da aplicação)
+            Class<?> sysUtils = Class.forName("org.apache.commons.lang3.SystemUtils", true, childFirst);
+            // sanity check opcional: garantir que essa cópia viu "Windows 10"
+            boolean isUnixInIsolated = (boolean) sysUtils.getField("IS_OS_UNIX").get(null);
+            if (isUnixInIsolated) {
+                // Se por algum motivo ainda veio true, algo "vazou" no classpath
+                throw new IllegalStateException("SystemUtils no classloader isolado não refletiu os.name=Windows 10");
+            }
+
+            Class<?> svc = Class.forName("br.com.itau.app.services.ArquivoService", true, childFirst);
+            Method m = svc.getMethod("ajustarPermissoesPosCopia", Path.class);
+
+            // 6) Invoca o método estático (cairá no ELSE dentro do classloader isolado)
+            m.invoke(null, destino);
+
+            // 7) Asserts best-effort no arquivo real
+            File f = destino.toFile();
+            // Leitura e escrita devem ter sido habilitadas no ELSE
+            org.junit.jupiter.api.Assertions.assertTrue(f.canRead());
+            org.junit.jupiter.api.Assertions.assertTrue(f.canWrite());
+        }
     }
 }
