@@ -220,3 +220,108 @@ class ArquivoServiceElseBranchTest {
         verify(file).setExecutable(false, true);
     }
 }
+
+
+----------------
+
+
+package br.com.itau.app.services;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.*;
+
+/**
+ * Cobre TODO o bloco ELSE, incluindo o if interno (!readable || !writable || !executable),
+ * SEM alterar a classe de produção.
+ *
+ * Estratégia:
+ *  1) Define os.name="Windows 10" na JVM do teste.
+ *  2) Cria um ClassLoader "child-first" isolado e carrega nele:
+ *     - org.apache.commons.lang3.SystemUtils (uma NOVA cópia, que verá Windows)
+ *     - br.com.itau.app.services.ArquivoService (uma NOVA cópia)
+ *  3) Invoca via reflection ArquivoService.ajustarPermissoesPosCopia(Path) passando mocks
+ *     de Path e File, controlando os retornos: readable=true, writable=false, executable=true
+ *     para GARANTIR a entrada no if interno e executar o logger.warn(...)
+ */
+public class ArquivoServiceElseBranchTest {
+
+    @Test
+    void deveExecutarTodoElseEEntrarNoIfInterno_comClassLoaderIsolado() throws Exception {
+        // 1) Força "Windows" antes de carregar SystemUtils no classloader isolado
+        System.setProperty("os.name", "Windows 10");
+
+        // 2) Monta o classpath atual em URLs
+        URL[] urls = Arrays.stream(System.getProperty("java.class.path").split(System.getProperty("path.separator")))
+                .map(p -> new java.io.File(p).toURI())
+                .map(u -> {
+                    try { return u.toURL(); } catch (Exception e) { throw new RuntimeException(e); }
+                })
+                .toArray(URL[]::new);
+
+        // 3) Cria um URLClassLoader "child-first"
+        try (URLClassLoader childFirst = new URLClassLoader(urls, /* parent */ null) {
+            private final ClassLoader appParent = ClassLoader.getSystemClassLoader();
+
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                // Classes do core Java pelo parent padrão
+                if (name.startsWith("java.") || name.startsWith("jdk.")) {
+                    return super.loadClass(name, resolve);
+                }
+                // Tenta carregar primeiro por este loader (child-first)
+                try {
+                    Class<?> c = findLoadedClass(name);
+                    if (c == null) c = findClass(name);
+                    if (resolve) resolveClass(c);
+                    return c;
+                } catch (ClassNotFoundException e) {
+                    // Fallback: delega ao classloader padrão da aplicação
+                    return appParent.loadClass(name);
+                }
+            }
+        }) {
+            // 4) Carrega NOVAS cópias de SystemUtils e da sua classe no classloader isolado
+            Class<?> sysUtils = Class.forName("org.apache.commons.lang3.SystemUtils", true, childFirst);
+            boolean isUnixIsolated = (boolean) sysUtils.getField("IS_OS_UNIX").get(null);
+            if (isUnixIsolated) {
+                throw new IllegalStateException("SystemUtils isolado não refletiu os.name=Windows 10 (ainda está Unix).");
+            }
+
+            Class<?> svc = Class.forName("br.com.itau.app.services.ArquivoService", true, childFirst);
+            Method ajustar = svc.getMethod("ajustarPermissoesPosCopia", Path.class);
+
+            // 5) Prepara mocks (bootstrap classes, compatíveis entre classloaders)
+            Path pathMock = mock(Path.class);
+            File fileMock = mock(File.class);
+            when(pathMock.toFile()).thenReturn(fileMock);
+
+            // readable = true, writable = false (força entrada no if interno), executable = true
+            when(fileMock.setReadable(true, true)).thenReturn(true);
+            when(fileMock.setWritable(true, true)).thenReturn(false); // <- força o if interno
+            when(fileMock.setExecutable(false, true)).thenReturn(true);
+
+            // 6) Invoca o método estático da classe carregada no classloader isolado
+            assertDoesNotThrow(() -> {
+                try {
+                    ajustar.invoke(null, pathMock);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            // 7) Verifica que o código do ELSE chamou os setters esperados no File mockado
+            verify(fileMock).setReadable(true, true);
+            verify(fileMock).setWritable(true, true);
+            verify(fileMock).setExecutable(false, true);
+        }
+    }
+}
