@@ -86,3 +86,43 @@ public class ArquivoServiceElseOnlyTest {
         verify(file).setReadable(true, true);
     }
 }
+
+-------------------------------------
+
+
+
+package br.com.itau.app.services;
+
+import org.apache.commons.lang3.SystemUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFileAttributeView;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+/**
+ * Exercita o ramo IF (Unix/POSIX). Não mexe em os.name.
+ * Em dev Windows, este teste será pulado via assumptions.
+ */
+public class ArquivoServiceIfOnlyTest {
+
+    @Test
+    void if_posix_setPermissions_ok(@TempDir Path tempDir) throws Exception {
+        // Garante que só roda quando a JVM realmente é Unix
+        org.junit.jupiter.api.Assumptions.assumeTrue(SystemUtils.IS_OS_UNIX,
+                "Teste válido apenas em Unix/POSIX");
+
+        Path destino = tempDir.resolve("arquivo.txt");
+        Files.writeString(destino, "teste");
+
+        // Garante que o FS suporta POSIX (evita UnsupportedOperationException em FS não-POSIX)
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                Files.getFileAttributeView(destino, PosixFileAttributeView.class) != null,
+                "FileSystem não é POSIX; pulando teste do ramo IF");
+
+        assertDoesNotThrow(() -> ArquivoService.ajustarPermissoesPosCopia(destino));
+    }
+}
