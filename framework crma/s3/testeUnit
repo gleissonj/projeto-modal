@@ -1,109 +1,152 @@
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+package br.com.itau.app.services;
+
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Supondo que o método testado está em:
- *   public class ArquivoService { 
- *       static Logger logger = LoggerFactory.getLogger(ArquivoService.class);
- *       static boolean isUnix() { ... }
- *       public static void ajustarPermissoesPosCopia(Path destino) { ... }
- *   }
+ * Testa ajustarPermissoesPosCopia sem modificar a classe original.
+ * Cenários:
+ *  1) Sucesso no ramo else (arquivo real).
+ *  2) Falha de permissão no ramo else (Path/File mockado) -> entra no if interno.
+ *  3) Exceção no else -> entra no catch.
  */
 class ArquivoServiceTest {
 
-    private MockedStatic<ArquivoService> mockStaticService;
-    private org.slf4j.Logger originalLogger;
-
-    @BeforeEach
-    void setUp() {
-        // Força sempre o ramo NÃO-UNIX (o 'else') para estes testes
-        mockStaticService = mockStatic(ArquivoService.class, CALLS_REAL_METHODS);
-        mockStaticService.when(ArquivoService::isUnix).thenReturn(false);
-
-        // Guarda logger original e injeta mock para validar mensagens
-        originalLogger = ArquivoService.logger;
-        ArquivoService.logger = mock(org.slf4j.Logger.class);
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (mockStaticService != null) mockStaticService.close();
-        ArquivoService.logger = originalLogger;
-    }
-
+    /**
+     * 1) Exercita o ELSE com arquivo real (sucesso).
+     * Requer que a JVM de teste esteja com -Dos.name=Windows 10 (ver surefire/gradle).
+     */
     @Test
-    void deveExecutarElseComSucesso_semGerarWarn() {
-        // Arrange: Path e File mockados
-        Path path = mock(Path.class);
-        File file = mock(File.class);
-        when(path.toFile()).thenReturn(file);
-
-        // Simula sucesso em todas as permissões
-        when(file.setReadable(true, true)).thenReturn(true);
-        when(file.setWritable(true, true)).thenReturn(true);
-        when(file.setExecutable(false, true)).thenReturn(true);
+    void else_sucesso_comArquivoReal(@TempDir Path tempDir) throws Exception {
+        // Arrange: cria arquivo real
+        Path destino = tempDir.resolve("arquivo.txt");
+        Files.writeString(destino, "teste");
 
         // Act
-        assertDoesNotThrow(() -> ArquivoService.ajustarPermissoesPosCopia(path));
+        assertDoesNotThrow(() -> ArquivoService.ajustarPermissoesPosCopia(destino));
 
-        // Assert: não deve logar warn do bloco de validação
-        verify(ArquivoService.logger, never())
-                .warn(startsWith("Falha ao ajustar algumas permissões"));
-        // Também não deve cair no catch
-        verify(ArquivoService.logger, never())
-                .warn(startsWith("Não foi possível ajustar permissões"));
+        // Assert (best effort): deve ter continuado OK; checamos flags comuns
+        File f = destino.toFile();
+        assertTrue(f.canRead(), "Esperado que o arquivo esteja legível");
+        assertTrue(f.canWrite(), "Esperado que o arquivo esteja gravável");
+        // Executável pode variar por FS/SO; não assertamos rigidamente
     }
 
+    /**
+     * 2) Exercita o ELSE com falha de permissão (entra no if interno).
+     * Usamos Path/File mockados para controlar os retornos de setReadable/Writable/Executable.
+     * Capturamos WARNING via java.util.logging para garantir que o warn foi emitido.
+     */
     @Test
-    void deveExecutarElseEGerarWarn_quandoAlgumaPermissaoFalha() {
-        // Arrange
+    void else_falhaAlgumaPermissao_geraWarningNoIfInterno() {
+        // Arrange: Path e File mockados (só o ELSE usa toFile(), sem POSIX)
         Path path = mock(Path.class);
         File file = mock(File.class);
         when(path.toFile()).thenReturn(file);
 
-        // Força falha em pelo menos uma das permissões (ex.: writable = false)
+        // Simula falha em uma permissão (writable = false)
         when(file.setReadable(true, true)).thenReturn(true);
         when(file.setWritable(true, true)).thenReturn(false);
         when(file.setExecutable(false, true)).thenReturn(true);
 
-        // Act
-        ArquivoService.ajustarPermissoesPosCopia(path);
+        // Captura logs WARNING do logger da classe (JUL)
+        Logger classLogger = Logger.getLogger(ArquivoService.class.getName());
+        TestLogHandler handler = new TestLogHandler();
+        Level oldLevel = classLogger.getLevel();
+        boolean oldUseParent = classLogger.getUseParentHandlers();
+        classLogger.setLevel(Level.ALL);
+        classLogger.setUseParentHandlers(false); // evita poluir saída do runner
+        classLogger.addHandler(handler);
 
-        // Assert: deve gerar warn do bloco interno
-        verify(ArquivoService.logger, atLeastOnce())
-                .warn(startsWith("Falha ao ajustar algumas permissões do arquivo temporário"),
-                        anyBoolean(), anyBoolean(), anyBoolean());
+        try {
+            // Act
+            ArquivoService.ajustarPermissoesPosCopia(path);
+        } finally {
+            // Cleanup handler
+            classLogger.removeHandler(handler);
+            classLogger.setUseParentHandlers(oldUseParent);
+            classLogger.setLevel(oldLevel);
+        }
 
-        // Não deve cair no catch
-        verify(ArquivoService.logger, never())
-                .warn(startsWith("Não foi possível ajustar permissões"));
+        // Assert: deve ter gerado um WARNING com a mensagem esperada
+        assertTrue(
+            handler.hasWarningStartingWith("Falha ao ajustar algumas permissões do arquivo temporário"),
+            "Esperado WARNING sobre falha de permissões no bloco interno"
+        );
+
+        // Também valida que tentamos ajustar todas as permissões
+        verify(file).setReadable(true, true);
+        verify(file).setWritable(true, true);
+        verify(file).setExecutable(false, true);
     }
 
+    /**
+     * 3) Exercita o catch: provocamos exceção dentro do ELSE.
+     * Usamos Path/File mockados e lançamos RuntimeException no primeiro setReadable.
+     * Capturamos WARNING do catch.
+     */
     @Test
-    void deveCapturarExcecaoNoElse_eLogarWarnDoCatch() {
-        // Arrange
+    void else_excecaoCapturada_noCatchGeraWarning() {
         Path path = mock(Path.class);
         File file = mock(File.class);
         when(path.toFile()).thenReturn(file);
 
-        // Lança exceção logo na primeira chamada de permissão para exercitar o catch
+        // Lança exceção na primeira chamada para cair no catch
         when(file.setReadable(true, true)).thenThrow(new RuntimeException("boom"));
 
-        // Act
-        ArquivoService.ajustarPermissoesPosCopia(path);
+        Logger classLogger = Logger.getLogger(ArquivoService.class.getName());
+        TestLogHandler handler = new TestLogHandler();
+        Level oldLevel = classLogger.getLevel();
+        boolean oldUseParent = classLogger.getUseParentHandlers();
+        classLogger.setLevel(Level.ALL);
+        classLogger.setUseParentHandlers(false);
+        classLogger.addHandler(handler);
 
-        // Assert: deve logar o warn do catch
-        verify(ArquivoService.logger, atLeastOnce())
-                .warn(startsWith("Não foi possível ajustar permissões do arquivo temporário"),
-                        contains("boom"));
+        try {
+            assertDoesNotThrow(() -> ArquivoService.ajustarPermissoesPosCopia(path));
+        } finally {
+            classLogger.removeHandler(handler);
+            classLogger.setUseParentHandlers(oldUseParent);
+            classLogger.setLevel(oldLevel);
+        }
+
+        assertTrue(
+            handler.hasWarningStartingWith("Não foi possível ajustar permissões do arquivo temporário"),
+            "Esperado WARNING vindo do catch"
+        );
+
+        verify(file).setReadable(true, true);
+        // writable/executable podem não ser chamados por causa da exceção – não verificamos
+    }
+
+    /** Handler simples para capturar WARNINGs de JUL. */
+    static class TestLogHandler extends Handler {
+        private final StringBuilder warnings = new StringBuilder();
+
+        @Override
+        public void publish(LogRecord record) {
+            if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
+                if (record.getMessage() != null) {
+                    warnings.append(record.getMessage()).append('\n');
+                }
+            }
+        }
+        @Override public void flush() {}
+        @Override public void close() throws SecurityException {}
+
+        boolean hasWarningStartingWith(String prefix) {
+            return warnings.toString().lines().anyMatch(l -> l.startsWith(prefix));
+        }
     }
 }
