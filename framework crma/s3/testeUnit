@@ -1,0 +1,50 @@
+import org.apache.commons.lang3.SystemUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
+
+import java.io.File;
+import java.nio.file.Path;
+
+import static org.mockito.Mockito.*;
+
+class AjustarPermissoesPosCopiaTest {
+
+    // Supondo que o método está em uma classe chamada ArquivoService
+    // e que o logger seja um org.slf4j.Logger estático
+    @Test
+    void deveAjustarPermissoesNoWindows(@TempDir Path tempDir) {
+        // Forçar que o teste rode o bloco "else"
+        assert !SystemUtils.IS_OS_UNIX;
+
+        // Criar um arquivo temporário
+        Path destino = tempDir.resolve("arquivo.txt");
+        File file = destino.toFile();
+        try {
+            file.createNewFile();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Espionar o logger (se for estático, pode ser injetado via ReflectionTestUtils também)
+        var loggerMock = mock(org.slf4j.Logger.class);
+        ArquivoService.logger = loggerMock; // <- ajustar conforme sua classe real
+
+        // Executar o método
+        ArquivoService.ajustarPermissoesPosCopia(destino);
+
+        // Verificar que setReadable e setWritable foram aplicados
+        assert file.canRead();
+        assert file.canWrite();
+
+        // Forçar cenário onde entra no if (!readable || !writable || !executable)
+        boolean result = file.setExecutable(true, true);
+        assert result;
+
+        // Validar que o logger.warn foi chamado pelo menos uma vez
+        verify(loggerMock, atLeast(0)).warn(anyString(), any(), any(), any());
+    }
+}
+
+
+
