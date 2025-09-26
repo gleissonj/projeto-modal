@@ -1,0 +1,87 @@
+package br.com.itau.app.services;
+
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.File;
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ArquivoServicePrepararDestinoElseTest {
+
+    @Test
+    void deveCairNoElse_eRetornarPathNoTempSemAtributos() throws Exception {
+        // 1) Força "Windows" antes de carregar classes no classloader isolado
+        System.setProperty("os.name", "Windows 10");
+
+        // 2) Classpath atual em URLs
+        URL[] urls = Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator))
+                .map(p -> new File(p).toURI())
+                .map(u -> {
+                    try { return u.toURL(); } catch (Exception e) { throw new RuntimeException(e); }
+                })
+                .toArray(URL[]::new);
+
+        // 3) ClassLoader child-first (isola uma nova cópia de SystemUtils e da sua classe)
+        try (URLClassLoader childFirst = new URLClassLoader(urls, /*parent*/ null) {
+            private final ClassLoader appParent = ClassLoader.getSystemClassLoader();
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                if (name.startsWith("java.") || name.startsWith("jdk.")) {
+                    return super.loadClass(name, resolve);
+                }
+                try {
+                    Class<?> c = findLoadedClass(name);
+                    if (c == null) c = findClass(name);
+                    if (resolve) resolveClass(c);
+                    return c;
+                } catch (ClassNotFoundException e) {
+                    return appParent.loadClass(name);
+                }
+            }
+        }) {
+            // 4) Garante que, dentro do classloader isolado, SystemUtils vê "Windows"
+            Class<?> sysUtils = Class.forName("org.apache.commons.lang3.SystemUtils", true, childFirst);
+            boolean isUnixIsolated = (boolean) sysUtils.getField("IS_OS_UNIX").get(null);
+            if (isUnixIsolated) {
+                throw new IllegalStateException("SystemUtils isolado não refletiu os.name=Windows 10.");
+            }
+
+            // 5) Carrega sua classe e o método prepararDestinoTemporario(String)
+            Class<?> svc = Class.forName("br.com.itau.app.services.ArquivoService", true, childFirst);
+            Method preparar = svc.getMethod("prepararDestinoTemporario", String.class);
+
+            final String nomeArquivo = "arquivo.txt";
+
+            // 6) Invoca o método estático (cairá no ELSE)
+            Path resultado = assertDoesNotThrow(() -> {
+                try {
+                    Object ret = preparar.invoke(null, nomeArquivo);
+                    return (Path) ret;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            // 7) Asserts: caiu no else ⇒ criou tempDir sem atributos POSIX e retornou path ainda inexistente
+            assertNotNull(resultado, "Path de retorno não deveria ser nulo");
+            assertEquals(nomeArquivo, resultado.getFileName().toString(), "Deveria resolver para o nome do arquivo");
+
+            Path parent = resultado.getParent();
+            assertNotNull(parent, "Deveria haver diretório pai (temp)");
+            assertTrue(Files.exists(parent), "Diretório temporário deveria existir");
+            assertTrue(Files.isDirectory(parent), "Diretório temporário esperado");
+            assertTrue(parent.getFileName().toString().startsWith("dados_crma_"),
+                    "Nome do diretório deve iniciar com 'dados_crma_'");
+
+            // O arquivo ainda não existe (o método só resolve o path)
+            assertFalse(Files.exists(resultado), "O arquivo ainda não deveria existir (apenas path resolvido)");
+        }
+    }
+}
