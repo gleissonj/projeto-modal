@@ -1,0 +1,604 @@
+import boto3
+import logging
+import pyspark.sql
+import pyspark.sql.functions as F
+import sys
+import uuid
+from awsglue.context import GlueContext
+from awsglue.job import Job
+from awsglue.utils import getResolvedOptions
+from datetime import datetime, timedelta
+from functools import reduce, partial
+from motordqconnector.dqconnector import RuleSetBuilder
+from pyspark.context import SparkContext
+from pyspark.sql import DataFrame
+from pyspark.sql import types as T
+from typing import Callable, Dict
+from typing import List
+
+
+stdout_handler = logging.StreamHandler(stream=sys.stdout)
+handlers = [stdout_handler]
+logging.basicConfig(
+    format="%(asctime)s | %(filename)s:%(lineno)d | %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=handlers
+)
+
+logger = logging.getLogger(__name__)
+
+DATABASE = "db_corp_gestaocomercial_governancasalesforceibba_sor_01"
+TABELA = "tb_ibba360_evento_oportunidade"
+DAYS_RETRO = 1
+FORCAR_DATA_PROC = True
+DATA_PROC_INIT = datetime.strptime("2025-03-13", "%Y-%m-%d").date()
+DATA_PROC_FIM = datetime.strptime("2025-09-04", "%Y-%m-%d").date()
+SHOW_COUNTS = False
+
+SCHEMA = {
+    "AccountId": T.StringType(),
+    "Amount": T.DoubleType(),
+    "Budget_Confirmed__c": T.BooleanType(),
+    "CampaignId": T.StringType(),
+    "CloseDate": T.TimestampType(),
+    "ContaId__c": T.StringType(),
+	"CreatedById": T.StringType(),
+	"CreatedDate": T.TimestampType(),
+	"Description": T.StringType(),
+	"Discovery_Completed__c": T.BooleanType(),
+	"FinServ__FinancialAccount__c": T.StringType(),
+	"FinServ__Household__c": T.StringType(),
+	"FinServ__ReferredByContact__c": T.StringType(),
+	"FinServ__ReferredByUser__c": T.StringType(),
+	"Fiscal": T.StringType(),
+	"FiscalQuarter": T.IntegerType(),
+	"FiscalYear": T.IntegerType(),
+	"ForecastCategory": T.StringType(),
+	"ForecastCategoryName": T.StringType(),
+	"HasOpenActivity": T.BooleanType(),
+	"HasOpportunityLineItem": T.BooleanType(),
+	"HasOverdueTask": T.BooleanType(),
+	"Id": T.StringType(),
+	"IsClosed": T.BooleanType(),
+	"IsDeleted": T.BooleanType(),
+	"IsExcludedFromTerritory2Filter": T.BooleanType(),
+	"IsWon": T.BooleanType(),
+	"LastActivityDate": T.TimestampType(),
+	"LastAmountChangedHistoryId": T.StringType(),
+	"LastCloseDateChangedHistoryId": T.StringType(),
+	"LastModifiedById": T.StringType(),
+	"LastModifiedDate": T.TimestampType(),
+	"LastReferencedDate": T.TimestampType(),
+	"LastStageChangeDate": T.TimestampType(),
+	"LastViewedDate": T.TimestampType(),
+	"LeadSource": T.StringType(),
+	"Loss_Reason__c": T.StringType(),
+	"Name": T.StringType(),
+	"NextStep": T.StringType(),
+	"OwnerId": T.StringType(),
+	"Pricebook2Id": T.StringType(),
+	"Probability": T.IntegerType(),
+	"PushCount": T.IntegerType(),
+	"ROI_Analysis_Completed__c": T.BooleanType(),
+	"RecordTypeId": T.StringType(),
+	"StageName": T.StringType(),
+	"SyncedQuoteId": T.StringType(),
+	"SystemModstamp": T.TimestampType(),
+	"Territory2Id": T.StringType(),
+	"Type": T.StringType(),
+	"codigos_particao": T.IntegerType(),
+	"codigo_particao": T.IntegerType(),
+	"HU7_MotivoPerda__c": T.StringType(),
+	"HU7_SubMotivoPerda__c": T.StringType(),
+	"HU7_SpreadConcorrente__c": T.DoubleType(),
+	"HU7_Probabilidade__c": T.StringType(),
+	"AccountIdSubGrupo__c": T.StringType(),
+	"DataVencimentoConcorrente__c": T.TimestampType(),
+	"EspecialistaTime__c": T.StringType(),
+	"ExpectedRevenue": T.DoubleType(),
+	"HU7_Concorrente__c": T.StringType(),
+	"HU7_ContactReport__c": T.StringType(),
+	"HU7_Detalhes__c": T.StringType(),
+	"HU7_EmpresaGrupo__c": T.StringType(),
+	"HU7_EstimativaPotencial__c": T.DoubleType(),
+	"HU7_IDExterno__c": T.StringType(),
+	"HU7_IdVencimento__c": T.StringType(),
+	"HU7_NomeOferta__c": T.StringType(),
+	"HU7_Restrito__c": T.BooleanType(),
+	"InformacaoAdicional__c": T.StringType(),
+	"IsPrivate": T.BooleanType(),
+	"IsPrivate": T.BooleanType(),
+	"Participantes__c": T.StringType(),
+	"TotalOpportunityQuantity": T.StringType()
+	}
+
+	class Util:
+		def get_time_br(self):
+			return datetime.today() - timedelta(hours=3)
+
+		def get_date_br(self):
+			today = datetime.today() - timedelta(hours=3)
+			return today.date()
+
+	class StorageS3Itau:
+		def __init__(self, bucket):
+			self.bucket = bucket
+			self.client = boto3.client("s3")
+
+		def _get_objects(self, prefix, delimiter):
+			objs = self.client.list_objects(
+				Bucket=self.bucket, Prefix=prefix, Delimiter=delimiter, MaxKeys=999
+			)
+			return objs
+
+		def folder_exists(self, prefix, delimiter):
+			result = self.client.list_objects(Bucket=self.bucket, Prefix=prefix)
+			exists = False
+			if "Contents" in result:
+				exists = True
+			return exists
+
+		def get_folders(self, prefix):
+			folders = self._get_objects(prefix, "/")
+			lstFolders = []
+
+			if "CommonPrefixes" not in folders:
+				return lstFolders
+
+			for f in folders.get("CommonPrefixes"):
+				lstFolders.append(f.get("Prefix"))
+
+			return lstFolders
+
+		def get_files(self, prefix, delimiter):
+			files = self._get_objects(prefix, delimiter)
+			lstFiles = []
+
+			if "Contents" in files:
+				for f in files.get("Contents"):
+					lstFiles.append(f"s3://{self.bucket}/{f.get('Key')}")
+
+			return lstFiles
+
+		def move_file(self, bucket_source, file_source, bucket_dest, file_dest, remove_source_file=True):
+			s3 = boto3.resource("s3")
+			copy_source = {"Bucket": bucket_source, "Key": file_source}
+			bucket = s3.Bucket(bucket_dest)
+			bucket.copy(copy_source, file_dest)
+
+			if remove_source_file:
+				self.client.delete_objects(
+					Bucket=bucket_source,
+					Delete={
+						"Objects": [
+							{"Key": file_source},
+						]
+					},
+				)
+		def delete_file(self, bucket, file):
+			s3 = boto3.resource("s3")
+			s3.Object(bucket, file).delete()
+
+	def atributo_existe_dataframe(df, col):
+		return df.columns.__contains__(col)
+		
+	def selecionar_atributos_democratizados(df_oportunidade_csv: pyspark.sql.DataFrame) -> pyspark.sql.DataFrame:
+		atributos_existentes = []
+		atributos_nao_existes = {}
+
+		for key, value in SCHEMA.items():
+			if atributo_existe_dataframe(df_oportunidade_csv, key):
+				atributos_existentes.append(key)
+			else:
+				atributos_nao_existes[key] = value
+
+		df = df_oportunidade_csv.select(*atributos_existentes)
+
+		for col_name in atributos_existentes:
+			if col_name in SCHEMA:
+				expected_type = SCHEMA[col_name]
+				try:
+					df = df.withColumn(col_name, F.col(col_name).cast(expected_type))
+				except Exception as e:
+					logger.warning(
+						f"Erro ao converter coluna {col_name} para tipo {expected_type}: {e}"
+					)
+
+		for key, value in atributos_nao_existentes.items():
+			df = df.withColumn(key, F.lit(None).cast(value))
+
+		if atributos_nao_existentes:
+			logger.info(
+				f"Colunas adicionadas com valores nulos: {list(atributos_nao_existentes.keys())}"
+			)
+
+		return df
+
+	class GlueRaw2SORibba:
+		def __init__(self, params: List[str]) -> None:
+			argv: List[str] = sys.argv
+			self.args = getResolvedOptions(argv, params)
+
+			self.bucket_raw = self.args["BUCKET_RAW"]
+			self.folder_raw = self.args["FOLDER_RAW"]
+			self.bucket_sor = self.args["BUCKET_SOR"]
+			self.folder_sor = self.args["FOLDER_SOR"]
+			self.jobname = self.args["JOB_NAME"]
+
+			logger.info(
+				f"""
+				Parâmetros:
+				DATABASE: {DATABASE}
+				TABELA: {TABELA}
+				DAYS_RETRO: {DAYS_RETRO}
+				bucket_raw: {self.bucket_raw}
+				folder_raw: {self.folder_raw}
+				bucket_sor: {self.bucket_sor}
+				folder_sor: {self.folder_sor}
+				jobname: {self.jobname}
+				FORCAR_DATA_PROC: {FORCAR_DATA_PROC}
+				DATA_PROC_INIT: {DATA_PROC_INIT}
+				DATA_PROC_FIM: {DATA_PROC_FIM}
+				SHOW_COUNTS: {SHOW_COUNTS}
+				"""
+			)
+
+			sc = SparkContext.getOrCreate()
+			self.glueContext = GlueContext(sc)
+			self.spark = self.glueContext.spark_session
+
+			# setando o overwrite para reescrever somente a partição e não toda a pasta
+			self.spark.conf.set("spark.sql.sources.partitionOverwriteMode", "dynamic")
+
+			self.glue_client = boto3.client("glue")
+			self.job = Job(self.glueContext)
+			self.job.init(self.jobname, self.args)
+
+			self.lst_partitions = []
+			
+		def run_data_quality(self, df_dados: DataFrame) -> None:
+			s3_client = boto3.client("s3")
+			bucket_name = self.bucket_sor.replace("s3://", "").replace("/", "")
+
+			partitions_list = [f"cod_partc={partition}" for partition in self.lst_partitions]
+			s3_paths_list = [
+				f"{self.bucket_sor}/{self.folder_sor}/tb_ibba360_evento_oportunidade/cod_partc={partition}"
+				for partition in self.lst_partitions
+			]
+
+			builder = RuleSetBuilder(
+				DATABASE,
+				TABELA,
+				partitions_list,
+				s3_paths_list,
+				"parquet",
+				"True",
+				str(uuid.uuid4()),
+				"dataops"
+			)
+
+			builder.add_rule("IsComplete", "cod_idt")
+			builder.add_rule("IsComplete", "des_ctrl_alter")
+			builder.add_rule("RowCount", operator=">=", expression=1)
+			builder.add_rule("ColumnLength", "des_ctrl_alter", operator=">=", expression=1)
+
+			ruleset_json = builder.build()
+			json_path = f"motor_data_quality/{DATABASE}/{TABELA}/{TABELA}.json"
+			builder.write_json_file(logger, s3_client, bucket_name, ruleset_json, json_path)
+
+			logger.info("Data Quality OK - Motor DQ configurado com sucesso")
+
+		def extract_oportunidade_csv(self, date_ref: datetime) -> DataFrame:
+			ut = Util()
+
+			date_ref_format = date_ref.strftime("%Y%m%d")
+			bucket_raw_name = self.bucket_raw.replace("s3://", "").replace("/", "")
+			obj_s3Itau = StorageS3Itau(bucket_raw_name)
+			path_folder_files = f"{self.folder_raw}/{date_ref_format}"
+
+			lst_files_found = obj_s3Itau.get_files(path_folder_files, "")
+
+			if len(lst_files_found) == 0:
+				logger.info(f"Pasta vazia: {path_folder_files}")
+				return None
+			else:
+				logger.info(f"Total de arquivos localizados: {len(lst_files_found)}")
+				self.lst_partitions.append(date_ref_format)
+
+			lst_df_spark = []
+			for file in lst_files_found:
+				logger.info(f"Processando arquivo: {file}")
+
+				df_oportunidade_csv = (
+					self.spark.read.option("encoding", "utf-8")
+					.option("delimiter", ";")
+					.option("header", "true")
+					.option("multiline", "true")
+					.option("unescapedQuoteHandling", "STOP_AT_CLOSING_QUOTE")
+					.option("ignoreLeadingWhiteSpace", "true")
+					.option("ignoreTrailingWhiteSpace", "true")
+					.csv(file)
+				)
+
+				df_oportunidade = selecionar_atributos_democratizados(df_oportunidade_csv)
+				
+				df_oportunidade = df_oportunidade.withColumn("descricao_arquivo", F.lit(file))
+				df_oportunidade = df_oportunidade.withColumn("data_hora_processamento", F.lit(ut.get_time_br()))
+
+				if SHOW_COUNTS:
+					logger.info(f"Total de linhas CSV: {df_oportunidade.count()}")
+
+				lst_df_spark.append(df_oportunidade)
+
+				logger.info("Empilhando dataframes CSV")
+				union_by_name = partial(DataFrame.unionByName, allowMissingColumns=True)
+				df_union = reduce(union_by_name, lst_df_spark)
+
+				if SHOW_COUNTS:
+					logger.info(f"Total de linhas: {df_union.count()}")
+
+			return df_union
+				
+		def add_column_hash(self, spark_df: DataFrame, columns_to_ignore: List) -> DataFrame:
+			lst_columns_df = spark_df.columns
+
+			lst_cols_clean = [col for col in lst_columns_df if col not in columns_to_ignore]
+
+			spark_df = spark_df.withColumn(
+				"des_ctrl_alter",
+				F.sha2(F.concat_ws("", *lst_cols_clean), 256)
+			)
+			return spark_df
+
+		def make_dataframe_new_data(self, spark_df: DataFrame):
+			formato_data_hora = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+			spark_df = spark_df.withColumn(
+				"codigo_particao",
+				F.date_format(F.to_timestamp(spark_df.SystemModstamp, formato_data_hora), "yyyyMMdd")
+			)
+
+			spark_df = spark_df.withColumn(
+				"CreatedDate_adj", F.to_timestamp(spark_df.CreatedDate, formato_data_hora)
+			)
+
+			spark_df = spark_df.withColumn(
+				"LastModifiedDate_adj", F.to_timestamp(spark_df.LastModifiedDate, formato_data_hora)
+			)
+
+			spark_df = spark_df.withColumn(
+				"SystemModstamp_adj", F.to_timestamp(spark_df.SystemModstamp, formato_data_hora)
+			)
+
+			spark_df = spark_df.withColumn(
+				"LastActivityDate_adj", F.to_timestamp(spark_df.LastActivityDate, formato_data_hora)
+			)
+
+			spark_df = spark_df.withColumn(
+				"LastStageChangeDate_adj", F.to_timestamp(spark_df.LastStageChangeDate, formato_data_hora)
+			)
+
+			spark_df = spark_df.withColumn(
+				"LastViewedDate_adj", F.to_timestamp(spark_df.LastViewedDate, formato_data_hora)
+			)
+
+			spark_df = spark_df.withColumn(
+				"LastReferencedDate_adj", F.to_timestamp(spark_df.LastReferencedDate, formato_data_hora)
+			)
+
+			spark_df_result = spark_df.select(
+				F.col("CreatedDate_adj").cast(T.TimestampType()).alias("dat_cria"),
+				F.col("LastActivityDate_adj").cast(T.TimestampType()).alias("dat_ulti_atii"),
+				F.col("LastModifiedDate_adj").cast(T.TimestampType()).alias("dat_ulti_alte"),
+				F.col("LastReferencedDate_adj").cast(T.TimestampType()).alias("dat_ulti_rfrc"),
+				F.col("LastStageChangeDate_adj").cast(T.TimestampType()).alias("dat_ulti_muda_esta"),
+				F.col("LastViewedDate_adj").cast(T.TimestampType()).alias("dat_ulti_visu"),
+				F.col("SystemModstamp_adj").cast(T.TimestampType()).alias("dat_alte_dado"),
+				F.col("codigo_particao").cast(T.IntegerType()).alias("cod_patc"),
+				spark_df.AccountId.cast(T.StringType()).alias("num_idt_cont"),
+				spark_df.Amount.cast(T.DoubleType()).alias("vlr_esmd_vend"),
+				spark_df.Budget_Confirmed__c.cast(T.BooleanType()).alias("ind_orcm_cfmd_c"),
+				spark_df.CampaignId.cast(T.StringType()).alias("num_idt_camp"),
+				spark_df.CloseDate.cast(T.TimestampType()).alias("dat_fecm"),
+				spark_df.ContactId.cast(T.StringType()).alias("num_usua_crin"),
+				spark_df.CreatedById.cast(T.StringType()).alias("des_idt_ctto"),
+				spark_df.Description.cast(T.StringType()).alias("des_optd"),
+				spark_df.Discovery_Completed__c.cast(T.BooleanType()).alias("ind_dsro_cocd_c"),
+				spark_df.FinServ__FinancialAccount__c.cast(T.StringType()).alias("des_finserv_cont_finn_c"),
+				spark_df.FinServ__Household__c.cast(T.StringType()).alias("des_finserv_domi_c"),
+				spark_df.FinServ__ReferredByContact__c.cast(T.StringType()).alias("des_finserv_refer_ctto_c"),
+				spark_df.FinServ__ReferredByUser__c.cast(T.StringType()).alias("des_finserv_refer_usua_c"),
+				spark_df.Fiscal.cast(T.StringType()).alias("des_ano_fisc"),
+				spark_df.FiscalQuarter.cast(T.IntegerType()).alias("num_trme_fisc"),
+				spark_df.FiscalYear.cast(T.IntegerType()).alias("ano_fisc"),
+				spark_df.ForecastCategory.cast(T.StringType()).alias("cate_prvs"),
+				spark_df.ForecastCategoryName.cast(T.StringType()).alias("nom_cate_prvs"),
+				spark_df.HU7_MotivoPerda__c.cast(T.StringType()).alias("txt_moti_perd"),
+				spark_df.HU7_SubMotivoPerda__c.cast(T.StringType()).alias("txt_sub_moti_perd"),
+				spark_df.HasOpenActivity.cast(T.BooleanType()).alias("ind_atii_aber"),
+				spark_df.HasOpportunityLineItem.cast(T.BooleanType()).alias("ind_item_linh_asdo"),
+				spark_df.HasOverdueTask.cast(T.BooleanType()).alias("ind_tare_vncd"),
+				spark_df.Id.cast(T.StringType()).alias("cod_idt"),
+				spark_df.IsClosed.cast(T.BooleanType()).alias("ind_optd_fech"),
+				spark_df.IsDeleted.cast(T.BooleanType()).alias("idt_excu"),
+				spark_df.IsExcludedFromTerritory2Filter.cast(T.BooleanType()).alias("ind_excu_filt_trto"),
+				spark_df.IsWon.cast(T.BooleanType()).alias("ind_optd_cnqt"),
+				spark_df.LastAmountChangedHistoryId.cast(T.StringType()).alias("idt_ulti_muda_hist_vlr_totl"),
+				spark_df.LastCloseDateChangedHistoryId.cast(T.StringType()).alias("idt_ulti_muda_hist_dat_fecm"),
+				spark_df.LastModifiedById.cast(T.StringType()).alias("cod_usua_ulti_alte"),
+				spark_df.LeadSource.cast(T.StringType()).alias("nom_font_optd"),
+				spark_df.Loss_Reason__c.cast(T.StringType()).alias("des_moti_perd_c"),
+				spark_df.Name.cast(T.StringType()).alias("des_nom"),
+				spark_df.NextStep.cast(T.StringType()).alias("des_prox_etap"),
+				spark_df.OwnerId.cast(T.StringType()).alias("num_idt_usua_optd"),
+				spark_df.Pricebook2Id.cast(T.StringType()).alias("num_idt_price_book"),
+				spark_df.Probability.cast(T.IntegerType()).alias("pbbbl_fecm_optd"),
+				spark_df.PushCount.cast(T.IntegerType()).alias("num_cotg_envo"),
+				spark_df.ROI_Analysis_Completed__c.cast(T.BooleanType()).alias("ind_anal_roi_cocd_c"),
+				spark_df.RecordTypeId.cast(T.StringType()).alias("cod_tipo_rgto"),
+				spark_df.StageName.cast(T.StringType()).alias("des_idt_ctotc_snca"),
+				spark_df.SyncedQuoteId.cast(T.StringType()).alias("cod_idt_trto"),
+				spark_df.Territory2Id.cast(T.StringType()).alias("num_tipo"),
+				spark_df.Type.cast(T.StringType()).alias("dat_hor_psst"),
+				spark_df.data_hora_processamento.cast(T.TimestampType()).alias("dat_hor_psst"),
+				spark_df.descricao_arquivo.cast(T.StringType()).alias("des_arq"),
+				spark_df.HU7_SpreadConcorrente__c.cast(T.DoubleType()).alias("num_sprd_crt"),
+				spark_df.HU7_Probabilidade__c.cast(T.StringType()).alias("nom_pbbbl"),
+				spark_df.AccountIdSubGrupo__c.cast(T.StringType()).alias("num_idt_cont_subg"),
+				spark_df.DataVencimentoConcorrente__c.cast(T.TimestampType()).alias("dat_venc_conc_c"),
+				spark_df.EspecialistaTime__c.cast(T.StringType()).alias("esp_time_c"),
+				spark_df.ExpectedRevenue.cast(T.DoubleType()).alias("exp_reve"),
+				spark_df.HU7_Concorrente__c.cast(T.StringType()).alias("cod_idt_conc_c"),
+				spark_df.HU7_ContactReport__c.cast(T.StringType()).alias("cod_idt_ctc_repo_c"),
+				spark_df.HU7_Detalhes__c.cast(T.StringType()).alias("txt_deta_c"),
+				spark_df.HU7_EmpresaGrupo__c.cast(T.StringType()).alias("cod_idt_emp_grp_c"),
+				spark_df.HU7_EstimativaPotencial__c.cast(T.DoubleType()).alias("num_est_pote_c"),
+				spark_df.HU7_IDExterno__c.cast(T.StringType()).alias("cod_idt_exte_c"),
+				spark_df.HU7_IdVencimento__c.cast(T.StringType()).alias("cod_idt_venc_c"),
+				spark_df.HU7_NomeOferta__c.cast(T.StringType()).alias("nom_ofta_c"),
+				spark_df.HU7_Restrito__c.cast(T.BooleanType()).alias("rest_c"),
+				spark_df.InformacaoAdicional__c.cast(T.StringType()).alias("inf_adic_c"),
+				spark_df.IsPrivate.cast(T.BooleanType()).alias("is_priv"),
+				spark_df.Participantes__c.cast(T.StringType()).alias("txt_part_c"),
+				spark_df.TotalOpportunityQuantity.cast(T.StringType()).alias("ttl_opp_qnty")
+				)
+
+				return spark_df_result
+				
+		def prepare_data_to_write(self, spark_df: DataFrame, partition: int) -> DataFrame:
+			if spark_df is None:
+				return None
+
+			spark_df_new_data = self.make_dataframe_new_data(spark_df)
+
+			spark_df_new_data = self.add_column_hash(
+				spark_df_new_data, ["des_arq", "dat_hor_psst", "cod_patc"]
+			)
+
+			if SHOW_COUNTS:
+				logger.info(f"Total de linhas novas: {spark_df_new_data.count()}")
+
+			return spark_df_new_data
+			
+		def write_dataframe(self, spark_df: DataFrame, partition: int) -> None:
+			spark_df_write = self.prepare_data_to_write(spark_df, partition)
+
+			# Mesmo sendo uma SOR, vamos remover duplicadas conforme combinado
+			spark_df_write_distinct = self.remove_duplicates(spark_df_write)
+
+			if SHOW_COUNTS:
+				logger.info(f"Total de linhas pós distinct: {spark_df_write_distinct.count()}")
+
+			logger.info("Aplicando Data Quality")
+			self.run_data_quality(spark_df_write_distinct)
+
+			path_parquet = f"s3://{self.bucket_sor}/{self.folder_sor}/tb_ibba360_evento_oportunidade"
+
+			logger.info(f"Escrevendo PARQUET: {path_parquet}")
+			spark_df_write_distinct.repartition(1).write.mode("overwrite").partitionBy("cod_patc").parquet(path_parquet)
+			
+		def get_date_to_processing(self) -> List[datetime.date]:
+			ut = Util()
+
+			if FORCAR_DATA_PROC:
+				logger.info(f"Processamento forçado: {DATA_PROC_INI} a {DATA_PROC_FIM}")
+				return [DATA_PROC_INI, DATA_PROC_FIM]
+
+			logger.info("Buscando a última partição")
+			last_partition = self.get_last_partition()
+			logger.info(f"Última partição localizada: {last_partition}")
+
+			if last_partition == "":
+				logger.info("Tabela sem partições, pegando hoje - 720 dias")
+				last_partition = (ut.get_date_br() - timedelta(days=720)).strftime("%Y%m%d")
+
+			last_partition_date = datetime.strptime(str(last_partition), "%Y%m%d").date()
+			end_partition_date = ut.get_date_br()
+
+			return [last_partition_date, end_partition_date]
+			
+		def remove_duplicates(self, spark_df: DataFrame) -> DataFrame:
+			return spark_df.dropDuplicates(["des_ctrl_alter"])
+			
+		def run(self) -> None:
+			lst_data_proc = self.get_date_to_processing()
+
+			date_proc_ini = lst_data_proc[0]
+			date_proc_fim = lst_data_proc[1]
+
+			particao_ini = int(date_proc_ini.strftime("%Y%m%d"))
+
+			lst_df_spark = []
+			while date_proc_ini <= date_proc_fim:
+				logger.info(f"/////////////// Processando dia: {date_proc_ini} ///////////////")
+				spark_df = self.extract_oportunidade_csv(date_proc_ini)
+				if spark_df is not None:
+					lst_df_spark.append(spark_df)
+					
+				date_proc_ini += timedelta(days=1)
+
+			if len(lst_df_spark) > 0:
+				logger.info("Empilhando dataframes Dias")
+				union_by_name = partial(DataFrame.unionByName, allowMissingColumns=True)
+				df_union = reduce(union_by_name, lst_df_spark)
+				if SHOW_COUNTS:
+					logger.info(f"Total de linhas empilhadas: {df_union.count()}")
+
+				logger.info("Escrevendo dataframe")
+				self.write_dataframe(df_union, particao_ini)
+			else:
+				logger.warning("Sem arquivos para processar!")
+				
+		def commit(self) -> None:
+			self.job.commit()
+			
+		def get_last_partition(self) -> str:
+			result = ""
+
+			def funct_map(values):
+				return values["Values"][0]
+
+			response = self.glue_client.get_partitions(
+				DatabaseName=DATABASE, TableName=TABELA, Segment={"SegmentNumber": 0, "TotalSegments": 1}
+			)
+
+			t_particoes = list(map(funct_map, response["Partitions"]))
+			if t_particoes:
+				t_particoes = sorted(t_particoes)
+				result = t_particoes[len(t_particoes) - 1]
+				result = int(result)
+
+			return result
+			
+	def main():
+		logger.info("Inicializando o Glue")
+		glue_job = GlueRaw2SORibba(params=["BUCKET_RAW", "FOLDER_RAW", "BUCKET_SOR", "FOLDER_SOR", "JOB_NAME"])
+		glue_job.run()
+		glue_job.commit()
+		logger.info("Job para mover log(oportunidade) IBBA 360 do raw para o SOR concluído")
+
+
+	if __name__ == "__main__":
+		# Versão 1.0 - 2024-03-15
+		main()
+		logger.info("Fim do processamento")
+
+			
+		
+
+
+
+
+
+
+
+
+)
+
+			
+
+}
+
+
+
+DatadogHandler - esse pparece que é o lance do datadog
