@@ -1,0 +1,216 @@
+version: 1
+
+# Se não for passado --PROFILE, usa este ambiente
+default_profile: prd
+
+# ==================
+# PERFIS por ambiente
+# ==================
+profiles:
+  dev:
+    paths:
+      bucket_raw: s3://meu-raw-dev
+      folder_raw: raw/salesforce/opportunity
+      bucket_sor: s3://meu-sor-dev
+      folder_sor: sor/gestaocomercial/opportunity
+    dq:
+      enable: true
+    write:
+      show_counts: true  # útil para debug em DEV
+
+  hml:
+    paths:
+      bucket_raw: s3://meu-raw-hml
+      folder_raw: raw/salesforce/opportunity
+      bucket_sor: s3://meu-sor-hml
+      folder_sor: sor/gestaocomercial/opportunity
+    dq:
+      enable: true
+    write:
+      show_counts: false
+
+  prd:
+    paths:
+      bucket_raw: s3://meu-raw-prd
+      folder_raw: raw/salesforce/opportunity
+      bucket_sor: s3://meu-sor-prd
+      folder_sor: sor/gestaocomercial/opportunity
+    dq:
+      enable: true
+    write:
+      show_counts: false
+
+# ==================
+# BLOCO COMUM (pode ser sobrescrito por profiles)
+# ==================
+job:
+  name: gc-sf-raw2sor-oportunidade
+  database: db_corp_gestaocomercial_governancasalesforceibba_sor_01
+  table: tb_ibba360_evento_oportunidade
+
+window:
+  force: false             # se true, usa start_date/end_date
+  start_date: 2025-03-13   # usado quando force=true (YYYY-MM-DD)
+  end_date: 2025-09-04
+  days_retro: 1
+  max_days_back: 720
+
+read:
+  input_format: csv
+  csv:
+    delimiter: ";"
+    header: true
+    encoding: utf-8
+    multiline: true
+    quote_mode: STOP_AT_CLOSING_QUOTE
+    ignore_leading_whitespace: true
+    ignore_trailing_whitespace: true
+
+schema:
+  # Pode embutir ou externalizar via: path: configs/opportunity_schema.json
+  columns:
+    AccountId: StringType
+    Amount: DoubleType
+    Budget_Confirmed__c: BooleanType
+    CampaignId: StringType
+    CloseDate: StringType
+    CreatedById: StringType
+    CreatedDate: StringType
+    Description: StringType
+    Discovery_Completed__c: BooleanType
+    Fiscal: StringType
+    FiscalQuarter: IntegerType
+    FiscalYear: IntegerType
+    ForecastCategory: StringType
+    ForecastCategoryName: StringType
+    HasOpenActivity: BooleanType
+    HasOpportunityLineItem: BooleanType
+    HasOverdueTask: BooleanType
+    Id: StringType
+    IsClosed: BooleanType
+    IsDeleted: BooleanType
+    IsWon: BooleanType
+    LastActivityDate: StringType
+    LastModifiedById: StringType
+    LastModifiedDate: StringType
+    LastStageChangeDate: StringType
+    LastViewedDate: StringType
+    LastReferencedDate: StringType
+    LeadSource: StringType
+    Name: StringType
+    NextStep: StringType
+    OwnerId: StringType
+    Pricebook2Id: StringType
+    Probability: IntegerType
+    PushCount: IntegerType
+    RecordTypeId: StringType
+    StageName: StringType
+    SyncedQuoteId: StringType
+    SystemModstamp: StringType
+    Territory2Id: StringType
+    Type: StringType
+    HU7_MotivoPerda__c: StringType
+    HU7_SubMotivoPerda__c: StringType
+    HU7_SpreadConcorrente__c: DoubleType
+    HU7_Probabilidade__c: StringType
+    AccountIdSubGrupo__c: StringType
+    DataVencimentoConcorrente__c: StringType
+    EspecialistaTime__c: StringType
+    ExpectedRevenue: DoubleType
+    HU7_Concorrente__c: StringType
+    HU7_ContactReport__c: StringType
+    HU7_Detalhes__c: StringType
+    HU7_EmpresaGrupo__c: StringType
+    HU7_EstimativaPotencial__c: DoubleType
+    HU7_IDExterno__c: StringType
+    HU7_IdVencimento__c: StringType
+    HU7_NomeOferta__c: StringType
+    HU7_Restrito__c: BooleanType
+    InformacaoAdicional__c: StringType
+    IsPrivate: BooleanType
+    Participantes__c: StringType
+    TotalOpportunityQuantity: StringType
+  optional_columns: [ ]
+
+time:
+  partition_source_col: SystemModstamp
+  partition_source_fmt: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+  partition_target_col: cod_patc
+  partition_target_format: yyyyMMdd
+  timezone_target: America/Sao_Paulo
+
+transform:
+  alias_map:
+    CreatedDate: dat_cria
+    LastActivityDate: dat_ulti_atii
+    LastModifiedDate: dat_ulti_alte
+    LastReferencedDate: dat_ulti_rfrc
+    LastStageChangeDate: dat_ulti_muda_esta
+    LastViewedDate: dat_ulti_visu
+    SystemModstamp: dat_alte_dado
+
+    AccountId: num_idt_cont
+    Amount: vlr_esmd_vend
+    Budget_Confirmed__c: ind_orcm_cfmd_c
+    CampaignId: num_idt_camp
+    CloseDate: dat_fecm
+    CreatedById: des_idt_ctto
+    Description: des_optd
+    Discovery_Completed__c: ind_dsro_cocd_c
+    Fiscal: des_ano_fisc
+    FiscalQuarter: num_trme_fisc
+    FiscalYear: ano_fisc
+    ForecastCategory: cate_prvs
+    ForecastCategoryName: nom_cate_prvs
+    HasOpenActivity: ind_atii_aber
+    HasOpportunityLineItem: ind_item_linh_asdo
+    HasOverdueTask: ind_tare_vncd
+    Id: cod_idt
+    IsClosed: ind_optd_fech
+    IsDeleted: idt_excu
+    IsWon: ind_optd_cnqt
+    LastModifiedById: cod_usua_ulti_alte
+    LeadSource: nom_font_optd
+    Name: des_nom
+    NextStep: des_prox_etap
+    OwnerId: num_idt_usua_optd
+    Pricebook2Id: num_idt_price_book
+    Probability: pbbbl_fecm_optd
+    PushCount: num_cotg_envo
+    RecordTypeId: cod_tipo_rgto
+    StageName: des_idt_ctotc_snca
+    SyncedQuoteId: cod_idt_trto
+    Territory2Id: num_tipo
+    Type: tip_oprt
+    HU7_MotivoPerda__c: txt_moti_perd
+    HU7_SubMotivoPerda__c: txt_sub_moti_perd
+    HU7_SpreadConcorrente__c: num_sprd_crt
+    HU7_Probabilidade__c: nom_pbbbl
+    AccountIdSubGrupo__c: num_idt_cont_subg
+    DataVencimentoConcorrente__c: dat_venc_conc_c
+    EspecialistaTime__c: esp_time_c
+    ExpectedRevenue: exp_reve
+    HU7_Concorrente__c: cod_idt_conc_c
+    HU7_ContactReport__c: cod_idt_ctc_repo_c
+    HU7_Detalhes__c: txt_deta_c
+    HU7_EmpresaGrupo__c: cod_idt_emp_grp_c
+    HU7_EstimativaPotencial__c: num_est_pote_c
+    HU7_IDExterno__c: cod_idt_exte_c
+    HU7_IdVencimento__c: cod_idt_venc_c
+    HU7_NomeOferta__c: nom_ofta_c
+    HU7_Restrito__c: rest_c
+    InformacaoAdicional__c: inf_adic_c
+    IsPrivate: is_priv
+    Participantes__c: txt_part_c
+    TotalOpportunityQuantity: ttl_opp_qnty
+  hash_ignore_cols: [ des_arq, dat_hor_psst, cod_patc ]
+
+write:
+  output_format: parquet
+  overwrite_mode: dynamic
+  show_counts: false
+
+dq:
+  enable: true
+  # Se quiser usar um JSON de regras pronto (local ou s3), descomente e aponte aqui:
+  # rules_path: configs/dq/opportunity_rules.json
