@@ -1,0 +1,146 @@
+version: 1
+
+# Se não passar --PROFILE, usamos este
+default_profile: prd
+
+profiles:
+  dev:
+    env: dev
+    paths:
+      bucket_raw: s3://itau-corp-artifact-sa-east-1-019163564458
+      folder_raw: entidades/sf/Contact
+      bucket_sor: s3://itau-corp-artifact-sa-east-1-019163564458
+      folder_sor: sor/gestaocomercial/contact
+    dq:
+      enable: true
+      rules_path: s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato/tb_ibba360_evento_contato.json
+      fail_path:  s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato
+    write:
+      show_counts: true
+    alerts:
+      sns_topic_name: IBBA-SNS-SENDEMAILLOGS-STEPFUNCTION-ALERT-DADOS-SF
+    schedule:
+      enabled: false
+      cron: "cron(0 0/1 * * ? *)"
+    stepfunctions:
+      state_machine: step-motordataquality
+
+  hml:
+    env: hml
+    paths:
+      bucket_raw: s3://itau-corp-artifact-sa-east-1-019163564458
+      folder_raw: entidades/sf/Contact
+      bucket_sor: s3://itau-corp-artifact-sa-east-1-019163564458
+      folder_sor: sor/gestaocomercial/contact
+    dq:
+      enable: true
+      rules_path: s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato/tb_ibba360_evento_contato.json
+      fail_path:  s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato
+    write:
+      show_counts: false
+    alerts:
+      sns_topic_name: IBBA-SNS-SENDEMAILLOGS-STEPFUNCTION-ALERT-DADOS-SF
+    schedule:
+      enabled: false
+      cron: "cron(0 0/1 * * ? *)"
+    stepfunctions:
+      state_machine: step-motordataquality
+
+  prd:
+    env: prd
+    paths:
+      bucket_raw: s3://itau-corp-artifact-sa-east-1-019163564458
+      folder_raw: entidades/sf/Contact
+      bucket_sor: s3://itau-corp-artifact-sa-east-1-019163564458
+      folder_sor: sor/gestaocomercial/contact
+    dq:
+      enable: true
+      rules_path: s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato/tb_ibba360_evento_contato.json
+      fail_path:  s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato
+    write:
+      show_counts: false
+    alerts:
+      sns_topic_name: IBBA-SNS-SENDEMAILLOGS-STEPFUNCTION-ALERT-DADOS-SF
+    schedule:
+      enabled: false
+      cron: "cron(0 0/1 * * ? *)"
+    stepfunctions:
+      state_machine: step-motordataquality
+
+# -------- Comum a todos (pode ser sobrescrito no profile) --------
+meta:
+  owner_team_email: "eduardo.goncalves-silva@itau-unibanco.com.br"
+  tech_team_email:  "43-engajamento.digital@Conectados.onmicrosoft.com"
+  product_name: "democratizacao-salesforce-contatos"
+  repository_name: "itau-kn8-app-gluejobsalesforce-contact"
+  squad: "EngajamentoDigital"
+  sigla: "kn8"
+  servico_negocio: "democratizar dados do ibba 360"
+  comunidade: "IBBA"
+
+job:
+  name: dadosibba-gluejobibbasalesforcecontact
+  database: db_corp_gestaocomercial_governancasalesforceibba_sor_01
+  table: tb_ibba360_evento_contato
+  description: "Democratizar dados de contatos do IBBA 360"
+
+window:
+  force: false
+  start_date: 2025-03-13
+  end_date: 2025-09-04
+  days_retro: 1
+  max_days_back: 720
+
+read:
+  input_format: csv
+  csv:
+    delimiter: ";"
+    header: true
+    encoding: utf-8
+    multiline: true
+    quote_mode: STOP_AT_CLOSING_QUOTE
+    ignore_leading_whitespace: true
+    ignore_trailing_whitespace: true
+
+schema:
+  columns:
+    Id: StringType
+    AccountId: StringType
+    FirstName: StringType
+    LastName: StringType
+    Email: StringType
+    Phone: StringType
+    CreatedDate: StringType
+    LastModifiedDate: StringType
+    SystemModstamp: StringType
+  optional_columns: [ ]
+
+time:
+  partition_source_col: SystemModstamp
+  partition_source_fmt: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+  partition_target_col: cod_patc
+  partition_target_format: yyyyMMdd
+  timezone_target: America/Sao_Paulo
+
+transform:
+  alias_map:
+    Id: cod_idt
+    AccountId: num_idt_conta
+    FirstName: nom_pess_prin
+    LastName: snm_pess_prin
+    Email: des_email
+    Phone: num_tele
+    CreatedDate: dat_cria
+    LastModifiedDate: dat_ulti_alte
+    SystemModstamp: dat_alte_dado
+  hash_ignore_cols: [ des_arq, dat_hor_psst, cod_patc ]
+
+write:
+  output_format: parquet
+  overwrite_mode: dynamic
+  show_counts: false
+
+dq:
+  enable: true
+  # rules_path: s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato/tb_ibba360_evento_contato.json
+  # fail_path:  s3://itau-corp-artifact-sa-east-1-019163564458/motor_data_quality/db_corp_gestaocomercial_governancasalesforceibba_sor_01/tb_ibba360_evento_contato
