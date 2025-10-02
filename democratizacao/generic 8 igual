@@ -575,3 +575,49 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+--------------
+
+
+
+def main():
+    # PROFILE é opcional; capturamos manualmente (getResolvedOptions exige keys presentes)
+    cli_profile = None
+    for a in sys.argv:
+        if a.startswith("--PROFILE="):
+            cli_profile = a.split("=", 1)[1]
+            break
+
+    # Aqui pegamos DIRETO do Terraform (obrigatórios)
+    args = getResolvedOptions(
+        sys.argv,
+        ["CONFIG_PATH", "JOB_NAME", "BUCKET_RAW", "FOLDER_RAW", "BUCKET_SOR", "FOLDER_SOR"]
+    )
+    if cli_profile:
+        args["PROFILE"] = cli_profile
+
+    # Carrega config e aplica profile (para o resto das chaves do YAML)
+    cfg_raw = load_config_any(args["CONFIG_PATH"])
+    profile = args.get("PROFILE") or cfg_raw.get("default_profile", "prd")
+    cfg = apply_profile(cfg_raw, profile)
+
+    job = GlueGenericJob(cfg, args)
+    try:
+        job.run()
+        job.commit()
+        logger.info("Job concluído com sucesso.")
+    except Exception:
+        logger.exception("Falha na execução do job.")
+        raise
+    finally:
+        logger.info("Fim do processamento.")
+
+
+if __name__ == "__main__":
+    main()
