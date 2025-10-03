@@ -1,0 +1,50 @@
+def write_dq_rules(self):
+    if not self.enable_dq:
+        logger.info("DQ desabilitado (dq.enable=false); pulando geração de regras.")
+        return
+
+    dst_bkt = get_bucket_only(self.bucket_sor)
+    dst_key = f"motor_data_quality/{self.database}/{self.table}/{self.table}.json"
+
+    partitions_list = [f"{self.part_tgt_col}={p}" for p in self.processed_partitions]
+    s3_paths_list = [
+        f"{self.bucket_sor}/{self.folder_sor}/{self.table}/{self.part_tgt_col}={p}"
+        for p in self.processed_partitions
+    ]
+
+    if not partitions_list:
+        logger.warning("Nenhuma partição processada nesta execução para DQ (lista vazia).")
+
+    team = self.dq_builder.get("team", "dataops")
+    builder = RuleSetBuilder(
+        self.database,
+        self.table,
+        partitions_list,
+        s3_paths_list,
+        self.output_format,
+        "True",
+        str(uuid.uuid4()),
+        team,
+    )
+
+    for rule in self.dq_builder.get("rules", []):
+        rtype = rule.get("type")
+        if not rtype:
+            continue
+        if rtype == "IsComplete":
+            builder.add_rule("IsComplete", rule.get("column"))
+        elif rtype == "RowCount":
+            builder.add_rule("RowCount",
+                             operator=rule.get("operator", ">="),
+                             expression=rule.get("expression", 1))
+        elif rtype == "ColumnLength":
+            builder.add_rule("ColumnLength",
+                             rule.get("column"),
+                             operator=rule.get("operator", ">="),
+                             expression=rule.get("expression", 1))
+        else:
+            logger.warning("Tipo de regra DQ não suportado no builder: %s", rtype)
+
+    ruleset_json = builder.build()
+    boto3.client("s3").put_object(Bucket=dst_bkt, Key=dst_key, Body=ruleset_json.encode("utf-8"))
+    logger.info("Regras DQ (builder) escritas em s3://%s/%s", dst_bkt, dst_key)
