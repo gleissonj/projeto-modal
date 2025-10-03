@@ -1,3 +1,6 @@
+# ===============================
+# glue_generic_job.py (v3 — sem profiles)
+# ===============================
 import sys, os, json, uuid, logging, boto3
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
@@ -13,21 +16,12 @@ from awsglue.job import Job
 from awsglue.utils import getResolvedOptions
 
 """
-Glue Generic Job — Config LOCAL + Profiles (dev/hml/prd)
+Glue Generic Job — Config LOCAL (sem profiles)
 
 • Lê o YAML local ao repositório (ex.: configs/opportunity.yaml)
-• Aplica o profile (--PROFILE=dev|hml|prd)
-• RAW (S3) -> schema/cast -> alias (preferindo *_adj quando timezone) -> partição -> hash/dedup -> DQ (copy|basic|builder) -> SOR (S3)
+• RAW (S3) -> schema/cast -> alias (prioriza *_adj quando timezone) -> partição -> hash/dedup -> DQ (copy|basic|builder) -> SOR (S3)
 
-Booleans (force, show_counts, dq.enable) são lidos DIRETO do YAML (sem defaults e sem coerção):
-  window.force, write.show_counts, dq.enable
-Se ausentes, o Python levantará KeyError naturalmente.
-
-Extras desta versão (v2):
-- Usa automaticamente colunas *_adj (ex.: CreatedDate_adj) quando time.timezone_target está definido.
-- Suporta write.repartition (inteiro) para forçar N arquivos por partição.
-- Suporta dq.mode: basic | copy | builder (o último integra RuleSetBuilder como no seu script).
-- dat_hor_psst com timezone técnico (time.technical_timestamp_tz), se configurado.
+Booleans (force, show_counts, dq.enable) são lidos DIRETO do YAML (sem defaults e sem coerção).
 """
 
 # ========== Logging ==========
@@ -40,7 +34,6 @@ logger = logging.getLogger(__name__)
 # ========== Helpers ==========
 
 def get_spark_type(type_name: str):
-    """Converte nome textual em tipo Spark (ex.: 'StringType' -> T.StringType())."""
     if not type_name:
         return None
     if not hasattr(T, type_name):
@@ -56,7 +49,6 @@ def get_bucket_only(s3_uri: str) -> str:
 
 
 def read_text_local(path: str) -> str:
-    """Lê arquivo local; tenta SparkFiles, caminho relativo ao script, /tmp e cwd."""
     # 1) SparkFiles (quando arquivo foi adicionado como Referenced file)
     try:
         from pyspark import SparkFiles
@@ -75,7 +67,7 @@ def read_text_local(path: str) -> str:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         candidates.append(os.path.join(base_dir, path))
         candidates.append(os.path.join("/tmp", path))
-        candidates.append(path)  # relativo ao cwd
+        candidates.append(path)
 
     for p in candidates:
         if os.path.exists(p):
@@ -88,7 +80,6 @@ def read_text_local(path: str) -> str:
 
 
 def load_config_any(config_path: str) -> dict:
-    """Carrega YAML/JSON de arquivo local (ou S3, se for s3://)."""
     if config_path.startswith("s3://"):
         bkt = get_bucket_only(config_path)
         key = config_path.replace(f"s3://{bkt}/", "", 1)
@@ -113,17 +104,17 @@ class GlueGenericJob:
         self.table = cfg["job"]["table"]
         self.job_name = job_args.get("JOB_NAME", cfg["job"].get("name", "GlueGenericJob"))
 
-        # paths são obrigatórios no YAML
+        # paths obrigatórios no YAML
         paths = cfg["paths"]
         self.bucket_raw = paths["bucket_raw"]  # s3://...
         self.folder_raw = paths["folder_raw"]  # prefixo
         self.bucket_sor = paths["bucket_sor"]  # s3://...
         self.folder_sor = paths["folder_sor"]  # prefixo
 
-        # janela — force é obrigatório (bool real)
+        # janela — booleans diretos do YAML
         window = cfg["window"]
-        self.force = window["force"]  # bool direto do YAML
-        self.start_date = window.get("start_date")  # YYYY-MM-DD (opcional)
+        self.force = window["force"]
+        self.start_date = window.get("start_date")
         self.end_date = window.get("end_date")
         self.days_retro = int(window.get("days_retro", 1))
         self.max_days_back = int(window.get("max_days_back", 720))
@@ -177,19 +168,19 @@ class GlueGenericJob:
             self.alias_map = json.loads(text)
         self.hash_ignore = set(tr.get("hash_ignore_cols", ["des_arq", "dat_hor_psst", "cod_patc"]))
 
-        # escrita — show_counts é obrigatório (bool real)
+        # escrita
         write_cfg = cfg["write"]
         self.output_format = write_cfg.get("output_format", "parquet")
         self.overwrite_mode = write_cfg.get("overwrite_mode", "dynamic")
-        self.show_counts = write_cfg["show_counts"]  # bool direto do YAML
+        self.show_counts = write_cfg["show_counts"]  # bool obrigatório no YAML
         self.write_repartition = int(write_cfg.get("repartition", 0))
 
-        # dq — enable é obrigatório (bool real)
+        # dq
         dq = cfg["dq"]
-        self.enable_dq = dq["enable"]  # bool direto do YAML
+        self.enable_dq = dq["enable"]  # bool obrigatório no YAML
         self.dq_mode = dq.get("mode", "basic")  # basic|copy|builder
-        self.dq_rules_path = dq.get("rules_path")  # opcional (local ou s3)
-        self.dq_builder = dq.get("builder", {})    # quando mode=builder
+        self.dq_rules_path = dq.get("rules_path")
+        self.dq_builder = dq.get("builder", {})
 
         # ---- Spark/Glue ----
         sc = SparkContext.getOrCreate()
@@ -201,11 +192,8 @@ class GlueGenericJob:
         self.job = Job(self.glue_context)
         self.job.init(self.job_name, job_args)
 
-        self.processed_partitions = []  # lista de yyyymmdd processados
-
-        logger.info(
-            f"Config para {self.database}.{self.table} carregada (profile aplicado)."
-        )
+        self.processed_partitions = []
+        logger.info(f"Config para {self.database}.{self.table} carregada.")
 
     # --------- Intervalo de datas ---------
     def get_date_range(self):
@@ -283,7 +271,6 @@ class GlueGenericJob:
 
             df = self.apply_schema(df)
             df = df.withColumn("descricao_arquivo", F.lit(path))
-            # timestamp técnico: UTC ou timezone configurado
             if self.tech_ts_tz:
                 df = df.withColumn(
                     "data_hora_processamento",
@@ -311,13 +298,11 @@ class GlueGenericJob:
 
     # --------- Transformação / Partição / Alias ---------
     def transform(self, df: DataFrame) -> DataFrame:
-        # coluna de partição lógica
         df = df.withColumn(
             "codigo_particao",
             F.date_format(F.to_timestamp(F.col(self.part_src_col), self.part_src_fmt), self.part_tgt_fmt),
         )
 
-        # Ajuste de timezone (opcional) – criamos *_adj
         if self.tz_target:
             time_cols = [
                 "CreatedDate",
@@ -338,25 +323,20 @@ class GlueGenericJob:
                     )
 
         def resolve_src(col_name: str):
-            """Se timezone_target estiver setado e existir <col>_adj, usa _adj; senão usa o original."""
             if self.tz_target and (col_name + "_adj") in df.columns:
                 return F.col(col_name + "_adj")
             return F.col(col_name)
 
         selects = []
-        # aliases vindos do YAML
         for src, dst in self.alias_map.items():
             if src in df.columns or (self.tz_target and (src + "_adj") in df.columns):
                 selects.append(resolve_src(src).alias(dst))
             else:
-                # cria coluna nula tipada, se estiver no schema
                 if src in self.schema_cols:
                     selects.append(
                         F.lit(None).cast(get_spark_type(self.schema_cols[src])).alias(dst)
                     )
-        # coluna de partição física
         selects.append(F.col("codigo_particao").cast(T.IntegerType()).alias(self.part_tgt_col))
-        # técnico: arquivo e horário de processamento
         if "descricao_arquivo" in df.columns:
             selects.append(F.col("descricao_arquivo").cast(T.StringType()).alias("des_arq"))
         if "data_hora_processamento" in df.columns:
@@ -399,7 +379,6 @@ class GlueGenericJob:
         dst_bkt = get_bucket_only(self.bucket_sor)
         dst_key = f"motor_data_quality/{self.database}/{self.table}/{self.table}.json"
 
-        # 1) Modo builder – integra RuleSetBuilder (igual ao seu script)
         if self.dq_mode == "builder":
             try:
                 from motordqconnector.dqconnector import RuleSetBuilder
@@ -452,7 +431,6 @@ class GlueGenericJob:
             logger.info("Regras DQ (builder) escritas em s3://%s/%s", dst_bkt, dst_key)
             return
 
-        # 2) Modo copy – copia JSON pronto do caminho configurado
         if self.dq_mode == "copy" and self.dq_rules_path:
             s3 = boto3.resource("s3")
             if self.dq_rules_path.startswith("s3://"):
@@ -465,7 +443,6 @@ class GlueGenericJob:
             logger.info("Regras DQ copiadas para s3://%s/%s", dst_bkt, dst_key)
             return
 
-        # 3) Modo basic – regras mínimas
         if self.dq_mode == "basic":
             rules = {
                 "database": self.database,
@@ -520,20 +497,8 @@ class GlueGenericJob:
 
 # ========== main ==========
 def main():
-    # PROFILE é opcional; se não vier, usa default_profile do YAML
-    cli_profile = None
-    for a in sys.argv:
-        if a.startswith("--PROFILE="):
-            cli_profile = a.split("=", 1)[1]
-            break
-
-    args = getResolvedOptions(sys.argv, ["CONFIG_PATH", "JOB_NAME"])  # obrigatórios
-    if cli_profile:
-        args["PROFILE"] = cli_profile
-
-    cfg_raw = load_config_any(args["CONFIG_PATH"])  # YAML/JSON local (ou S3)
-    profile = args.get("PROFILE") or cfg_raw.get("default_profile", "prd")
-    cfg = apply_profile(cfg_raw, profile)
+    args = getResolvedOptions(sys.argv, ["CONFIG_PATH", "JOB_NAME"])  # sem PROFILE
+    cfg = load_config_any(args["CONFIG_PATH"])  # YAML/JSON local (ou S3)
 
     job = GlueGenericJob(cfg, args)
     try:
@@ -551,47 +516,212 @@ if __name__ == "__main__":
     main()
 
 
+# ===============================
+# opportunity.yaml (sem profiles)
+# ===============================
+# Salve como: configs/opportunity.yaml
+---
+version: 1
 
+meta:
+  owner_team_email: "eduardo.goncalves-silva@itau-unibanco.com.br"
+  tech_team_email:  "43-engajamento.digital@Conectados.onmicrosoft.com"
+  product_name: "democratizacao-salesforce-contatos"
+  repository_name: "itau-kn8-app-gluejobsalesforce-contact"
+  squad: "EngajamentoDigital"
+  sigla: "kn8"
+  servico_negocio: "democratizar dados do ibba 360"
+  comunidade: "IBBA"
 
+paths:
+  bucket_raw: s3://itau-corp-artifact-sa-east-1-019163564458
+  folder_raw: raw/salesforce/opportunity
+  bucket_sor: s3://itau-corp-artifact-sa-east-1-019163564458
+  folder_sor: sor/gestaocomercial/opportunity
 
+job:
+  name: gc-sf-raw2sor-oportunidade
+  description: "Democratizar dados de oportunidade do IBBA 360"
+  database: db_corp_gestaocomercial_governancasalesforceibba_sor_01
+  table: tb_ibba360_evento_oportunidade
 
+window:  # booleans obrigatórios
+  force: false
+  start_date: 2025-03-13
+  end_date: 2025-09-04
+  days_retro: 1
+  max_days_back: 720
 
---------------
+read:
+  input_format: csv
+  csv:
+    delimiter: ";"
+    header: true
+    encoding: utf-8
+    multiline: true
+    quote_mode: STOP_AT_CLOSING_QUOTE
+    ignore_leading_whitespace: true
+    ignore_trailing_whitespace: true
 
+schema:
+  columns:
+    AccountId: StringType
+    Amount: DoubleType
+    Budget_Confirmed__c: BooleanType
+    CampaignId: StringType
+    CloseDate: StringType
+    CreatedById: StringType
+    CreatedDate: StringType
+    Description: StringType
+    Discovery_Completed__c: BooleanType
+    Fiscal: StringType
+    FiscalQuarter: IntegerType
+    FiscalYear: IntegerType
+    ForecastCategory: StringType
+    ForecastCategoryName: StringType
+    HasOpenActivity: BooleanType
+    HasOpportunityLineItem: BooleanType
+    HasOverdueTask: BooleanType
+    Id: StringType
+    IsClosed: BooleanType
+    IsDeleted: BooleanType
+    IsWon: BooleanType
+    LastActivityDate: StringType
+    LastModifiedById: StringType
+    LastModifiedDate: StringType
+    LastStageChangeDate: StringType
+    LastViewedDate: StringType
+    LastReferencedDate: StringType
+    LeadSource: StringType
+    Name: StringType
+    NextStep: StringType
+    OwnerId: StringType
+    Pricebook2Id: StringType
+    Probability: IntegerType
+    PushCount: IntegerType
+    RecordTypeId: StringType
+    StageName: StringType
+    SyncedQuoteId: StringType
+    SystemModstamp: StringType
+    Territory2Id: StringType
+    Type: StringType
+    HU7_MotivoPerda__c: StringType
+    HU7_SubMotivoPerda__c: StringType
+    HU7_SpreadConcorrente__c: DoubleType
+    HU7_Probabilidade__c: StringType
+    AccountIdSubGrupo__c: StringType
+    DataVencimentoConcorrente__c: StringType
+    EspecialistaTime__c: StringType
+    ExpectedRevenue: DoubleType
+    HU7_Concorrente__c: StringType
+    HU7_ContactReport__c: StringType
+    HU7_Detalhes__c: StringType
+    HU7_EmpresaGrupo__c: StringType
+    HU7_EstimativaPotencial__c: DoubleType
+    HU7_IDExterno__c: StringType
+    HU7_IdVencimento__c: StringType
+    HU7_NomeOferta__c: StringType
+    HU7_Restrito__c: BooleanType
+    InformacaoAdicional__c: StringType
+    IsPrivate: BooleanType
+    Participantes__c: StringType
+    TotalOpportunityQuantity: StringType
+  optional_columns: []
 
+time:
+  partition_source_col: SystemModstamp
+  partition_source_fmt: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+  partition_target_col: cod_patc
+  partition_target_format: yyyyMMdd
+  timezone_target: America/Sao_Paulo           # ativa *_adj e preferência automática
+  technical_timestamp_tz: America/Sao_Paulo    # dat_hor_psst em BR
 
-def main():
-    # PROFILE é opcional; capturamos manualmente (getResolvedOptions exige keys presentes)
-    cli_profile = None
-    for a in sys.argv:
-        if a.startswith("--PROFILE="):
-            cli_profile = a.split("=", 1)[1]
-            break
+transform:
+  alias_map:
+    CreatedDate: dat_cria
+    LastActivityDate: dat_ulti_atii
+    LastModifiedDate: dat_ulti_alte
+    LastReferencedDate: dat_ulti_rfrc
+    LastStageChangeDate: dat_ulti_muda_esta
+    LastViewedDate: dat_ulti_visu
+    SystemModstamp: dat_alte_dado
+    AccountId: num_idt_cont
+    Amount: vlr_esmd_vend
+    Budget_Confirmed__c: ind_orcm_cfmd_c
+    CampaignId: num_idt_camp
+    CloseDate: dat_fecm
+    CreatedById: des_idt_ctto
+    Description: des_optd
+    Discovery_Completed__c: ind_dsro_cocd_c
+    Fiscal: des_ano_fisc
+    FiscalQuarter: num_trme_fisc
+    FiscalYear: ano_fisc
+    ForecastCategory: cate_prvs
+    ForecastCategoryName: nom_cate_prvs
+    HasOpenActivity: ind_atii_aber
+    HasOpportunityLineItem: ind_item_linh_asdo
+    HasOverdueTask: ind_tare_vncd
+    Id: cod_idt
+    IsClosed: ind_optd_fech
+    IsDeleted: idt_excu
+    IsWon: ind_optd_cnqt
+    LastModifiedById: cod_usua_ulti_alte
+    LeadSource: nom_font_optd
+    Name: des_nom
+    NextStep: des_prox_etap
+    OwnerId: num_idt_usua_optd
+    Pricebook2Id: num_idt_price_book
+    Probability: pbbbl_fecm_optd
+    PushCount: num_cotg_envo
+    RecordTypeId: cod_tipo_rgto
+    StageName: des_idt_ctotc_snca
+    SyncedQuoteId: cod_idt_trto
+    Territory2Id: num_tipo
+    Type: tip_oprt
+    HU7_MotivoPerda__c: txt_moti_perd
+    HU7_SubMotivoPerda__c: txt_sub_moti_perd
+    HU7_SpreadConcorrente__c: num_sprd_crt
+    HU7_Probabilidade__c: nom_pbbbl
+    AccountIdSubGrupo__c: num_idt_cont_subg
+    DataVencimentoConcorrente__c: dat_venc_conc_c
+    EspecialistaTime__c: esp_time_c
+    ExpectedRevenue: exp_reve
+    HU7_Concorrente__c: cod_idt_conc_c
+    HU7_ContactReport__c: cod_idt_ctc_repo_c
+    HU7_Detalhes__c: txt_deta_c
+    HU7_EmpresaGrupo__c: cod_idt_emp_grp_c
+    HU7_EstimativaPotencial__c: num_est_pote_c
+    HU7_IDExterno__c: cod_idt_exte_c
+    HU7_IdVencimento__c: cod_idt_venc_c
+    HU7_NomeOferta__c: nom_ofta_c
+    HU7_Restrito__c: rest_c
+    InformacaoAdicional__c: inf_adic_c
+    IsPrivate: is_priv
+    Participantes__c: txt_part_c
+    TotalOpportunityQuantity: ttl_opp_qnty
+  hash_ignore_cols: [ des_arq, dat_hor_psst, cod_patc ]
 
-    # Aqui pegamos DIRETO do Terraform (obrigatórios)
-    args = getResolvedOptions(
-        sys.argv,
-        ["CONFIG_PATH", "JOB_NAME", "BUCKET_RAW", "FOLDER_RAW", "BUCKET_SOR", "FOLDER_SOR"]
-    )
-    if cli_profile:
-        args["PROFILE"] = cli_profile
+write:
+  output_format: parquet
+  overwrite_mode: dynamic
+  show_counts: false   # obrigatório (sem default no código)
+  repartition: 0       # 0 = sem repartition; use 1 para 1 arquivo/partição
 
-    # Carrega config e aplica profile (para o resto das chaves do YAML)
-    cfg_raw = load_config_any(args["CONFIG_PATH"])
-    profile = args.get("PROFILE") or cfg_raw.get("default_profile", "prd")
-    cfg = apply_profile(cfg_raw, profile)
-
-    job = GlueGenericJob(cfg, args)
-    try:
-        job.run()
-        job.commit()
-        logger.info("Job concluído com sucesso.")
-    except Exception:
-        logger.exception("Falha na execução do job.")
-        raise
-    finally:
-        logger.info("Fim do processamento.")
-
-
-if __name__ == "__main__":
-    main()
+dq:
+  enable: true         # obrigatório (sem default no código)
+  mode: builder        # builder|copy|basic
+  builder:
+    owner: dataops
+    team: ibba360
+    rules:
+      - type: IsComplete
+        column: cod_idt
+      - type: IsComplete
+        column: des_ctrl_alter
+      - type: RowCount
+        operator: ">="
+        expression: 1
+      - type: ColumnLength
+        column: des_ctrl_alter
+        operator: ">="
+        expression: 1
